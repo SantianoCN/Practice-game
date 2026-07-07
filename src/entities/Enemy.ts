@@ -1,15 +1,18 @@
 import LivingEntity from './LivingEntity.js';
 import Player from './Player.js';
 import { EntityStats } from '../config/types.js';
+import Weapon from '../items/Weapon.js';
 
 export default class Enemy extends LivingEntity {
     public aiState: 'idle' | 'chase' | 'attack';
     public targetId: string | null;
+    public currentWeapon: Weapon;
 
-    constructor(id: string, archetype: string, x: number, y: number, presetStats: EntityStats) {
+    constructor(id: string, archetype: string, x: number, y: number, presetStats: EntityStats, startWeapon: Weapon) {
         super(id, 'enemy', x, y, 32, 32, archetype);
         this.aiState = 'chase';
         this.targetId = null;
+        this.currentWeapon = startWeapon;
 
         this.maxHp = presetStats.maxHp;
         this.hp = presetStats.maxHp;
