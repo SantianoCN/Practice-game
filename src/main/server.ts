@@ -1,7 +1,12 @@
 import express, { Request, Response } from 'express';
+import { Server } from 'socket.io';
+import { NetworkManager } from '../managers/networkManager';
 
 const app = express();
-const PORT = 3000;
+const PORT = 3001;
+
+const server = new NetworkManager(new Server(3000));
+server.init();
 
 app.get('/hello', (req: Request, res: Response) => {
   res.json({ 
@@ -24,3 +29,5 @@ app.listen(PORT, () => {
   console.log(`📝 Проверьте эндпоинт: http://localhost:${PORT}/hello`);
   console.log(`📊 Статус: http://localhost:${PORT}/status`);
 });
+
+
