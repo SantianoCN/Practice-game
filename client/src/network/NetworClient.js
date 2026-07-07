@@ -51,3 +51,20 @@ class NetworkClient {
     }
   }
 }
+
+const socket = io('http://26.218.158.162:3000', { transports: ['websocket'] });
+
+socket.on('connect', () => {
+  console.log('✅ Подключено! ID:', socket.id);
+  
+  socket.emit('login', {
+    login: 'Maximm',
+    password: '123'
+  });
+  console.log('📤 Отправлен login: Maxim');
+  
+
+  socket.once('response', (data) => {
+    console.log('📥 Получен ответ:', data);
+  });
+});
