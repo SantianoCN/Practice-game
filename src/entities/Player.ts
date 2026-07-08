@@ -1,16 +1,17 @@
 import LivingEntity from './LivingEntity.js';
 import { EntityStats } from '../config/types.js';
+import Weapon from '../items/Weapon.js';
 
 export default class Player extends LivingEntity {
     public name: string;
-    public inventory: string[];
-    public currentWeaponId: string;
+    public inventory: Weapon[];
+    public currentWeaponId: number;
 
-    constructor(id: string, name: string, archetype: string, x: number, y: number, presetStats: EntityStats) {
+    constructor(id: string, name: string, archetype: string, x: number, y: number, presetStats: EntityStats, startWeapon: Weapon) {
         super(id, 'player', x, y, 32, 32, archetype);
         this.name = name;
-        this.inventory = [];
-        this.currentWeaponId = 'default_sword';
+        this.inventory = [startWeapon];
+        this.currentWeaponId = 0;
 
         this.maxHp = presetStats.maxHp;
         this.hp = presetStats.maxHp;
@@ -25,12 +26,18 @@ export default class Player extends LivingEntity {
         this.vy = inputY;
     }
 
-    public addItemToInventory(itemId: string): void {
-        this.inventory.push(itemId);
+    public addWeaponToInventory(newWeapon: Weapon): void {
+        if (this.inventory.length < 3) {
+            this.inventory.push(newWeapon);
+        } else {
+            this.inventory[this.currentWeaponId] = newWeapon;
+        }
     }
 
-    public equipWeapon(weaponId: string): void {
-        this.currentWeaponId = weaponId;
+    public equipWeapon(index: number): void {
+        if (index >= 0 && index < this.inventory.length) {
+            this.currentWeaponId = index;
+        }
     }
 
     override die(): void {

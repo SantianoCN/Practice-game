@@ -1,7 +1,7 @@
 import MoveableEntity from './MoveableEntity.js';
 
 export default class LivingEntity extends MoveableEntity {
-    private static readonly INVULN_DURATION = 0.5;
+    private static readonly INVULN_DURATION = 500;
 
     public archetype: string;
     public hp: number;
@@ -11,8 +11,6 @@ export default class LivingEntity extends MoveableEntity {
     
     public isInvulnerable: boolean;
     protected invulnTimer: number;
-    
-    public lastAttackTime: number;
 
     constructor(id: string, type: 'player' | 'enemy', x: number, y: number, width: number, height: number, archetype: string) {
         super(id, type, x, y, width, height);
@@ -24,11 +22,9 @@ export default class LivingEntity extends MoveableEntity {
         
         this.isInvulnerable = false;
         this.invulnTimer = 0;
-        
-        this.lastAttackTime = 0;
     }
 
-    public updateEntity(deltaTime: number, currentTime: number): void {
+    public updateEntity(deltaTime: number): void {
         this.updatePosition(deltaTime);
 
         if (this.isInvulnerable) {
@@ -52,14 +48,6 @@ export default class LivingEntity extends MoveableEntity {
             this.die();
         }
         return true;
-    }
-
-    public canAttack(currentTime: number, cooldownMs: number): boolean {
-        return currentTime - this.lastAttackTime >= cooldownMs;
-    }
-
-    public registerAttack(currentTime: number): void {
-        this.lastAttackTime = currentTime;
     }
 
     public die(): void {

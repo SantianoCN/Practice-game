@@ -2,17 +2,19 @@ import MoveableEntity from './MoveableEntity.js';
 import { WeaponConfig } from '../config/types.js';
 
 export default class Bullet extends MoveableEntity {
+    public ownerId: string;
     public ownerType: 'player' | 'enemy';
     public damage: number;
     public range: number;
     public distanceTraveled: number;
     public isDestroyed: boolean;
 
-    constructor(id: string, ownerType: 'player' | 'enemy', startX: number, startY: number, targetVx: number, targetVy: number, config: WeaponConfig) {
+    constructor(id: string, ownerType: 'player' | 'enemy', ownerId: string, startX: number, startY: number, targetVx: number, targetVy: number, config: WeaponConfig) {
         super(id, 'projectile', startX, startY, 8, 8);
         this.vx = targetVx;
         this.vy = targetVy;
         this.ownerType = ownerType;
+        this.ownerId = ownerId;
         
         this.damage = config.damage;
         this.range = config.range;
@@ -20,7 +22,7 @@ export default class Bullet extends MoveableEntity {
         
         this.distanceTraveled = 0;
         this.isDestroyed = false;
-        this.spriteKey = 'projectile_default';
+        this.spriteKey = 'red_ball';
     }
 
     override updatePosition(deltaTime: number): void {
