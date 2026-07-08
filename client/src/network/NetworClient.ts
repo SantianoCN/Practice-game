@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client';
-import { PlayerAction } from '../../../shared/gameTypes';
+import { PlayerAction, LoginData } from '../../../shared/gameTypes';
 type GameStateData = any; // позже подтягивать
 
 class NetworkClient {
@@ -50,16 +50,21 @@ class NetworkClient {
     }
   }
 
-  public sendPlayerLogin(login: string): void {
+  public sendPlayerLogin(login: LoginData): void {
     if (this.socket && this.socket.connected) { 
-      this.socket.emit('playerLogin', login);
+      this.socket.emit('login', login)
     } else {
-      console.warn('Нет соединения с сервером!');
+      console.warn('Нет соединения с сервером!')
     }
   }
 
   public disconnect(): void {
     if (this.socket) {
+      this.socket.emit('savePlayerData', (response: boolean) => {
+        if (response){
+          console.log('Сохранение')
+        }
+      })
       this.socket.disconnect();
       this.socket = null;
     }
