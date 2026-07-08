@@ -1,4 +1,4 @@
-import { EntityStats } from './types.js';
+import { EntityStats } from './types';
 
 export const WARRIOR_PRESET_LIZARD: EntityStats = {
     maxHp: 150,          

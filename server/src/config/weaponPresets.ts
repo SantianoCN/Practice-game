@@ -1,4 +1,4 @@
-import { WeaponConfig } from './types.js';
+import { WeaponConfig } from './types';
 
 export const FIREBALL: WeaponConfig = {
     damage: 10,

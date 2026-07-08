@@ -1,4 +1,4 @@
-import { EntityStats } from './types.js';
+import { EntityStats } from './types';
 
 export const WARRIOR_PRESET: EntityStats = {
     maxHp: 150,          
@@ -11,5 +11,5 @@ export const MAGE_PRESET: EntityStats = {
     maxHp: 80,
     maxMana: 150,
     speed: 110,
-    spriteKey: 'blua_box'
+    spriteKey: 'blue_box'
 };

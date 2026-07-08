@@ -1,5 +1,5 @@
-import MoveableEntity from './MoveableEntity.js';
-import { WeaponConfig } from '../config/types.js';
+import MoveableEntity from './MoveableEntity';
+import { WeaponConfig } from '../config/types';
 
 export default class Bullet extends MoveableEntity {
     public ownerId: string;

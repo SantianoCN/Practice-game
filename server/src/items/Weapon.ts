@@ -1,5 +1,5 @@
-import { WeaponConfig } from '../config/types.js';
-import Bullet from '../entities/Bullet.js';
+import { WeaponConfig } from '../config/types';
+import Bullet from '../entities/Bullet';
 
 export default class Weapon {
     public id: string;

@@ -1,7 +1,7 @@
-import LivingEntity from './LivingEntity.js';
-import Player from './Player.js';
-import { EntityStats } from '../config/types.js';
-import Weapon from '../items/Weapon.js';
+import LivingEntity from './LivingEntity';
+import Player from './Player';
+import { EntityStats } from '../config/types';
+import Weapon from '../items/Weapon';
 
 export default class Enemy extends LivingEntity {
     public aiState: 'idle' | 'chase' | 'attack';

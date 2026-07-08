@@ -1,7 +1,7 @@
-import MoveableEntity from './MoveableEntity.js';
+import MoveableEntity from './MoveableEntity';
 
 export default class LivingEntity extends MoveableEntity {
-    private static readonly INVULN_DURATION = 500;
+    private static readonly INVULN_DURATION = 0.5;
 
     public archetype: string;
     public hp: number;

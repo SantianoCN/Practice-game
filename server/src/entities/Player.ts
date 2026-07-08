@@ -1,6 +1,6 @@
-import LivingEntity from './LivingEntity.js';
-import { EntityStats } from '../config/types.js';
-import Weapon from '../items/Weapon.js';
+import LivingEntity from './LivingEntity';
+import { EntityStats } from '../config/types';
+import Weapon from '../items/Weapon';
 
 export default class Player extends LivingEntity {
     public name: string;
