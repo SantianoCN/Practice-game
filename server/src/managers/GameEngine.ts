@@ -9,6 +9,7 @@ import { FIREBALL } from '../config/weaponPresets';
 import Weapon from '../items/Weapon';
 import IdGenerator from '../utils/IDGenerator';
 import { GameSnapshot } from '../../../shared/gameTypes';
+import CollisionManager from './CollisionManager';
 
 export default class GameEngine {
     public roomId: string;
@@ -145,9 +146,12 @@ export default class GameEngine {
     }
 
     private checkCollisions() {
-        processCollisions();
-        CollisionManager.constrainEntitiesToRoom(this.players, this.enemies, this.roomWidth, this.roomHeight);
-        CollisionManager.handleBullets(this.bullets, this.players, this.enemies, this.roomWidth, this.roomHeight);
+        CollisionManager.processCollisions(this.bullets, 
+            Array.from(this.players.values()), 
+            this.enemies, 
+            this.roomWidth, 
+            this.roomHeight
+        );
     }
 
     // Сборка слепка экрана (Snapshot) и отправка в сеть
