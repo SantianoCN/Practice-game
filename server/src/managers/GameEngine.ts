@@ -2,7 +2,7 @@
 import Player from '../entities/Player';
 import Enemy from '../entities/Enemy';
 import Bullet from '../entities/Bullet';
-import CollisionEngine from './CollisionEngine';
+import './CollisionManager';
 import { WARRIOR_PRESET, MAGE_PRESET } from '../config/playerPresets';
 import { WARRIOR_PRESET_LIZARD } from '../config/enemyPresets';
 import { FIREBALL } from '../config/weaponPresets';
@@ -145,8 +145,9 @@ export default class GameEngine {
     }
 
     private checkCollisions() {
-        CollisionEngine.constrainEntitiesToRoom(this.players, this.enemies, this.roomWidth, this.roomHeight);
-        CollisionEngine.handleBullets(this.bullets, this.players, this.enemies, this.roomWidth, this.roomHeight);
+        processCollisions();
+        CollisionManager.constrainEntitiesToRoom(this.players, this.enemies, this.roomWidth, this.roomHeight);
+        CollisionManager.handleBullets(this.bullets, this.players, this.enemies, this.roomWidth, this.roomHeight);
     }
 
     // Сборка слепка экрана (Snapshot) и отправка в сеть
@@ -160,17 +161,19 @@ export default class GameEngine {
                 x: p.x, 
                 y: p.y, 
                 hp: p.hp, 
+                maxHp: p.maxHp,
                 mana: p.mana,
-                sprite: p.spriteKey, // Переводим серверный spriteKey в сетевой sprite
+                maxMana: p.maxMana,
+                sprite: p.spriteKey,
                 width: p.width,
                 height: p.height
             })),
             enemies: this.enemies.map(e => ({ 
-                // Если вы помечаете уничтоженных ящеров флагами, можно сюда добавить фильтр .filter(e => e.hp > 0)
                 id: e.id, 
                 x: e.x, 
                 y: e.y, 
-                hp: e.hp, 
+                hp: e.hp,
+                maxHp: e.maxHp, 
                 sprite: e.spriteKey,
                 width: e.width,
                 height: e.height
@@ -184,7 +187,6 @@ export default class GameEngine {
             }))
         };
 
-        // Рассылаем каждому сокету в этой комнате
         for (const sendEmit of this.networkCallbacks.values()) {
             sendEmit(snapshot);
         }

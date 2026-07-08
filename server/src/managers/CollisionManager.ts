@@ -1,5 +1,5 @@
-import Bullet from "src/entities/Bullet";
-import LivingEntity from "src/entities/LivingEntity";
+import Bullet from "../entities/Bullet";
+import LivingEntity from "../entities/LivingEntity";
 
 function processCollisions(bullets: Bullet[], players: LivingEntity[], enemies: LivingEntity[],
     height: number, width: number) {

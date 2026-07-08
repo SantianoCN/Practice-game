@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import { randomUUID } from 'crypto';
-import { LoginData } from '../models/LoginData';
+import { LoginData } from '../../../shared/gameTypes';
 import { PlayerAction } from 'src/models/PlayerAction';
 
 export class NetworkManager {

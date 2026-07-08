@@ -20,6 +20,22 @@ export interface Entity {
     x: number;
     y: number;
     hp: number;
+    maxHp: number;
+    width: number;
+    height: number;
+    sprite: string;
+}
+
+export interface Player {
+    id: string;
+    x: number;
+    y: number;
+    hp: number;
+    maxHp: number;
+    mana: number;
+    maxMana: number;
+    width: number;
+    height: number;
     sprite: string;
 }
 
@@ -27,11 +43,12 @@ export interface Bullet {
     id: string;
     x: number;
     y: number;
+    width: number;
+    height: number;
 }
 
-// Тот самый слепок, который сервер собирает и отправляет браузерам 60 раз в секунду
 export interface GameSnapshot {
-    players: Entity[];
+    players: Player[];
     enemies: Entity[];
     bullets: Bullet[];
 }

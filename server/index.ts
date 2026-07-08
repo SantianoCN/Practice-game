@@ -1,7 +1,7 @@
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import NetworkManager from './managers/NetworkManager';
+import { NetworkManager } from './src/managers/NetworkManager';
 
 const app = express();
 const httpServer = createServer(app);
