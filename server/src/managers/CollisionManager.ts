@@ -19,12 +19,12 @@ export default class CollisionManager {
                 const entity = entities[i];
                 if (entity.hp <= 0) continue;
                 if (bullet.ownerType === entity.type) continue;
-                this.checkBulletHit(bullet, entity);
+                if (this.checkBulletHit(bullet, entity)) break;
             }
         }
     }
     
-    private static checkBulletHit(bullet: Bullet, target: LivingEntity) {
+    private static checkBulletHit(bullet: Bullet, target: LivingEntity): boolean {
         const bulletBounds = bullet.getBounds();
         const targetBounds = target.getBounds();
         if (bulletBounds.top > targetBounds.top
@@ -33,8 +33,10 @@ export default class CollisionManager {
                 && bulletBounds.left < targetBounds.right) {
                 target.takeDamage(bullet.damage);
                 bullet.destroy();
+                return true;
             }
         }
+        return false;
     }
     
     private static collisionBullet(bullet: Bullet, height: number, width: number): boolean {

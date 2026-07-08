@@ -67,10 +67,12 @@ export default class GameEngine {
     }
 
     // Удаление игрока (вышел)
-    public removePlayer(userId: string) {
+    // возвращает true, если комната пуста
+    public removePlayer(userId: string): boolean {
         this.players.delete(userId);
         this.networkCallbacks.delete(userId);
         this.inputQueue.delete(userId);
+        return this.players.size === 0;
     }
 
     // Сюда GameManager складывает нажатия кнопок от сокетов
@@ -222,5 +224,12 @@ export default class GameEngine {
         this.enemies.push(newLizard);
 
         console.log(`[GameEngine] 🐊 Свежий ящер заспавнен! ID: ${enemyId} в координатах [${randomX}, ${randomY}]`);
+    }
+
+    public stop() {
+        if (this.gameLoopInterval) {
+            clearInterval(this.gameLoopInterval);
+            this.gameLoopInterval = null;
+        }
     }
 }

@@ -1,4 +1,59 @@
+import IdGenerator from "../utils/IDGenerator";
+import GameEngine from "./GameEngine";
 
-export class GameManager {
-    
+export default class GameManager {
+    private sessions: Map<string, GameEngine> = new Map();
+
+    public createSession(): string {
+        const uuid = IdGenerator.generateUUID('session');
+        const engine = new GameEngine(uuid);    // uuid?
+        this.sessions.set(uuid, engine); 
+        return uuid; 
+    }
+
+    public getSession(sessionId: string): GameEngine | null {
+        const engine = this.sessions.get(sessionId);
+        if (!engine) return null;
+        return engine;
+    }
+
+    public removeSession(sessionId: string): void {
+        const engine = this.sessions.get(sessionId);
+        if (!engine) return;
+        engine.stop();
+        this.sessions.delete(sessionId);
+    }
+
+    public addPlayer(
+        sessionId: string, 
+        userId: string, 
+        name: string,
+        archetype: 'warrior' | 'mage',
+        emitCallback: (snapshot: any) => void
+    ): void {
+        const engine = this.getSession(sessionId);
+        if (!engine) return;
+        engine.addPlayer(userId, name, archetype, emitCallback);
+    }
+
+    public removePlayer(
+        sessionId: string, 
+        userId: string
+    ): void {
+        const engine = this.getSession(sessionId); 
+        if (!engine) return;
+        if (engine.removePlayer(userId)) {
+            this.removeSession(sessionId); 
+        }
+    }
+
+    public pushInput(
+        sessionId: string,
+        userId: string, 
+        actionData: any
+    ): void {
+        const engine = this.getSession(sessionId);
+        if (!engine) return;
+        engine.pushInput(userId, actionData);
+    }
 }
