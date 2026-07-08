@@ -15,9 +15,28 @@ export interface EntityStats {
     spriteKey: string;
 }
 
+export interface Entity {
+    id: string;
+    x: number;
+    y: number;
+    hp: number;
+    sprite: string;
+}
+
+export interface Bullet {
+    id: string;
+    x: number;
+    y: number;
+}
+
 // Тот самый слепок, который сервер собирает и отправляет браузерам 60 раз в секунду
 export interface GameSnapshot {
-    players: { id: string, x: number, y: number, hp: number, mana: number, width: number, height: number, sprite: string }[];
-    enemies: { id: string, x: number, y: number, hp: number, width: number, height: number, sprite: string }[];
-    bullets: { id: string, x: number, y: number, width: number, height: number }[];
+    players: Entity[];
+    enemies: Entity[];
+    bullets: Bullet[];
+}
+
+export interface LoginData {
+    login: string;
+    password: string;
 }
