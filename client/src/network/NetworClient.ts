@@ -83,7 +83,7 @@ export class NetworkClient {
 
   public login(data: LoginData): Promise<{ success: boolean; message?: string }> {
     return this.emitWithAck('login', data, 'response');
-}
+  }
 
   public disconnect(): void {
     if (this.socket) {

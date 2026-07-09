@@ -28,41 +28,36 @@ export class GameRender {
     this.cameraX = 0;
     this.cameraY = 0;
 
-    this.context.save;
-    this.context.translate(this.canvas.width / 2, this.canvas.height / 2);
-    
     this.drawMap();
     this.drawBullets(snapshot.bullets);
     this.drawPlayers(snapshot.players);
     this.drawEnemies(snapshot.enemies);
     this.drawParticles();
-
-    this.context.restore();
   }
 
   private drawMap(): void {    
     this.context.fillStyle = 'white';
-    this.context.fillRect(-this.canvas.width / 2, -this.canvas.height / 2, this.canvas.width, this.canvas.height)
+    this.context.fillRect(0, 0, this.canvas.width, this.canvas.height)
   }
 
   private drawBullets(bulets: Bullet[]): void {
     bulets.forEach(bullet => {
       this.context.fillStyle = 'black';
-      this.context.fillRect(bullet.x / 2, bullet.y / 2, bullet.width, bullet.height)
+      this.context.fillRect(bullet.x - bullet.width / 2, bullet.y - bullet.height / 2, bullet.width, bullet.height)
     })
   }
   
   private drawPlayers(players: Player[]): void {
     players.forEach(player => {
       this.context.fillStyle ='green';
-      this.context.fillRect(player.x / 2, player.y / 2, player.width, player.height)
+      this.context.fillRect(player.x - player.width / 2, player.y - player.height / 2, player.width, player.height)
     });
   }
 
   private drawEnemies(enemys: Entity[]): void {
     enemys.forEach(enemy => {
       this.context.fillStyle ='red';
-      this.context.fillRect(enemy.x / 2, enemy.y / 2, enemy.width, enemy.height)
+      this.context.fillRect(enemy.x - enemy.width / 2, enemy.y - enemy.height / 2, enemy.width, enemy.height)
     });
   }
 

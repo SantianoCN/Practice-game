@@ -47,9 +47,9 @@ class Game{
     this.network.disconnect()
   }
 
-  public sendLogin(login: LoginData) {
+  /*public sendLogin(login: LoginData) {
     this.network.sendPlayerLogin(login)
-  }
+  }*/
 
   public getSnapshot(): {isRunning: boolean, action: PlayerAction, snapshot: GameSnapshot} {
     return {isRunning: this.isRunning, action: this.lastPlayerAction, snapshot: this.snapshot}
