@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import { randomUUID } from 'crypto';
-import { LoginData, PlayerAction, SessionJoinRequest, SessionConnectResponse, SessionCreateRequest, SessionLeaveRequest, SessionCreateResponse, GameSnapshot } from '../../../shared/gameTypes';
+import { LoginData, PlayerAction, SessionJoinRequest, SessionCreateRequest, GameSnapshot } from '../../../shared/gameTypes';
 import GameManager from './GameManager';
 import IdGenerator from '../utils/IDGenerator';
 
@@ -65,76 +65,81 @@ export class NetworkManager {
                 this.joinSessionHandler(request, socket)
         );
         socket.on('leave-session',
-            (request: SessionLeaveRequest) =>
-                this.leaveSession(request, socket) 
+            () =>
+                this.leaveSession(socket) 
         );
         socket.on(
             'playerAction', (data: PlayerAction) => 
-                this.playerActionHandler(data)
+                this.playerActionHandler(data, socket)
         );
 
         //socket.emit('response', { success: true, userId: 'userId'});
-        socket.emit('response', { success: true, userId: IdGenerator.generateUUID('player')});
+        socket.data.userId = IdGenerator.generateUUID('player');
+        socket.emit('response', { success: true });
     }
 
     public createSessionHandler(request: SessionCreateRequest, socket: Socket) {
+        if (!socket.data.userId) return;
         const sessionId = this.game.createSession();
+        socket.data.sessionId = sessionId;
         this.game.addPlayer(
             sessionId, 
-            request.userId, 
+            socket.data.userId, 
             request.name,
             request.archetype,
             (snapshot: GameSnapshot) => {
-                const response: SessionCreateResponse = {
-                    sessionId: sessionId
-                };
-                socket.emit('connect-session-response', response);
+                socket.emit('snapshot', snapshot);
             }
-        )
+        );
+        socket.emit('session-create-response', 
+            { success: true, sessionId: sessionId }
+        );
     }
 
     public joinSessionHandler(request: SessionJoinRequest, socket: Socket) {
-        if (!request.sessionId || 
-            !this.game.sessionExists(request.sessionId)) {
-                socket.emit('error', { message: 'не удается найти сессию' });
+        if (!socket.data.userId) return;
+        if (!this.game.sessionExists(request.sessionId)) {
+                socket.emit('error', 
+                    { message: 'не удается найти сессию' }
+                );
                 return;
         }
         this.game.addPlayer(
             request.sessionId, 
-            request.userId, 
+            socket.data.userId,
             request.name,
             request.archetype,
             (snapshot: GameSnapshot) => {
-                const response: SessionConnectResponse = {
-                    success: true,
-                    sessionId: request.sessionId,
-                    snapshot: snapshot
-                };
-                socket.emit('connect-session-response', response);
+                socket.emit('snapshot', snapshot); 
             }
         )
+        socket.data.sessionId = request.sessionId;
+        socket.emit('session-join-response',
+            { success: true, sessionId: request.sessionId }
+        );
     }
 
     public playerActionHandler(
-        data: PlayerAction
+        data: PlayerAction,
+        socket: Socket
     ) {
-        if (!data.sessionId || !data.userId) return;
+        if (!socket.data.sessionId || !socket.data.userId) return;
         this.game.pushInput(
-            data.sessionId, 
-            data.userId, 
+            socket.data.sessionId,
+            socket.data.userId,
             data
         );
     }
 
-    public leaveSession(
-        request: SessionLeaveRequest, 
+    public leaveSession( 
         socket: Socket
     ) {
-        if (!request.sessionId || !request.userId) return;
+        if (!socket.data.sessionId || !socket.data.userId) return;
         this.game.removePlayer(
-            request.sessionId, 
-            request.userId
+            socket.data.sessionId, 
+            socket.data.userId
         );
+        socket.data.sessionId = undefined;
     }
 
     private disconnectHandler(socket: Socket) {
@@ -148,4 +153,4 @@ export class NetworkManager {
     public disconnectSocket(socket: Socket) {
         socket.disconnect();
     }
-} 
+}

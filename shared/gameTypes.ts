@@ -53,20 +53,15 @@ export interface GameSnapshot {
     bullets: Bullet[];
 }
 
-export interface SessionJoinRequest {
-    name: string;
-    archetype: 'warrior' | 'mage';
-}
-
 export interface SessionCreateRequest {
     name: string;
     archetype: 'warrior' | 'mage';
 }
 
-export interface SessionConnectResponse {
-    success: boolean;
-    
-    snapshot: any;
+export interface SessionJoinRequest {
+    sessionId: string;
+    name: string;
+    archetype: 'warrior' | 'mage';
 }
 
 export interface LoginData {
