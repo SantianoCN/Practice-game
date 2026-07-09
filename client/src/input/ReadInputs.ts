@@ -1,6 +1,6 @@
 import { PlayerAction } from '../../../shared/gameTypes';
 
-class ReadInputs {
+export class ReadInputs {
   private keys: Record<string, boolean> = {};
   private listeners: Array<(action: PlayerAction) => void> = [];
 
@@ -9,28 +9,29 @@ class ReadInputs {
   }
 
   private listener(): void {
-    window.addEventListener('keydown', (event: KeyboardEvent) => {
-      this.keys[event.key] = true;
-      this.sayListeners();
-    });
+  window.addEventListener('keydown', (event: KeyboardEvent) => {
+    if (this.keys[event.code]) return; 
+    this.keys[event.code] = true;
+    this.sayListeners();
+  });
 
-    window.addEventListener('keyup', (event: KeyboardEvent) => {
-      this.keys[event.key] = false;
-      this.sayListeners();
-    });
-  }
+  window.addEventListener('keyup', (event: KeyboardEvent) => {
+    this.keys[event.code] = false;
+    this.sayListeners();
+  });
+}
 
-  private getPlayerAction(): PlayerAction {
-    return {
-      keys: {
-        up: this.keys['ArrowUp'] || this.keys['w'] || false,
-        down: this.keys['ArrowDown'] || this.keys['s'] || false,
-        left: this.keys['ArrowLeft'] || this.keys['a'] || false,
-        right: this.keys['ArrowRight'] || this.keys['d'] || false,
-        shoot: this.keys[' '] || this.keys['Space'] || false,
-      }
-    };
-  }
+private getPlayerAction(): PlayerAction {
+  return {
+    keys: {
+      up: this.keys['ArrowUp'] || this.keys['KeyW'] || false,
+      down: this.keys['ArrowDown'] || this.keys['KeyS'] || false,
+      left: this.keys['ArrowLeft'] || this.keys['KeyA'] || false,
+      right: this.keys['ArrowRight'] || this.keys['KeyD'] || false,
+      shoot: this.keys['Space'] || false
+    }
+  };
+}
 
   public saveListener(callback: (action: PlayerAction) => void): void {
     this.listeners.push(callback);
@@ -51,5 +52,3 @@ class ReadInputs {
     return this.getPlayerAction();
   }
 }
-
-export default ReadInputs;
