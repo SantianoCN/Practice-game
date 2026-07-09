@@ -1,22 +1,25 @@
 import Bullet from "../entities/Bullet";
 import LivingEntity from "../entities/LivingEntity";
 
-export default class CollisionManager {
-    public static processCollisions(bullets: Bullet[], players: LivingEntity[], enemies: LivingEntity[],
-        width: number, height: number) {
+export class CollisionManager {
+    public static processCollisions(
+        bullets: Bullet[], 
+        players: LivingEntity[], 
+        enemies: LivingEntity[],
+        widthRoom: number, 
+        heightRoom: number
+    ): void {
         const entities = players.concat(enemies);
     
-        for (let i = 0; i < entities.length; i++) {
-            this.collisionEntity(entities[i], height, width);
+        for (const entity of entities) {
+            this.collisionEntity(entity, heightRoom, widthRoom);
         }
     
-        for (let j = 0; j < bullets.length; j++) {
-            const bullet = bullets[j];
+        for (const bullet of bullets) {
             if (bullet.isDestroyed) continue;
-            if (this.collisionBullet(bullet, height, width)) continue;
+            if (this.collisionBullet(bullet, heightRoom, widthRoom)) continue;
     
-            for (let i = 0; i < entities.length; i++) {
-                const entity = entities[i];
+            for (const entity of entities) {
                 if (entity.hp <= 0) continue;
                 if (bullet.ownerType === entity.type) continue;
                 if (this.checkBulletHit(bullet, entity)) break;
@@ -48,7 +51,11 @@ export default class CollisionManager {
         return false;
     }
     
-    private static collisionEntity(entity: LivingEntity, height: number, width: number) {
+    private static collisionEntity(
+        entity: LivingEntity, 
+        height: number, 
+        width: number
+    ): void {
         const entityBound = entity.getBounds();
         if (entityBound.left < 0) {
             entity.vx = 0;
