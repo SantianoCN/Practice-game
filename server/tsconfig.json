@@ -2,11 +2,16 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "CommonJS",
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "outDir": "./dist",
-    "rootDir": "../", // Позволяет TS подняться на уровень выше и прочитать типы из shared
+    "rootDir": "../",
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "strict": true
   },
-  "include": ["src", "../shared"]
+  "include": [
+    "index.ts",
+    "src/**/*",
+    "../shared/**/*"
+  ]
 }
