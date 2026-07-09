@@ -3,8 +3,6 @@ import { GameSnapshot, Player, Entity, Bullet } from '../../../shared/gameTypes'
 export class GameRender {
   private context: CanvasRenderingContext2D;
   private canvas: HTMLCanvasElement; 
-  private cameraX: number = 0;
-  private cameraY: number = 0;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -25,9 +23,6 @@ export class GameRender {
   }
 
   private drawScreen(snapshot: GameSnapshot): void {
-    this.cameraX = 0;
-    this.cameraY = 0;
-
     this.drawMap();
     this.drawBullets(snapshot.bullets);
     this.drawPlayers(snapshot.players);

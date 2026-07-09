@@ -1,13 +1,13 @@
 import { io, Socket } from 'socket.io-client';
 import { PlayerAction, LoginData, GameSnapshot, SessionCreateRequest, SessionCreateResponse, SessionJoinRequest, SessionJoinResponse } from '../../../shared/gameTypes';
-import { platform } from 'os';
+//import { platform } from 'os';
 
 export class NetworkClient {
   private socket: Socket | null = null;
   private readonly serverUrl: string;
   private UpdateCallback: ((data: GameSnapshot) => void) | null = null;
 
-  constructor(serverUrl: string = 'http://26.218.158.162:3000') {
+  constructor(serverUrl: string = 'http://localhost:3000') {
     this.serverUrl = serverUrl;
   }
 
