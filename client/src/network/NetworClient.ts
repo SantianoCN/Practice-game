@@ -1,6 +1,5 @@
 import { io, Socket } from 'socket.io-client';
 import { PlayerAction, LoginData, GameSnapshot, SessionCreateRequest, SessionCreateResponse, SessionJoinRequest, SessionJoinResponse } from '../../../shared/gameTypes';
-//import { platform } from 'os';
 
 export class NetworkClient {
   private socket: Socket | null = null;
@@ -11,30 +10,37 @@ export class NetworkClient {
     this.serverUrl = serverUrl;
   }
 
-  public connect(): void {
-    if (this.socket) {
-      console.log('Соединение уже установлено');
-      return;
-    }
-
-    this.socket = io(this.serverUrl, { transports: ['websocket'] });
-
-    this.socket.on('connection', () => {
-      console.log('Подключено к серверу! ID:', this.socket?.id);
-    });
-
-    this.socket.on('snapshot', (data: GameSnapshot) => {
-      if (this.UpdateCallback) {
-        this.UpdateCallback(data);
+  // Изменено: теперь возвращает Promise, чтобы мы могли дождаться установки соединения
+  public connect(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (this.socket) {
+        console.log('Соединение уже установлено');
+        resolve();
+        return;
       }
-    });
 
-    this.socket.on('connect_error', (err: Error) => {
-      console.error('Ошибка подключения:', err.message);
-    });
+      this.socket = io(this.serverUrl, { transports: ['websocket'] });
 
-    this.socket.on('disconnect', () => {
-      console.warn('Отключено от сервера');
+      // ИСПРАВЛЕНО: событие 'connect' вместо 'connection'
+      this.socket.on('connect', () => {
+        console.log('Подключено к серверу! ID:', this.socket?.id);
+        resolve();
+      });
+
+      this.socket.on('connect_error', (err: Error) => {
+        console.error('Ошибка подключения:', err.message);
+        reject(err);
+      });
+
+      this.socket.on('snapshot', (data: GameSnapshot) => {
+        if (this.UpdateCallback) {
+          this.UpdateCallback(data);
+        }
+      });
+
+      this.socket.on('disconnect', () => {
+        console.warn('Отключено от сервера');
+      });
     });
   }
 
@@ -60,7 +66,7 @@ export class NetworkClient {
         return;
     }
     this.socket.emit('playerAction', action);
-}
+  }
 
   private async emitWithAck<T>(
     event: string, 

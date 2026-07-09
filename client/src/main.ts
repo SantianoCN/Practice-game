@@ -1,7 +1,7 @@
 import { NetworkClient } from "./network/NetworClient";
 import { ReadInputs } from "./input/ReadInputs";
 import { GameRender } from "./render/screenRender";
-import { PlayerAction, LoginData, GameSnapshot } from '../../shared/gameTypes';
+import { PlayerAction, GameSnapshot } from '../../shared/gameTypes';
 
 class Game{
   private network: NetworkClient;
@@ -12,8 +12,8 @@ class Game{
   private snapshot: GameSnapshot
 
   constructor() {
-    this.network = new NetworkClient;
-    this.input = new ReadInputs;
+    this.network = new NetworkClient();
+    this.input = new ReadInputs();
     const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement
     this.renderServise = new GameRender(canvas);
     this.lastPlayerAction = {keys: { up: false, down: false, left: false, right: false, shoot: false }};
@@ -25,20 +25,41 @@ class Game{
     };
   }
 
-  public startGame() {
+  // Изменено: метод стал асинхронным для соблюдения порядка авторизации
+  public async startGame() {
     if (this.isRunning) {
-      return
+      return;
     } else {
-      this.isRunning = true
+      this.isRunning = true;
     }
-    this.network.connect();
+
+    try {
+      // 1. Подключаемся и ждем фактического коннекта сокета
+      await this.network.connect();
+
+      // 2. Проходим авторизацию
+      const loginResult = await this.network.login({ login: 'testUser', password: 'testPassword' });
+      console.log('Авторизация выполнена успешно:', loginResult);
+
+      // 3. Создаем сессию
+      const sessionResult = await this.network.createSession({ name: 'Русич', archetype: 'warrior' });
+      console.log('Сессия создана! ID:', sessionResult.sessionId);
+
+    } catch (error) {
+      console.error('Не удалось запустить сетевую игру:', error);
+      this.isRunning = false;
+      return;
+    }
+
     this.input.saveListener((action: PlayerAction) => {
       this.lastPlayerAction = action;
       this.network.sendPlayerAction(action)
     });
+
     this.network.onSnapshotUpdate((snapshot: GameSnapshot) => {
-      this.snapshot = snapshot
+      this.snapshot = snapshot;
     });
+
     this.gameLoop();
   }
 
@@ -46,10 +67,6 @@ class Game{
     this.isRunning = false;
     this.network.disconnect()
   }
-
-  /*public sendLogin(login: LoginData) {
-    this.network.sendPlayerLogin(login)
-  }*/
 
   public getSnapshot(): {isRunning: boolean, action: PlayerAction, snapshot: GameSnapshot} {
     return {isRunning: this.isRunning, action: this.lastPlayerAction, snapshot: this.snapshot}
