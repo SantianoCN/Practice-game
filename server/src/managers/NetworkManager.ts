@@ -2,6 +2,7 @@ import { Server, Socket } from 'socket.io';
 import { randomUUID } from 'crypto';
 import { LoginData, PlayerAction, SessionJoinRequest, SessionConnectResponse, SessionCreateRequest, SessionLeaveRequest, SessionCreateResponse } from '../../../shared/gameTypes';
 import GameManager from './GameManager';
+import IdGenerator from '../utils/IDGenerator';
 
 export class NetworkManager {
     private io: Server;
@@ -65,7 +66,7 @@ export class NetworkManager {
         );
 
         //socket.emit('response', { success: true, userId: 'userId'});
-        socket.emit('response', { success: true, userId: randomUUID()});
+        socket.emit('response', { success: true, userId: IdGenerator.generateUUID('player')});
     }
 
     public async createSessionHandler(request: SessionCreateRequest, socket: Socket) {
@@ -98,6 +99,7 @@ export class NetworkManager {
             (snapshot: any) => {
                 const response: SessionConnectResponse = {
                     success: true,
+                    sessionId: request.sessionId,
                     snapshot: snapshot
                 };
                 socket.emit('connect-session-response', response);

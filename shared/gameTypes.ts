@@ -74,6 +74,7 @@ export interface SessionCreateResponse {
 
 export interface SessionConnectResponse {
     success: boolean;
+    sessionId: string;
     snapshot: any;
 }
 
