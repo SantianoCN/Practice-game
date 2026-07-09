@@ -58,6 +58,14 @@ export interface SessionCreateRequest {
     archetype: 'warrior' | 'mage';
 }
 
+export interface SessionCreateResponse {
+    sessionId: string;
+}
+
+export interface SessionJoinResponse {
+    sessionId: string;
+}
+
 export interface SessionJoinRequest {
     sessionId: string;
     name: string;
