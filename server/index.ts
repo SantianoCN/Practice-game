@@ -2,6 +2,7 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { NetworkManager } from './src/managers/NetworkManager';
+import GameManager from './src/managers/GameManager';
 
 const app = express();
 const httpServer = createServer(app);
@@ -19,7 +20,8 @@ app.get('/status', (req, res) => {
     res.send({ status: "working", message: "Игровой сервер запущен. Слава Роду!" });
 });
 
-const networkManager = new NetworkManager(io);
+const gameManager = new GameManager();
+const networkManager = new NetworkManager(io, gameManager);
 networkManager.init();
 
 httpServer.listen(PORT, () => {

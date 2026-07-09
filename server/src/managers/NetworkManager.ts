@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import { randomUUID } from 'crypto';
-import { LoginData, PlayerAction, SessionJoinRequest, SessionConnectResponse, SessionCreateRequest, SessionLeaveRequest, SessionCreateResponse } from '../../../shared/gameTypes';
+import { LoginData, PlayerAction, SessionJoinRequest, SessionConnectResponse, SessionCreateRequest, SessionLeaveRequest, SessionCreateResponse, GameSnapshot } from '../../../shared/gameTypes';
 import GameManager from './GameManager';
 import IdGenerator from '../utils/IDGenerator';
 
@@ -15,19 +15,27 @@ export class NetworkManager {
     }
 
     public init() {
-        this.io.on('connection', (socket: Socket) => this.connectUserHandler(socket));
+        this.io.on('connection', 
+            (socket: Socket) => 
+                this.connectUserHandler(socket)
+        );
         console.log('initialized');
     }
 
-    private broadcastSnapshot(snapshot: any) {
-        this.io.emit('game:snapshot', snapshot);
-    }
-
-    public async connectUserHandler(socket: Socket) {
+    public connectUserHandler(socket: Socket) {
         console.log('соединение установлено');
         
         // авторизация подключения
-        socket.once('login', (data: LoginData) => this.authorizeConnection(socket, data));
+        socket.once('login', 
+            (data: LoginData) => 
+                this.authorizeConnection(socket, data)
+        );
+        // отключение сокета
+        socket.on('disconnect',
+            () => {
+                this.disconnectHandler(socket)
+            }
+        )
     }
     
     public async authorizeConnection(socket: Socket, data: LoginData) {
@@ -62,21 +70,21 @@ export class NetworkManager {
         );
         socket.on(
             'playerAction', (data: PlayerAction) => 
-                this.playerActionHandler(data, socket)
+                this.playerActionHandler(data)
         );
 
         //socket.emit('response', { success: true, userId: 'userId'});
         socket.emit('response', { success: true, userId: IdGenerator.generateUUID('player')});
     }
 
-    public async createSessionHandler(request: SessionCreateRequest, socket: Socket) {
+    public createSessionHandler(request: SessionCreateRequest, socket: Socket) {
         const sessionId = this.game.createSession();
         this.game.addPlayer(
             sessionId, 
             request.userId, 
             request.name,
             request.archetype,
-            (snapshot: any) => {
+            (snapshot: GameSnapshot) => {
                 const response: SessionCreateResponse = {
                     sessionId: sessionId
                 };
@@ -96,7 +104,7 @@ export class NetworkManager {
             request.userId, 
             request.name,
             request.archetype,
-            (snapshot: any) => {
+            (snapshot: GameSnapshot) => {
                 const response: SessionConnectResponse = {
                     success: true,
                     sessionId: request.sessionId,
@@ -108,8 +116,7 @@ export class NetworkManager {
     }
 
     public playerActionHandler(
-        data: PlayerAction,
-        socket: Socket
+        data: PlayerAction
     ) {
         if (!data.sessionId || !data.userId) return;
         this.game.pushInput(
@@ -128,6 +135,14 @@ export class NetworkManager {
             request.sessionId, 
             request.userId
         );
+    }
+
+    private disconnectHandler(socket: Socket) {
+        const { userId, sessionId } = socket.data;
+        if (userId && sessionId) {
+            this.game.removePlayer(sessionId, userId);
+        }
+        console.log('соединение разорвано:', socket.id);
     }
 
     public disconnectSocket(socket: Socket) {
