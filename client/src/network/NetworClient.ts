@@ -1,11 +1,10 @@
 import { io, Socket } from 'socket.io-client';
-import { PlayerAction, LoginData } from '../../../shared/gameTypes';
-type GameStateData = any; // позже подтягивать
+import { PlayerAction, LoginData, GameSnapshot } from '../../../shared/gameTypes';
 
-class NetworkClient {
+export class NetworkClient {
   private socket: Socket | null = null;
   private readonly serverUrl: string;
-  private UpdateCallback: ((data: GameStateData) => void) | null = null;
+  private UpdateCallback: ((data: GameSnapshot) => void) | null = null;
 
   constructor(serverUrl: string = 'http://26.218.158.162:3000') {
     this.serverUrl = serverUrl;
@@ -23,7 +22,7 @@ class NetworkClient {
       console.log('Подключено к серверу! ID:', this.socket?.id);
     });
 
-    this.socket.on('gameStateUpdate', (data: GameStateData) => {
+    this.socket.on('snapshot', (data: GameSnapshot) => {
       if (this.UpdateCallback) {
         this.UpdateCallback(data);
       }
@@ -38,7 +37,7 @@ class NetworkClient {
     });
   }
 
-  public onGameStateUpdate(callback: (data: GameStateData) => void): void {
+  public onSnapshotUpdate(callback: (data: GameSnapshot) => void): void {
     this.UpdateCallback = callback;
   }
 
@@ -70,5 +69,3 @@ class NetworkClient {
     }
   }
 }
-
-export default NetworkClient;

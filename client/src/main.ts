@@ -1,21 +1,24 @@
-import NetworkClient from "./network/NetworClient";
-import ReadInputs from "./input/ReadInputs";
-import { PlayerAction, LoginData } from '../../shared/gameTypes';
-type GameStateData = any; // позже подтягивать
+import { NetworkClient } from "./network/NetworClient";
+import { ReadInputs } from "./input/ReadInputs";
+import { PlayerAction, LoginData, GameSnapshot } from '../../shared/gameTypes';
 
 class Game{
   private network: NetworkClient;
   private input: ReadInputs;
   private lastPlayerAction: PlayerAction;
   private isRunning: boolean;
-  private gameState: GameStateData
+  private snapshot: GameSnapshot
 
   constructor() {
     this.network = new NetworkClient;
     this.input = new ReadInputs;
     this.lastPlayerAction = {keys: { up: false, down: false, left: false, right: false, shoot: false }};
     this.isRunning = false;
-    this.gameState = null
+    this.snapshot = {
+      players: [],
+      enemies: [],
+      bullets: []
+    };
   }
 
   public startGame() {
@@ -24,13 +27,13 @@ class Game{
     } else {
       this.isRunning = true
     }
-    this.network.connect
+    this.network.connect();
     this.input.saveListener((action: PlayerAction) => {
       this.lastPlayerAction = action;
       this.network.sendPlayerAction(action)
     })
-    this.network.onGameStateUpdate((gameState: GameStateData) => {
-      this.gameState = gameState
+    this.network.onSnapshotUpdate((snapshot: GameSnapshot) => {
+      this.snapshot = snapshot
     })
   }
 
@@ -43,21 +46,20 @@ class Game{
     this.network.sendPlayerLogin(login)
   }
 
-  public getGameState(): {isRunning: boolean, action: PlayerAction, gameState: GameStateData} {
-    return {isRunning: this.isRunning, action: this.lastPlayerAction, gameState: this.gameState}
+  public getSnapshot(): {isRunning: boolean, action: PlayerAction, snapshot: GameSnapshot} {
+    return {isRunning: this.isRunning, action: this.lastPlayerAction, snapshot: this.snapshot}
   }
 
   public gameLoop() {
     if (!this.isRunning) return
 
-    this.upDateState();
+    this.render(this.snapshot);
 
-    this.render();
-
-    requestAnimationFrame(() => this.gameLoop)
+    requestAnimationFrame(() => this.gameLoop())
   }
 
-  private upDateState() {
-
+  private render(snapshot: GameSnapshot) {
+    
   }
+
 }

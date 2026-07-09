@@ -1,6 +1,6 @@
 import { PlayerAction } from '../../../shared/gameTypes';
 
-class ReadInputs {
+export class ReadInputs {
   private keys: Record<string, boolean> = {};
   private listeners: Array<(action: PlayerAction) => void> = [];
 
@@ -51,5 +51,3 @@ class ReadInputs {
     return this.getPlayerAction();
   }
 }
-
-export default ReadInputs;
