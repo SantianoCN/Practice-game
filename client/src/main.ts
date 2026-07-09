@@ -1,10 +1,12 @@
 import { NetworkClient } from "./network/NetworClient";
 import { ReadInputs } from "./input/ReadInputs";
+import { GameRender } from "./render/screenRender";
 import { PlayerAction, LoginData, GameSnapshot } from '../../shared/gameTypes';
 
 class Game{
   private network: NetworkClient;
   private input: ReadInputs;
+  private renderServise: GameRender;
   private lastPlayerAction: PlayerAction;
   private isRunning: boolean;
   private snapshot: GameSnapshot
@@ -12,6 +14,8 @@ class Game{
   constructor() {
     this.network = new NetworkClient;
     this.input = new ReadInputs;
+    const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement
+    this.renderServise = new GameRender(canvas);
     this.lastPlayerAction = {keys: { up: false, down: false, left: false, right: false, shoot: false }};
     this.isRunning = false;
     this.snapshot = {
@@ -31,10 +35,11 @@ class Game{
     this.input.saveListener((action: PlayerAction) => {
       this.lastPlayerAction = action;
       this.network.sendPlayerAction(action)
-    })
+    });
     this.network.onSnapshotUpdate((snapshot: GameSnapshot) => {
       this.snapshot = snapshot
-    })
+    });
+    this.gameLoop();
   }
 
   public stopGame() {
@@ -53,13 +58,11 @@ class Game{
   public gameLoop() {
     if (!this.isRunning) return
 
-    this.render(this.snapshot);
+    this.renderServise.render(this.snapshot);
 
     requestAnimationFrame(() => this.gameLoop())
   }
-
-  private render(snapshot: GameSnapshot) {
-    
-  }
-
 }
+
+const game = new Game();
+game.startGame();
