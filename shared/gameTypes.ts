@@ -1,6 +1,4 @@
 export interface PlayerAction {
-    sessionId: string;
-    userId: string;
     keys: {
         up: boolean;
         down: boolean;
@@ -56,31 +54,19 @@ export interface GameSnapshot {
 }
 
 export interface SessionJoinRequest {
-    sessionId: string;
-    userId: string;
     name: string;
     archetype: 'warrior' | 'mage';
 }
 
 export interface SessionCreateRequest {
-    userId: string;
     name: string;
     archetype: 'warrior' | 'mage';
 }
 
-export interface SessionCreateResponse {
-    sessionId: string;
-}
-
 export interface SessionConnectResponse {
     success: boolean;
-    sessionId: string;
+    
     snapshot: any;
-}
-
-export interface SessionLeaveRequest {
-    sessionId: string;
-    userId: string;
 }
 
 export interface LoginData {
