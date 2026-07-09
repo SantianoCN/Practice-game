@@ -1,4 +1,3 @@
-// src/managers/GameEngine.ts
 import Player from '../entities/Player';
 import Enemy from '../entities/Enemy';
 import Bullet from '../entities/Bullet';
@@ -7,14 +6,13 @@ import { WARRIOR_PRESET, MAGE_PRESET } from '../config/playerPresets';
 import { WARRIOR_PRESET_LIZARD } from '../config/enemyPresets';
 import { FIREBALL } from '../config/weaponPresets';
 import Weapon from '../items/Weapon';
-import IdGenerator from '../utils/IDGenerator';
-import CollisionManager from './CollisionManager';
+import { IdGenerator } from '../utils/IDGenerator';
+import { CollisionManager } from './CollisionManager';
 import { PlayerAction, GameSnapshot } from '../../../shared/gameTypes';
 
-export default class GameEngine {
+export class GameEngine {
     public roomId: string;
     
-    // Списки всех сущностей в этой конкретной комнате
     private players: Map<string, Player>;
     private enemies: Enemy[];
     private bullets: Bullet[];
@@ -22,16 +20,12 @@ export default class GameEngine {
     private roomWidth: number;
     private roomHeight: number;
 
-
-    // Очередь входящих инпутов, которые накопились за 16мс (между тиками)
     private inputQueue: Map<string, PlayerAction>;
-
-    // Колбэки для отправки данных обратно в сеть через сокеты
     private networkCallbacks: Map<string, (snapshot: GameSnapshot) => void>;
 
     private gameLoopInterval: ReturnType<typeof setInterval> | null = null;
-    private readonly TICK_RATE = 60; // 60 тиков в секунду
-    private readonly TICK_TIME = 1000 / this.TICK_RATE; // ~16.67 миллисекунд
+    private readonly TICK_RATE = 60;
+    private readonly TICK_TIME = 1000 / this.TICK_RATE;
     private static readonly ROOM_WIDTH = 1000;
     private static readonly ROOM_HEIGHT = 1000;
 
@@ -45,19 +39,12 @@ export default class GameEngine {
         this.roomHeight = GameEngine.ROOM_HEIGHT;
         this.roomWidth = GameEngine.ROOM_WIDTH;
 
-        // Запускаем бесконечный конвейер игры
         this.startGameLoop();
-        
-        // Спавним парочку тестовых монстров для затравки
         this.spawnTestEnemies();
     }
 
-    // Добавление игрока в игровой мир
     public addPlayer(userId: string, name: string, archetype: 'warrior' | 'mage', emitCallback: (snapshot: GameSnapshot) => void) {
         const preset = archetype === 'mage' ? MAGE_PRESET : WARRIOR_PRESET;
-        
-        // Создаем физический объект игрока (Оружие добавим чуть позже при интеграции)
-        // Ставим его в центр карты (координаты 400, 400)
         const weaponId = IdGenerator.generateId('weapon');
         const startWeapon = new Weapon(weaponId, "Огненый посох", FIREBALL);
         const newPlayer = new Player(userId, name, archetype, 400, 400, preset, startWeapon);
@@ -66,8 +53,6 @@ export default class GameEngine {
         this.networkCallbacks.set(userId, emitCallback);
     }
 
-    // Удаление игрока (вышел)
-    // возвращает true, если комната пуста
     public removePlayer(userId: string): boolean {
         this.players.delete(userId);
         this.networkCallbacks.delete(userId);
@@ -75,12 +60,10 @@ export default class GameEngine {
         return this.players.size === 0;
     }
 
-    // Сюда GameManager складывает нажатия кнопок от сокетов
     public pushInput(userId: string, actionData: PlayerAction) {
         this.inputQueue.set(userId, actionData);
     }
 
-    // Главный цикл (Game Loop)
     private startGameLoop() {
         this.gameLoopInterval = setInterval(() => {
             this.update();
@@ -113,7 +96,7 @@ export default class GameEngine {
             enemy.updateTarget(playersArray);
         }
 
-        // 5. Проверяем коллизии (врезания пули в ящеров) -> Сюда подключим CollisionEngine
+        // 5. Проверяем коллизии (врезания пули в ящеров)
         this.checkCollisions();
         this.bullets = this.bullets.filter(b => !b.isDestroyed);
         this.enemies = this.enemies.filter(e => e.hp > 0);
@@ -127,7 +110,6 @@ export default class GameEngine {
             const player = this.players.get(userId);
             if (!player) continue;
 
-            // Пример обработки движения: input.keys = { up: true, down: false... }
             let vx = 0;
             let vy = 0;
             if (input.keys?.up) vy = -1;
@@ -137,13 +119,13 @@ export default class GameEngine {
 
             player.setDirection(vx, vy);
 
-            // Если прилетел флаг выстрела
             if (input.keys?.shoot) {
-                const bulletId = IdGenerator.generateId('bullet');
-                player.inventory[player.currentWeaponId].fire(bulletId,'player', player.id, player.x, player.y, 1, 1, Date.now());
+                const activeWeapon = player.getActiveWeapon();
+                const now = Date.now();
+                const dir = this.getDirectionToClosestEnemy(player);
+                this.spawnProjectile(player, activeWeapon, dir.vx, dir.vy, now);
             }
         }
-        // Очищаем инпуты после обработки кадра
         this.inputQueue.clear();
     }
 
@@ -156,11 +138,69 @@ export default class GameEngine {
         );
     }
 
-    // Сборка слепка экрана (Snapshot) и отправка в сеть
+    private spawnProjectile(
+        owner: Player | Enemy,
+        weapon: Weapon,
+        dirX: number,
+        dirY: number,
+        currentTime: number
+    ): void {
+        if (!weapon.canFire(currentTime)) {
+            return;
+        }
+
+        const prefix = owner.type === 'player' ? 'bullet' : 'bullet_enemy';
+        const projectileId = IdGenerator.generateId(prefix);
+
+        const projectile = weapon.fire(
+            projectileId,
+            owner.type as 'player' | 'enemy',
+            owner.id,
+            owner.x,
+            owner.y,
+            dirX,
+            dirY,
+            currentTime
+        );
+
+        if (projectile) {
+            this.bullets.push(projectile);
+        }
+    }
+
+    private getDirectionToClosestEnemy(player: Player): { vx: number, vy: number } {
+        if (this.enemies.length === 0) {
+            return { vx: 1, vy: 0 };
+        }
+
+        let closestEnemy: Enemy | null = null;
+        let minDistance = Infinity;
+
+        for (const enemy of this.enemies) {
+            if (enemy.hp <= 0) continue;
+            const dx = enemy.x - player.x;
+            const dy = enemy.y - player.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestEnemy = enemy;
+            }
+        }
+
+        if (!closestEnemy) return { vx: 1, vy: 0 };
+
+        const dx = closestEnemy.x - player.x;
+        const dy = closestEnemy.y - player.y;
+        const len = Math.sqrt(dx * dx + dy * dy);
+
+        if (len === 0) return { vx: 1, vy: 0 };
+        return { vx: dx / len, vy: dy / len };
+    }
+
     private broadcastState() {
         if (this.players.size === 0) return;
 
-        // Собираем минимальные данные для отрисовки на клиенте
         const snapshot: GameSnapshot = {
             players: Array.from(this.players.values()).map(p => ({ 
                 id: p.id, 
@@ -200,27 +240,19 @@ export default class GameEngine {
 
     private spawnTestEnemies() {
         const enemyId = IdGenerator.generateId('lizard');
-
-        // 2. Выбираем случайную точку на карте, но не у самого края
         const padding = 100;
         const randomX = padding + Math.random() * (GameEngine.ROOM_WIDTH - padding * 2);
         const randomY = padding + Math.random() * (GameEngine.ROOM_HEIGHT - padding * 2);
-
-        // 3. Создаем "оружие" ближнего боя для укусов (урон 15, кулдаун 1 секунда)
         const lizardBite = new Weapon(`bite_${enemyId}`, "Укус завра", FIREBALL);
-
-        // 4. Инициализируем объект ящера
-        // Передаем: id, x, y, width, height, hp, speed, spriteKey, weapon
         const newLizard = new Enemy(
             enemyId,
             'warrior',
             randomX,
             randomY,
             WARRIOR_PRESET_LIZARD,
-            lizardBite   // оружие для коллизий ближнего боя
+            lizardBite
         );
 
-        // 5. Толкаем его в наш массив активных монстров
         this.enemies.push(newLizard);
 
         console.log(`[GameEngine] 🐊 Свежий ящер заспавнен! ID: ${enemyId} в координатах [${randomX}, ${randomY}]`);

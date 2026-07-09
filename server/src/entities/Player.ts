@@ -5,13 +5,13 @@ import Weapon from '../items/Weapon';
 export default class Player extends LivingEntity {
     public name: string;
     public inventory: Weapon[];
-    public currentWeaponId: number;
+    public currentWeaponIndex: number;
 
     constructor(id: string, name: string, archetype: string, x: number, y: number, presetStats: EntityStats, startWeapon: Weapon) {
         super(id, 'player', x, y, 32, 32, archetype);
         this.name = name;
         this.inventory = [startWeapon];
-        this.currentWeaponId = 0;
+        this.currentWeaponIndex = 0;
 
         this.maxHp = presetStats.maxHp;
         this.hp = presetStats.maxHp;
@@ -30,14 +30,18 @@ export default class Player extends LivingEntity {
         if (this.inventory.length < 3) {
             this.inventory.push(newWeapon);
         } else {
-            this.inventory[this.currentWeaponId] = newWeapon;
+            this.inventory[this.currentWeaponIndex] = newWeapon;
         }
     }
 
     public equipWeapon(index: number): void {
         if (index >= 0 && index < this.inventory.length) {
-            this.currentWeaponId = index;
+            this.currentWeaponIndex = index;
         }
+    }
+
+    public getActiveWeapon(): Weapon {
+        return this.inventory[this.currentWeaponIndex];
     }
 
     override die(): void {

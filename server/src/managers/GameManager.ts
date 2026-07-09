@@ -1,5 +1,5 @@
-import IdGenerator from "../utils/IDGenerator";
-import GameEngine from "./GameEngine";
+import { IdGenerator } from "../utils/IDGenerator";
+import { GameEngine } from "./GameEngine";
 import { PlayerAction, GameSnapshot } from '../../../shared/gameTypes';
 
 export default class GameManager {
