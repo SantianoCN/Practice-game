@@ -2,7 +2,7 @@ import { Server, Socket } from 'socket.io';
 import { randomUUID } from 'crypto';
 import { LoginData, PlayerAction, SessionJoinRequest, SessionCreateRequest, GameSnapshot } from '../../../shared/gameTypes';
 import GameManager from './GameManager';
-import IdGenerator from '../utils/IDGenerator';
+import { IdGenerator } from '../utils/IDGenerator';
 
 export class NetworkManager {
     private io: Server;
