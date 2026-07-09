@@ -8,13 +8,17 @@ export default class GameManager {
         const uuid = IdGenerator.generateUUID('session');
         const engine = new GameEngine(uuid);    // uuid?
         this.sessions.set(uuid, engine); 
-        return uuid; 
+        return uuid;
     }
 
     public getSession(sessionId: string): GameEngine | null {
         const engine = this.sessions.get(sessionId);
         if (!engine) return null;
         return engine;
+    }
+
+    public sessionExists(sessionId: string): boolean {
+        return this.sessions.get(sessionId) !== null;
     }
 
     public removeSession(sessionId: string): void {

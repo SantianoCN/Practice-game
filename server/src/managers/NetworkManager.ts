@@ -1,25 +1,32 @@
 import { Server, Socket } from 'socket.io';
 import { randomUUID } from 'crypto';
-import { LoginData } from '../../../shared/gameTypes';
-import { PlayerAction } from 'src/models/PlayerAction';
+import { LoginData, PlayerAction, SessionJoinRequest, SessionConnectResponse, SessionCreateRequest, SessionLeaveRequest, SessionCreateResponse } from '../../../shared/gameTypes';
+import GameManager from './GameManager';
 
 export class NetworkManager {
     private io: Server;
-    //private accountService: AccountService;
+    private game: GameManager;
+    //private accountService: AccountManager;
 
-    constructor(io: Server) {
+    constructor(io: Server, gameManager: GameManager) {
         this.io = io;
+        this.game = gameManager;
     }
 
     public init() {
-        this.io.on('connection', (socket) => this.connectUserHandler(socket));
+        this.io.on('connection', (socket: Socket) => this.connectUserHandler(socket));
         console.log('initialized');
+    }
+
+    private broadcastSnapshot(snapshot: any) {
+        this.io.emit('game:snapshot', snapshot);
     }
 
     public async connectUserHandler(socket: Socket) {
         console.log('соединение установлено');
-        socket.on('login', (data) => this.authorizeConnection(socket, data));
-        socket.on('playerAction', (data) => this.playerActionHandler(socket, data) );
+        
+        // авторизация подключения
+        socket.once('login', (data: LoginData) => this.authorizeConnection(socket, data));
     }
     
     public async authorizeConnection(socket: Socket, data: LoginData) {
@@ -30,20 +37,95 @@ export class NetworkManager {
             return;
         }
 
-        // const response = await accountService.login(data)
-        // if (!response) {
+        // const userId = await accountService.login(data)
+        // if (!userId) {
         //     socket.emit('response', { success: false, message: 'incorrect login or password' } );
         //     this.close();
         //     return;
         // }
+        //
+        //await accountService.saveId(userId);
+        
+        // создание/подключение к игровой сессии
+        socket.on('create-session',
+            (request: SessionCreateRequest) =>
+                this.createSessionHandler(request, socket)
+        );
+        socket.on('connect-session',
+            (request: SessionJoinRequest) => 
+                this.joinSessionHandler(request, socket)
+        );
+        socket.on('leave-session',
+            (request: SessionLeaveRequest) =>
+                this.leaveSession(request, socket) 
+        );
+        socket.on(
+            'playerAction', (data: PlayerAction) => 
+                this.playerActionHandler(data, socket)
+        );
 
-        const userId = randomUUID();
-        // await accountService.saveId(userId);
-        socket.emit('response', { success: true, user_id: userId});
+        //socket.emit('response', { success: true, userId: 'userId'});
+        socket.emit('response', { success: true, userId: randomUUID()});
     }
 
-    public async playerActionHandler(socket: Socket, data: PlayerAction) {
-        // TODO: связать с GameManager
+    public async createSessionHandler(request: SessionCreateRequest, socket: Socket) {
+        const sessionId = this.game.createSession();
+        this.game.addPlayer(
+            sessionId, 
+            request.userId, 
+            request.name,
+            request.archetype,
+            (snapshot: any) => {
+                const response: SessionCreateResponse = {
+                    sessionId: sessionId
+                };
+                socket.emit('connect-session-response', response);
+            }
+        )
+    }
+
+    public joinSessionHandler(request: SessionJoinRequest, socket: Socket) {
+        if (!request.sessionId || 
+            !this.game.sessionExists(request.sessionId)) {
+                socket.emit('error', { message: 'не удается найти сессию' });
+                return;
+        }
+        this.game.addPlayer(
+            request.sessionId, 
+            request.userId, 
+            request.name,
+            request.archetype,
+            (snapshot: any) => {
+                const response: SessionConnectResponse = {
+                    success: true,
+                    snapshot: snapshot
+                };
+                socket.emit('connect-session-response', response);
+            }
+        )
+    }
+
+    public playerActionHandler(
+        data: PlayerAction,
+        socket: Socket
+    ) {
+        if (!data.sessionId || !data.userId) return;
+        this.game.pushInput(
+            data.sessionId, 
+            data.userId, 
+            data
+        );
+    }
+
+    public leaveSession(
+        request: SessionLeaveRequest, 
+        socket: Socket
+    ) {
+        if (!request.sessionId || !request.userId) return;
+        this.game.removePlayer(
+            request.sessionId, 
+            request.userId
+        );
     }
 
     public disconnectSocket(socket: Socket) {
