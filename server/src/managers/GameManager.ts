@@ -1,5 +1,6 @@
 import IdGenerator from "../utils/IDGenerator";
 import GameEngine from "./GameEngine";
+import { PlayerAction, GameSnapshot } from '../../../shared/gameTypes';
 
 export default class GameManager {
     private sessions: Map<string, GameEngine> = new Map();
@@ -33,7 +34,7 @@ export default class GameManager {
         userId: string, 
         name: string,
         archetype: 'warrior' | 'mage',
-        emitCallback: (snapshot: any) => void
+        emitCallback: (snapshot: GameSnapshot) => void
     ): void {
         const engine = this.getSession(sessionId);
         if (!engine) return;
@@ -54,7 +55,7 @@ export default class GameManager {
     public pushInput(
         sessionId: string,
         userId: string, 
-        actionData: any
+        actionData: PlayerAction
     ): void {
         const engine = this.getSession(sessionId);
         if (!engine) return;

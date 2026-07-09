@@ -8,8 +8,8 @@ import { WARRIOR_PRESET_LIZARD } from '../config/enemyPresets';
 import { FIREBALL } from '../config/weaponPresets';
 import Weapon from '../items/Weapon';
 import IdGenerator from '../utils/IDGenerator';
-import { GameSnapshot } from '../../../shared/gameTypes';
 import CollisionManager from './CollisionManager';
+import { PlayerAction, GameSnapshot } from '../../../shared/gameTypes';
 
 export default class GameEngine {
     public roomId: string;
@@ -24,10 +24,10 @@ export default class GameEngine {
 
 
     // Очередь входящих инпутов, которые накопились за 16мс (между тиками)
-    private inputQueue: Map<string, any>;
+    private inputQueue: Map<string, PlayerAction>;
 
     // Колбэки для отправки данных обратно в сеть через сокеты
-    private networkCallbacks: Map<string, (snapshot: any) => void>;
+    private networkCallbacks: Map<string, (snapshot: GameSnapshot) => void>;
 
     private gameLoopInterval: ReturnType<typeof setInterval> | null = null;
     private readonly TICK_RATE = 60; // 60 тиков в секунду
@@ -53,7 +53,7 @@ export default class GameEngine {
     }
 
     // Добавление игрока в игровой мир
-    public addPlayer(userId: string, name: string, archetype: 'warrior' | 'mage', emitCallback: (snapshot: any) => void) {
+    public addPlayer(userId: string, name: string, archetype: 'warrior' | 'mage', emitCallback: (snapshot: GameSnapshot) => void) {
         const preset = archetype === 'mage' ? MAGE_PRESET : WARRIOR_PRESET;
         
         // Создаем физический объект игрока (Оружие добавим чуть позже при интеграции)
@@ -76,7 +76,7 @@ export default class GameEngine {
     }
 
     // Сюда GameManager складывает нажатия кнопок от сокетов
-    public pushInput(userId: string, actionData: any) {
+    public pushInput(userId: string, actionData: PlayerAction) {
         this.inputQueue.set(userId, actionData);
     }
 
