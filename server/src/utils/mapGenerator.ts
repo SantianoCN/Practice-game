@@ -46,33 +46,38 @@ export class MapGenerator {
     ];
 
     while ((this.roomList.length < targetCount) && (queue.length > 0)) {
-      const element = Math.floor(Math.random() * (queue.length));
-      const cordXY = queue[element];
+      const element = Math.floor(Math.random() * queue.length);
+      const [cordXY] = queue.splice(element, 1); 
+      let roomCreated = false;
+
       for (const move of directions) {
-        const nextX = cordXY['x'] + move['x'];
-        const nextY = cordXY['y'] + move['y'];
+        const nextX = cordXY.x + move.x;
+        const nextY = cordXY.y + move.y;
+
         if (this.canCreateRoom(nextX, nextY)) {
           this.addRoom(nextX, nextY, 'Normal');
-          queue.push({x: nextX, y: nextY})
-          if (this.countNeighbors(cordXY['x'], cordXY['y']) > 2){
-            queue.splice(element, 1)
-          }
+          queue.push({ x: nextX, y: nextY });
+          roomCreated = true;
           break;
         }
       }
+
+      if (roomCreated && this.countNeighbors(cordXY.x, cordXY.y) < 3) {
+        queue.push(cordXY);
+      }
     }
-    return false
+  return this.roomList.length >= minRooms;
   }
 
   private canCreateRoom(x: number, y: number): boolean {
-    if ((x >= this.matrixSize || x < 0) || (y >= this.matrixSize || y < 0)){
-      return false
+    if (x >= this.matrixSize || x < 0 || y >= this.matrixSize || y < 0) {
+      return false;
     }
-    if (this.countNeighbors(x, y) > 1){
-      return false
+    if (this.grid[y][x] !== null) {
+      return false;
     }
-    if (this.grid[x][y] !== null) {
-      return false
+    if (this.countNeighbors(x, y) > 1) {
+      return false;
     }
     return true
   }
