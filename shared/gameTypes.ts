@@ -76,3 +76,21 @@ export interface LoginData {
     login: string;
     password: string;
 }
+
+export type RoomType = 'Start' | 'Normal' | 'Boss' | 'Treasure' | 'Shop';
+export type Direction = 'Top' | 'Bottom' | 'Left' | 'Right';
+
+export interface RoomState {
+    gridX: number;
+    gridy: number;
+    isClear: boolean;
+    type: RoomType;
+    hasDoor: {[key in Direction]: boolean};
+    respawnedEntity: Entity[];
+    distansToSpawn: number;
+}
+
+export interface VectorXY{
+    x: number;
+    y: number;
+}
