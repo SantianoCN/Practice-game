@@ -82,10 +82,10 @@ export type Direction = 'Top' | 'Bottom' | 'Left' | 'Right';
 
 export interface RoomState {
     gridX: number;
-    gridy: number;
+    gridY: number;
     isClear: boolean;
     type: RoomType;
-    hasDoor: {[key in Direction]: boolean};
+    hasDoors: {[key in Direction]: boolean};
     respawnedEntity: Entity[];
     distansToSpawn: number;
 }
