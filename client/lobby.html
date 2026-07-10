@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Русы против Ящеров: Лобби</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <div class="card">
+        <h2>Игровое Лобби</h2>
+        <div id="welcomeText" class="user-welcome">Приветствуем тебя, боец!</div>
+        <button id="logoutBtn" class="btn-logout">Выйти из аккаунта</button>
+        <div class="section">
+            <label>Создать новое подземелье</label>
+            <button id="createRoomBtn" class="btn btn-alt">Создать комнату</button>
+        </div>
+        <div class="section">
+            <label for="sessionIdInput">Подключиться к другу</label>
+            <input type="text" id="sessionIdInput" class="text-center" placeholder="Вставьте ID сессии">
+            <button id="joinRoomBtn" class="btn btn-success">В бой!</button>
+            <div id="lobbyError" class="error-message">Комната не найдена</div>
+        </div>
+    </div>
+    <script type="module" src="/src/lobby.ts"></script>
+</body>
+</html>

@@ -76,3 +76,9 @@ export interface LoginData {
     login: string;
     password: string;
 }
+
+export interface LoginResponse {
+    success: boolean;
+    refreshToken?: string;
+    message: string;
+}

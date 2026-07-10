@@ -3,18 +3,25 @@ import { randomUUID } from 'crypto';
 import { LoginData, PlayerAction, SessionJoinRequest, SessionCreateRequest, GameSnapshot } from '../../../shared/gameTypes';
 import GameManager from './GameManager';
 import { IdGenerator } from '../utils/IDGenerator';
+import { AccountManager } from './AccountManager';
 
 export class NetworkManager {
     private io: Server;
     private game: GameManager;
-    //private accountService: AccountManager;
+    private accountManager: AccountManager;
 
-    constructor(io: Server, gameManager: GameManager) {
+    constructor(
+        io: Server, 
+        gameManager: GameManager,
+        accountManager: AccountManager
+    ) {
         this.io = io;
         this.game = gameManager;
+        this.accountManager = accountManager;
     }
 
     public init() {
+        this.io.use((socket, next) => this.authenticationMiddleware(socket, next))
         this.io.on('connection', 
             (socket: Socket) => 
                 this.connectUserHandler(socket)
@@ -22,40 +29,32 @@ export class NetworkManager {
         console.log('initialized');
     }
 
-    public connectUserHandler(socket: Socket) {
-        console.log('соединение установлено');
+    private authenticationMiddleware(socket: Socket, next: (err?: Error) => void) {
+        const token = socket.handshake.auth.token;
         
-        // авторизация подключения
-        socket.once('login', 
-            (data: LoginData) => 
-                this.authorizeConnection(socket, data)
-        );
-        // отключение сокета
-        socket.on('disconnect',
-            () => {
-                this.disconnectHandler(socket)
-            }
-        )
-    }
-    
-    public async authorizeConnection(socket: Socket, data: LoginData) {
-        if (!data.login || !data.password) {
-            console.log(data);
-            socket.emit('response', { success: false, message: 'wrong data' } );
-            this.disconnectSocket(socket);
+        if (!token || typeof token !== 'string') {
+            console.log('[authenticationMiddleware] auth: токен авторизации не обнаружен');
+            next(
+                new Error('auth: токен авторизации не обнаружен')
+            );
             return;
         }
 
-        // const userId = await accountService.login(data)
-        // if (!userId) {
-        //     socket.emit('response', { success: false, message: 'incorrect login or password' } );
-        //     this.close();
-        //     return;
-        // }
-        //
-        //await accountService.saveId(userId);
+        const login = this.accountManager.resolveToken(token); 
+        if (!login) {
+            console.log('[authenticationMiddleware] auth: токен авторизации не обнаружен');
+            next(
+                new Error('auth: токен авторизации не обнаружен')
+            );
+            return;
+        }
+        socket.data.login = login;
+        next();
+    }
+
+    public connectUserHandler(socket: Socket) {
+        console.log('соединение установлено');
         
-        // создание/подключение к игровой сессии
         socket.on('create-session',
             (request: SessionCreateRequest) =>
                 this.createSessionHandler(request, socket)
@@ -72,8 +71,10 @@ export class NetworkManager {
             'playerAction', (data: PlayerAction) => 
                 this.playerActionHandler(data, socket)
         );
+        socket.on('disconnect', () => 
+            this.disconnectHandler(socket)
+        ); 
 
-        //socket.emit('response', { success: true, userId: 'userId'});
         socket.data.userId = IdGenerator.generateUUID('player');
         socket.emit('response', { success: true });
     }
@@ -99,8 +100,8 @@ export class NetworkManager {
     public joinSessionHandler(request: SessionJoinRequest, socket: Socket) {
         if (!socket.data.userId) return;
         if (!this.game.sessionExists(request.sessionId)) {
-                socket.emit('error', 
-                    { message: 'не удается найти сессию' }
+                socket.emit('session-join-response', 
+                    { success: false, sessionId: '' }
                 );
                 return;
         }

@@ -47,9 +47,15 @@ export default class GameManager {
     ): void {
         const engine = this.getSession(sessionId); 
         if (!engine) return;
+    
+        // Просто удаляем игрока из движка, но НЕ удаляем саму сессию!
+        engine.removePlayer(userId); 
+        
+        /* УДАЛИТЕ ИЛИ ЗАКОММЕНТИРУЙТЕ ЭТОТ БЛОК:
         if (engine.removePlayer(userId)) {
             this.removeSession(sessionId); 
         }
+        */
     }
 
     public pushInput(

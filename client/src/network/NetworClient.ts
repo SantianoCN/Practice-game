@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client';
-import { PlayerAction, LoginData, GameSnapshot, SessionCreateRequest, SessionCreateResponse, SessionJoinRequest, SessionJoinResponse } from '../../../shared/gameTypes';
+import { PlayerAction, GameSnapshot, SessionCreateRequest, SessionCreateResponse, SessionJoinRequest, SessionJoinResponse } from '../../../shared/gameTypes';
 
 export class NetworkClient {
   private socket: Socket | null = null;
@@ -10,8 +10,7 @@ export class NetworkClient {
     this.serverUrl = serverUrl;
   }
 
-  // Изменено: теперь возвращает Promise, чтобы мы могли дождаться установки соединения
-  public connect(): Promise<void> {
+  public connect(token?: string): Promise<void> {
     return new Promise((resolve, reject) => {
       if (this.socket) {
         console.log('Соединение уже установлено');
@@ -19,9 +18,11 @@ export class NetworkClient {
         return;
       }
 
-      this.socket = io(this.serverUrl, { transports: ['websocket'] });
+      this.socket = io(this.serverUrl, { 
+        transports: ['websocket'],
+        auth: { token: token } 
+      });
 
-      // ИСПРАВЛЕНО: событие 'connect' вместо 'connection'
       this.socket.on('connect', () => {
         console.log('Подключено к серверу! ID:', this.socket?.id);
         resolve();
@@ -85,10 +86,6 @@ export class NetworkClient {
 
   public onSnapshotUpdate(callback: (data: GameSnapshot) => void): void {
     this.UpdateCallback = callback;
-  }
-
-  public login(data: LoginData): Promise<{ success: boolean; message?: string }> {
-    return this.emitWithAck('login', data, 'response');
   }
 
   public disconnect(): void {
