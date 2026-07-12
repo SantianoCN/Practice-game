@@ -1,9 +1,8 @@
-import { Server, Socket } from 'socket.io';
-import { randomUUID } from 'crypto';
+import { Server, Socket} from 'socket.io';
 import { LoginData, PlayerAction, SessionJoinRequest, SessionCreateRequest, GameSnapshot } from '../../../shared/gameTypes';
 import GameManager from './GameManager';
-import { IdGenerator } from '../utils/IDGenerator';
 import { AccountManager } from './AccountManager';
+import { ClientEvent, ServerEvent } from '../../../shared/networkEvents';
 
 export class NetworkManager {
     private io: Server;
@@ -54,17 +53,13 @@ export class NetworkManager {
     public connectUserHandler(socket: Socket) {
         console.log('соединение установлено');
         
-        socket.on('create-session',
+        socket.on(ClientEvent.CREATE_SESSION,
             (request: SessionCreateRequest) =>
                 this.createSessionHandler(request, socket)
         );
-        socket.on('connect-session',
+        socket.on(ClientEvent.CONNECT_SESSION,
             (request: SessionJoinRequest) => 
                 this.joinSessionHandler(request, socket)
-        );
-        socket.on('leave-session',
-            () =>
-                this.leaveSession(socket) 
         );
         socket.on(
             'playerAction', (data: PlayerAction) => 
@@ -75,7 +70,6 @@ export class NetworkManager {
         );
 
         socket.data.userId = socket.data.login;
-        socket.emit('response', { success: true });
     }
 
     public createSessionHandler(request: SessionCreateRequest, socket: Socket) {
@@ -88,17 +82,17 @@ export class NetworkManager {
             request.name,
             request.archetype,
             (snapshot: GameSnapshot) => {
-                socket.emit('snapshot', snapshot);
+                socket.emit(ServerEvent.SNAPSHOT, snapshot);
             }
         );
         if (!state.success) {
-            socket.emit('session-create-response',
+            socket.emit(ServerEvent.SESSION_CREATE_RESPONSE,
                 { success: false, message: state.message }
             );
             return;
         }
         socket.data.sessionId = sessionId;
-        socket.emit('session-create-response', 
+        socket.emit(ServerEvent.SESSION_CREATE_RESPONSE, 
             { success: true, sessionId: sessionId }
         );
     }
@@ -106,7 +100,7 @@ export class NetworkManager {
     public joinSessionHandler(request: SessionJoinRequest, socket: Socket) {
         if (!socket.data.userId) return;
         if (!this.game.sessionExists(request.sessionId)) {
-                socket.emit('session-join-response', 
+                socket.emit(ServerEvent.SESSION_JOIN_RESPONSE, 
                     { success: false, sessionId: '' }
                 );
                 return;
@@ -117,17 +111,17 @@ export class NetworkManager {
             request.name,
             request.archetype,
             (snapshot: GameSnapshot) => {
-                socket.emit('snapshot', snapshot); 
+                socket.emit(ServerEvent.SNAPSHOT, snapshot); 
             }
         );
         if (!state.success) {
-            socket.emit('session-join-response',
+            socket.emit(ServerEvent.SESSION_JOIN_RESPONSE,
                 { success: false, message: state.message }
             );
             return;
         }
         socket.data.sessionId = request.sessionId;
-        socket.emit('session-join-response',
+        socket.emit(ServerEvent.SESSION_JOIN_RESPONSE,
             { success: true, sessionId: request.sessionId }
         );
     }
@@ -142,17 +136,6 @@ export class NetworkManager {
             socket.data.userId,
             data
         );
-    }
-
-    public leaveSession( 
-        socket: Socket
-    ) {
-        if (!socket.data.sessionId || !socket.data.userId) return;
-        this.game.removePlayer(
-            socket.data.sessionId, 
-            socket.data.userId
-        );
-        socket.data.sessionId = undefined;
     }
 
     private disconnectHandler(socket: Socket) {
