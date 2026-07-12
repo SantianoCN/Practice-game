@@ -4,11 +4,13 @@ import { PlayerAction, GameSnapshot } from '../../../shared/gameTypes';
 
 export default class GameManager {
     private sessions: Map<string, GameEngine> = new Map();
+    // <sessionId, userId[]>
+    private playerSessions: Map<string, string[]> = new Map();
 
     public createSession(): string {
         const uuid = IdGenerator.generateUUID('session');
         const engine = new GameEngine(uuid);    // uuid?
-        this.sessions.set(uuid, engine); 
+        this.sessions.set(uuid, engine);
         return uuid;
     }
 
@@ -19,7 +21,7 @@ export default class GameManager {
     }
 
     public sessionExists(sessionId: string): boolean {
-        return this.sessions.get(sessionId) !== null;
+        return this.sessions.has(sessionId);
     }
 
     public removeSession(sessionId: string): void {
@@ -30,27 +32,55 @@ export default class GameManager {
     }
 
     public addPlayer(
-        sessionId: string, 
-        userId: string, 
+        sessionId: string,
+        userId: string,
         name: string,
         archetype: 'warrior' | 'mage',
         emitCallback: (snapshot: GameSnapshot) => void
-    ): void {
+    ): { success: boolean, message?: string } {
+        const isPlayerInSession = Array.from(this.playerSessions.values())
+            .some(userIds => userIds.includes(userId));
         const engine = this.getSession(sessionId);
-        if (!engine) return;
+        console.log(this.playerSessions.values());
+        if (isPlayerInSession) {
+            return {
+                success: false,
+                message: 'игрок уже в сессии'
+            };
+        }
+        if (!engine) return {
+            success: false,
+            message: 'сессия не найдена'
+        }
         engine.addPlayer(userId, name, archetype, emitCallback);
+        const session = this.playerSessions.get(sessionId);
+        if (!session) {
+            this.playerSessions.set(sessionId, [userId]);
+        } else
+            session?.push(userId);
+        return { success: true }
     }
 
     public removePlayer(
-        sessionId: string, 
+        sessionId: string,
         userId: string
     ): void {
-        const engine = this.getSession(sessionId); 
+        const engine = this.getSession(sessionId);
         if (!engine) return;
-    
+
         // Просто удаляем игрока из движка, но НЕ удаляем саму сессию!
-        engine.removePlayer(userId); 
-        
+        engine.removePlayer(userId);
+        const players = this.playerSessions.get(sessionId);
+        if (players) {
+            const index = players.indexOf(userId);
+            if (index !== -1) {
+                players.splice(index, 1);
+            }
+            if (players.length === 0) {
+                this.playerSessions.delete(sessionId);
+            }
+        }
+
         /* УДАЛИТЕ ИЛИ ЗАКОММЕНТИРУЙТЕ ЭТОТ БЛОК:
         if (engine.removePlayer(userId)) {
             this.removeSession(sessionId); 
@@ -60,7 +90,7 @@ export default class GameManager {
 
     public pushInput(
         sessionId: string,
-        userId: string, 
+        userId: string,
         actionData: PlayerAction
     ): void {
         const engine = this.getSession(sessionId);

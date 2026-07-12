@@ -1,0 +1,107 @@
+import { io, Socket } from 'socket.io-client';
+import { PlayerAction, GameSnapshot, SessionCreateRequest, SessionCreateResponse, SessionJoinRequest, SessionJoinResponse } from '../../../shared/gameTypes';
+
+export class NetworkClient {
+  private socket: Socket | null = null;
+  private readonly serverUrl: string;
+  private UpdateCallback: ((data: GameSnapshot) => void) | null = null;
+
+  constructor(serverUrl: string = 'http://localhost:3000') {
+    this.serverUrl = serverUrl;
+  }
+
+  public connect(token?: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (this.socket) {
+        console.log('Соединение уже установлено');
+        resolve();
+        return;
+      }
+
+      this.socket = io(this.serverUrl, { 
+        transports: ['websocket'],
+        auth: { token: token } 
+      });
+
+      this.socket.on('connect', () => {
+        console.log('Подключено к серверу! ID:', this.socket?.id);
+        resolve();
+      });
+
+      this.socket.on('connect_error', (err: Error) => {
+        console.error('Ошибка подключения:', err.message);
+        reject(err);
+      });
+
+      this.socket.on('snapshot', (data: GameSnapshot) => {
+        if (this.UpdateCallback) {
+          this.UpdateCallback(data);
+        }
+      });
+
+      this.socket.on('disconnect', () => {
+        console.warn('Отключено от сервера');
+      });
+    });
+  }
+
+  public createSession(request: SessionCreateRequest) {
+    return this.emitWithAck<SessionCreateResponse>(
+      'create-session', 
+      request,
+      'session-create-response'
+    );
+  }
+
+  public joinSession(request: SessionJoinRequest) {
+    return this.emitWithAck<SessionJoinResponse>(
+      'connect-session',
+      request,
+      'session-join-response'
+    );
+  } 
+  
+  public sendPlayerAction(action: PlayerAction): void {
+    if (!this.socket?.connected) {
+        console.warn('нет соединения с сервером');
+        return;
+    }
+    this.socket.emit('playerAction', action);
+  }
+
+  private emitWithAck<T>(event: string, payload: unknown, responseEvent: string): Promise<T> {
+    return new Promise((resolve, reject) => {
+        if (!this.socket?.connected) {
+            reject(new Error('нет соединения с сервером'));
+            return;
+        }
+
+        const timeout = setTimeout(() => {
+            reject(new Error('сервер не ответил вовремя'));
+        }, 5000);
+
+        this.socket.once(responseEvent, (data: T) => {
+            clearTimeout(timeout);
+            resolve(data);
+        });
+
+        this.socket.emit(event, payload);
+    });
+}
+
+  public onSnapshotUpdate(callback: (data: GameSnapshot) => void): void {
+    this.UpdateCallback = callback;
+  }
+
+  public disconnect(): void {
+    if (this.socket) {
+      this.socket.emit('savePlayerData', (response: boolean) => {
+        if (response) {
+          console.log('Сохранение')
+        }
+      })
+      this.socket.disconnect();
+      this.socket = null;
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import { NetworkClient } from "./network/NetworClient";
+import { NetworkClient } from "./network/NetworkClient";
 import { ReadInputs } from "./input/ReadInputs";
 import { GameRender } from "./render/screenRender";
 import { PlayerAction, GameSnapshot } from '../../shared/gameTypes';
@@ -58,8 +58,11 @@ class Game {
         name: token, 
         archetype: 'warrior' 
       });
-      console.log('Успешное подключение к игровой сессии:', sessionResult.sessionId);
-
+      if (sessionResult.success) {
+        console.log('Успешное подключение к игровой сессии:', sessionResult.sessionId);
+      } else {
+        console.log('Ошибка подключения:', sessionResult.message);
+      }
     } catch (error) {
       console.error('Не удалось запустить сетевую игру:', error);
       this.isRunning = false;

@@ -11,7 +11,7 @@ export class NetworkManager {
     private accountManager: AccountManager;
 
     constructor(
-        io: Server, 
+        io: Server,
         gameManager: GameManager,
         accountManager: AccountManager
     ) {
@@ -39,8 +39,7 @@ export class NetworkManager {
             );
             return;
         }
-
-        const login = this.accountManager.resolveToken(token); 
+        const login = this.accountManager.resolveToken(token);
         if (!login) {
             console.log('[authenticationMiddleware] auth: токен авторизации не обнаружен');
             next(
@@ -73,9 +72,9 @@ export class NetworkManager {
         );
         socket.on('disconnect', () => 
             this.disconnectHandler(socket)
-        ); 
+        );
 
-        socket.data.userId = IdGenerator.generateUUID('player');
+        socket.data.userId = socket.data.login;
         socket.emit('response', { success: true });
     }
 
@@ -83,7 +82,7 @@ export class NetworkManager {
         if (!socket.data.userId) return;
         const sessionId = this.game.createSession();
         socket.data.sessionId = sessionId;
-        this.game.addPlayer(
+        const state = this.game.addPlayer(
             sessionId, 
             socket.data.userId, 
             request.name,
@@ -92,6 +91,13 @@ export class NetworkManager {
                 socket.emit('snapshot', snapshot);
             }
         );
+        if (!state.success) {
+            socket.emit('session-create-response',
+                { success: false, message: state.message }
+            );
+            return;
+        }
+        socket.data.sessionId = sessionId;
         socket.emit('session-create-response', 
             { success: true, sessionId: sessionId }
         );
@@ -105,7 +111,7 @@ export class NetworkManager {
                 );
                 return;
         }
-        this.game.addPlayer(
+        const state = this.game.addPlayer(
             request.sessionId, 
             socket.data.userId,
             request.name,
@@ -113,7 +119,13 @@ export class NetworkManager {
             (snapshot: GameSnapshot) => {
                 socket.emit('snapshot', snapshot); 
             }
-        )
+        );
+        if (!state.success) {
+            socket.emit('session-join-response',
+                { success: false, message: state.message }
+            );
+            return;
+        }
         socket.data.sessionId = request.sessionId;
         socket.emit('session-join-response',
             { success: true, sessionId: request.sessionId }

@@ -1,4 +1,4 @@
-import { NetworkClient } from "./network/NetworClient";
+import { NetworkClient } from "./network/NetworkClient";
 
 const token = localStorage.getItem('session_token');
 if (!token) {
@@ -21,12 +21,17 @@ createRoomButton.addEventListener('click', async () => {
     await network.connect(token!);
     
     const res = await network.createSession({ name: token!, archetype: 'warrior' });
-    
-    if (res.sessionId) {
+    console.log(res); 
+
+    if (res.success && res.sessionId) {
       localStorage.setItem('game_session_id', res.sessionId);
       network.disconnect();
       
       window.location.href = '/game.html';
+    } else {
+      if (res.message) showError('ошибка: ' + res.message)
+        else showError('не удалось создать комнату');
+      network.disconnect();
     }
   } catch (err) {
     showError('Не удалось создать комнату');
