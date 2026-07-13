@@ -4,6 +4,8 @@ import { RoomState } from '../../../shared/gameTypes';
 export class GameRender {
   private context: CanvasRenderingContext2D;
   private canvas: HTMLCanvasElement; 
+  private visitedMatrix: number[][] = [];
+  private readonly matrixSize = 7;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -11,6 +13,7 @@ export class GameRender {
     if (!ctx) {
       throw new Error('Cannot get 2D context')
     }
+    this.initVisitedMatrix()
     this.context = ctx;
   }
 
@@ -22,6 +25,19 @@ export class GameRender {
   ): void {
     this.clear();
     this.drawScreen(playersMap, enemiesMap, bulletsMap, room);
+    if (!room) return;
+    this.updateVisitedRooms(room.gridX, room.gridY);
+  }
+
+  private initVisitedMatrix(): void {
+    this.visitedMatrix = Array(this.matrixSize).fill(null).map(() => 
+      Array(this.matrixSize).fill(0))
+  }
+
+  private updateVisitedRooms(x: number, y: number): void {
+    if (x >= 0 && x < this.matrixSize && y >= 0 && y < this.matrixSize) {
+      this.visitedMatrix[y][x] = 1;
+    }
   }
 
   private clear(): void {
@@ -39,6 +55,8 @@ export class GameRender {
     this.drawPlayers(playersMap);
     this.drawEnemies(enemiesMap);
     this.drawParticles();
+    if (!room) return;
+    this.drawMiniMap(room.gridX, room.gridY); 
   }
 
   private drawMap(room: RoomState | null): void {    
@@ -75,6 +93,45 @@ export class GameRender {
     if (room.hasDoors.Right) {
         this.context.fillRect(this.canvas.width - doorThickness, this.canvas.height / 2 - doorWidth / 2, doorThickness, doorWidth);
     }
+  }
+
+  private drawMiniMap(currentGridX: number, currentGridY: number): void {
+    const mapSize = 120; // Размер миникарты на экране
+    const padding = 20;  // Отступ от правого верхнего угла холста
+    
+    const mapX = this.canvas.width - mapSize - padding;
+    const mapY = padding;
+
+    this.context.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    this.context.fillRect(mapX, mapY, mapSize, mapSize);
+    
+    this.context.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    this.context.lineWidth = 1;
+    this.context.strokeRect(mapX, mapY, mapSize, mapSize);
+
+    const cellWidth = mapSize / this.matrixSize;
+    const cellHeight = mapSize / this.matrixSize;
+    const cellPadding = 2; // Зазор между комнатами
+
+    for (let y = 0; y < this.matrixSize; y++) {
+      for (let x = 0; x < this.matrixSize; x++) {
+        if (this.visitedMatrix[y][x] === 1) {
+          if (x === currentGridX && y === currentGridY) {
+            this.context.fillStyle = '#ff5555'; // Красный цвет для текущей комнаты
+          } else {
+            this.context.fillStyle = '#6272a4'; // Сине-серый для ранее посещенных комнат
+          }
+
+          const roomX = mapX + x * cellWidth + cellPadding;
+          const roomY = mapY + y * cellHeight + cellPadding;
+          const roomW = cellWidth - cellPadding * 2;
+          const roomH = cellHeight - cellPadding * 2;
+
+          this.context.fillRect(roomX, roomY, roomW, roomH);
+        }
+      }
+    }
+  
   }
 
   private drawBullets(bulletsMap: Map<string, ClientBullet>): void {
@@ -117,7 +174,5 @@ export class GameRender {
   }
 
   private drawParticles(): void {
-    
   }
-
 }

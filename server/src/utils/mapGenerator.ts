@@ -66,7 +66,7 @@ export class MapGenerator {
         queue.push(cordXY);
       }
     }
-  return this.roomList.length >= minRooms;
+    return this.roomList.length >= minRooms;
   }
 
   private canCreateRoom(x: number, y: number): boolean {
