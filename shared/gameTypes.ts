@@ -85,7 +85,7 @@ export interface RoomState {
     gridY: number;
     isClear: boolean;
     type: RoomType;
-    hasDoor: {[key in Direction]: boolean};
+    hasDoors: {[key in Direction]: boolean};
     respawnedEntity: Entity[];
     distansToSpawn: number;
 }

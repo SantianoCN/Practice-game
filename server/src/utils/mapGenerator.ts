@@ -103,10 +103,6 @@ export class MapGenerator {
     return counter;
   }
 
-
-  /**
-   * Создает объект комнаты и регистрирует его в структурах генератора.
-   */
   private addRoom(x: number, y: number, type: RoomType): void {
     const center = Math.floor(this.matrixSize / 2);
     const distance = Math.abs(x - center) + Math.abs(y - center);
