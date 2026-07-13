@@ -13,12 +13,12 @@ export class AccountRepository implements IAccountRepository {
                 refreshToken: obj.refreshToken
             }
         });
-        return created;
+        return this.toDomain(created);
     }
 
     async get(id: string): Promise<Account | null> {
         const account = await this.prisma.account.findUnique({ where: { id: id }});
-        return account ? account : null;
+        return account ? this.toDomain(account) : null;
     }
 
     async getByLogin(login: string): Promise<Account | null> {
@@ -33,7 +33,7 @@ export class AccountRepository implements IAccountRepository {
 
     async getAll(): Promise<Account[]> {
         const accounts = await this.prisma.account.findMany();
-        return accounts;
+        return accounts.map(acc => this.toDomain(acc)); 
     }
 
     async update(id: string, obj: Partial<Account>): Promise<Account | null> {
@@ -43,7 +43,7 @@ export class AccountRepository implements IAccountRepository {
                 where: { id: id}, 
                 data: {
                     login: obj.login ?? existing.login,
-                    passwordHash: obj.passwordHash ?? existing.login,
+                    passwordHash: obj.passwordHash ?? existing.passwordHash,
                     refreshToken: obj.refreshToken ?? existing.refreshToken
                 }
             });
@@ -55,7 +55,8 @@ export class AccountRepository implements IAccountRepository {
     async updateByLogin(login: string, obj: Partial<Account>): Promise<Account | null> {
         const account = await this.prisma.account.findFirst({ where: { login: login}});
         if (account) {
-            return await this.update(account.id, obj);
+            const updated = await this.update(account.id, obj);
+            return updated;
         }
         return null;
     }
@@ -70,7 +71,7 @@ export class AccountRepository implements IAccountRepository {
         }
     }
 
-    private toDomain(row: { id: string; login: string; passwordHash: string; refreshToken: string }): Account {
+    private toDomain(row: { login: string; passwordHash: string; refreshToken: string }): Account {
         return new Account(row.login, row.passwordHash, row.refreshToken);
     }
 }
