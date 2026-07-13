@@ -1,3 +1,6 @@
+import Enemy from "../server/src/entities/Enemy";
+import LivingEntity from "../server/src/entities/LivingEntity";
+
 export interface PlayerAction {
     keys: {
         up: boolean;
@@ -86,7 +89,7 @@ export interface RoomState {
     isClear: boolean;
     hasDoors: {[key in Direction]: boolean};
     respawnedEntity: Entity[];
-    enemies: Entity[];
+    enemies: Enemy[];
     distansToSpawn: number;
     type: RoomType;
 }

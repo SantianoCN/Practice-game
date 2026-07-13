@@ -52,7 +52,7 @@ export class GameEngine {
         this.logFloorMap();
 
         this.startGameLoop();
-        this.spawnTestEnemies();
+        this.populateDungeonWithEnemies();
     }
 
     private getCurrentRoomState(): RoomState | null {
@@ -101,54 +101,142 @@ export class GameEngine {
         const deltaTime = (currentTime - this.lastFrameTime) / 1000;
         this.lastFrameTime = currentTime;
 
-        const room = this.getCurrentRoomState();
-        if (!room) return;
-
         // 1. Разгребаем накопленные инпуты игроков
         this.processInputs();
 
         // 2. Двигаем игроков
         for (const player of this.players.values()) {
             player.updateEntity(deltaTime);
-            this.checkRoomTransition(player)
+            this.checkRoomTransition(player); // Переходы теперь считаются индивидуально для каждого игрока!
         }
 
         // 3. Двигаем пули (снаряды)
-        for (const bullet of this.bullets.values()) {
+        for (const bullet of this.bullets) {
             bullet.updatePosition(deltaTime);
         }
 
-        const playersArray: Player[] = Array.from(this.players.values());
-        for (const enemyData of room.enemies) {
-            // Создаем временный экземпляр класса Enemy на лету, чтобы использовать его методы движения
-            const enemyInstance = new Enemy(
-                enemyData.id,
-                'warrior',
-                enemyData.x,
-                enemyData.y,
-                { speed: 100, maxHp: enemyData.maxHp, maxMana: 0, spriteKey: enemyData.sprite },
-                new Weapon(`bite_${enemyData.id}`, "Укус завра", FIREBALL)
+        // Группируем активных игроков по комнатам, чтобы обновлять только те комнаты, где кто-то есть
+        const activeRooms = new Map<string, { rx: number, ry: number, players: Player[], roomState: RoomState }>();
+        for (const player of this.players.values()) {
+            const rx = player.currentRoomX;
+            const ry = player.currentRoomY;
+            const roomState = this.floorMap[ry][rx];
+            if (roomState) {
+                const key = `${rx},${ry}`;
+                if (!activeRooms.has(key)) {
+                    activeRooms.set(key, { rx, ry, players: [], roomState });
+                }
+                activeRooms.get(key)!.players.push(player);
+            }
+        }
+
+        // 4. Обновляем ИИ монстров и проверяем коллизии в каждой активной комнате отдельно
+        for (const active of activeRooms.values()) {
+            const room = active.roomState;
+            const playersInRoom = active.players;
+
+            // ИСПРАВЛЕНО: Монстры теперь — настоящие классы. Двигаем их напрямую!
+            for (const enemy of room.enemies) {
+                enemy.updateEntity(deltaTime);
+                enemy.updateTarget(playersInRoom); // Таргетируем только тех, кто в одной комнате с монстром
+            }
+
+            // Фильтруем пули, которые находятся именно в этой комнате
+            const bulletsInRoom = this.bullets.filter(b => b.currentRoomX === active.rx && b.currentRoomY === active.ry);
+
+            // Проверяем коллизии локально для этой комнаты (двери открыты, если врагов не осталось)
+            const areDoorsOpen = room.enemies.length === 0;
+
+            CollisionManager.processCollisions(
+                bulletsInRoom, 
+                playersInRoom, 
+                room.enemies, 
+                this.roomWidth, 
+                this.roomHeight,
+                room.hasDoors,
+                areDoorsOpen // Передаем статус открытых дверей
             );
-            enemyInstance.hp = enemyData.hp;
 
-            enemyInstance.updateEntity(deltaTime);
-            enemyInstance.updateTarget(playersArray);
-
-            enemyData.x = enemyInstance.x;
-            enemyData.y = enemyInstance.y;
+            // Если все враги в комнате повержены, открываем двери
+            if (room.enemies.length === 0 && !room.isClear) {
+                room.isClear = true;
+                console.log(`[GameEngine] Комната [${active.rx}, ${active.ry}] зачищена! Двери открыты.`);
+            }
         }
 
-        // 5. Проверяем коллизии (врезания пули в ящеров)
-        this.checkCollisions();
+        // Очищаем уничтоженные пули глобально
         this.bullets = this.bullets.filter(b => !b.isDestroyed);
-        room.enemies = room.enemies.filter(e => e.hp > 0);
-        if (room.enemies.length === 0 && !room.isClear) {
-            room.isClear = true;
-            console.log(`[GameEngine] Комната [${this.currentRoomX}, ${this.currentRoomY}] зачищена! Двери открыты.`);
+        
+        // Очищаем мертвых врагов во всех комнатах на этаже
+        for (const row of this.floorMap) {
+            for (const room of row) {
+                if (room) {
+                    room.enemies = room.enemies.filter(e => e.hp > 0);
+                }
+            }
         }
 
-        // 6. Отправляем свежие координаты всем выжившим игрокам в комнате
+        // 5. Отправляем индивидуальные снапшоты игрокам в зависимости от их текущей комнаты
         this.broadcastState();
+    }
+
+    private checkRoomTransition(player: Player) {
+        const rx = player.currentRoomX;
+        const ry = player.currentRoomY;
+        const room = this.floorMap[ry][rx];
+        if (!room) return;
+
+        // Если в комнате есть враги — двери заперты, уйти нельзя!
+        if (room.enemies.length > 0) {
+            return;
+        }
+
+        const padding = 15; 
+        let nextX = rx;
+        let nextY = ry;
+        let spawnX = player.x;
+        let spawnY = player.y;
+        let isTransition = false;
+
+        // Проверяем выход за границы экрана с учетом наличия дверей в этой комнате
+        if (player.y < padding && room.hasDoors.Top) {
+            nextY -= 1;
+            spawnY = this.roomHeight - player.height - padding * 3;
+            isTransition = true;
+        } else if (player.y > this.roomHeight - padding && room.hasDoors.Bottom) {
+            nextY += 1;
+            spawnY = player.height + padding * 3;
+            isTransition = true;
+        } else if (player.x < padding && room.hasDoors.Left) {
+            nextX -= 1;
+            spawnX = this.roomWidth - player.width - padding * 3;
+            isTransition = true;
+        } else if (player.x > this.roomWidth - padding && room.hasDoors.Right) {
+            nextX += 1;
+            spawnX = player.width + padding * 3;
+            isTransition = true;
+        }
+
+        // Если переход состоялся и следующая комната существует на сгенерированной сетке
+        if (isTransition) {
+            if (nextX >= 0 && nextX < MapGenerator.MATRIX_SIZE && 
+                nextY >= 0 && nextY < MapGenerator.MATRIX_SIZE && 
+                this.floorMap[nextY][nextX] !== null) {
+                
+                // Смещаем конкретного игрока в новую комнату
+                player.currentRoomX = nextX;
+                player.currentRoomY = nextY;
+                player.x = spawnX;
+                player.y = spawnY;
+                player.vx = 0; 
+                player.vy = 0;
+                
+                // Удаляем пули, которые принадлежали этому игроку в старой комнате
+                this.bullets = this.bullets.filter(b => b.ownerId !== player.id);
+                
+                console.log(`[GameRoom] Игрок ${player.name} перешел в комнату [${nextX}, ${nextY}]`);
+            }
+        }
     }
 
     private processInputs() {
@@ -175,59 +263,7 @@ export class GameEngine {
         this.inputQueue.clear();
     }
 
-    private checkRoomTransition(player: Player) {
-        const room = this.getCurrentRoomState();
-        if (!room) return;
-
-        if (room.enemies.length > 0) {
-            return;
-        }
-
-        const padding = 15; 
-        let nextX = this.currentRoomX;
-        let nextY = this.currentRoomY;
-        let spawnX = player.x;
-        let spawnY = player.y;
-        let isTransition = false;
-
-        if (player.y < padding && room.hasDoors.Top) {
-            nextY -= 1;
-            spawnY = this.roomHeight - player.height - padding * 3;
-            isTransition = true;
-        } else if (player.y > this.roomHeight - padding && room.hasDoors.Bottom) {
-            nextY += 1;
-            spawnY = player.height + padding * 3;
-            isTransition = true;
-        } else if (player.x < padding && room.hasDoors.Left) {
-            nextX -= 1;
-            spawnX = this.roomWidth - player.width - padding * 3;
-            isTransition = true;
-        } else if (player.x > this.roomWidth - padding && room.hasDoors.Right) {
-            nextX += 1;
-            spawnX = player.width + padding * 3;
-            isTransition = true;
-        }
-
-        if (isTransition) {
-            if (nextX >= 0 && nextX < MapGenerator.MATRIX_SIZE && 
-                nextY >= 0 && nextY < MapGenerator.MATRIX_SIZE && 
-                this.floorMap[nextY][nextX] !== null) {
-                
-                this.currentRoomX = nextX;
-                this.currentRoomY = nextY;
-                this.bullets = []; // Очистка пуль старой комнаты
-                
-                for (const p of this.players.values()) {
-                    p.x = spawnX;
-                    p.y = spawnY;
-                    p.vx = 0; p.vy = 0;
-                }
-                console.log(`[GameRoom] Игроки перешли в комнату [${nextX}, ${nextY}]`);
-            }
-        }
-    }    
-
-    private checkCollisions() {
+    /*private checkCollisions() {
         const room = this.getCurrentRoomState();
         const hasDoors = room ? room.hasDoors : { Top: false, Bottom: false, Left: false, Right: false };
         const roomEnemies = room ? room.enemies : [];
@@ -241,7 +277,7 @@ export class GameEngine {
             this.roomHeight,
             hasDoors
         );
-    }
+    }*/
 
     private spawnProjectile(
         owner: Player | Enemy,
@@ -269,6 +305,8 @@ export class GameEngine {
         );
 
         if (projectile) {
+            projectile.currentRoomX = owner.currentRoomX;
+            projectile.currentRoomY = owner.currentRoomY;
             this.bullets.push(projectile);
         }
     }
@@ -307,59 +345,47 @@ export class GameEngine {
 
     private broadcastState() {
         if (this.players.size === 0) return;
-        const room = this.getCurrentRoomState();
-        if (!room) return;
 
-        const snapshot: GameSnapshot = {
-            players: Array.from(this.players.values()).map(p => ({ 
-                id: p.id, 
-                x: p.x, 
-                y: p.y, 
-                hp: p.hp, 
-                maxHp: p.maxHp,
-                mana: p.mana,
-                maxMana: p.maxMana,
-                width: p.width,
-                height: p.height,
-                sprite: p.spriteKey 
-            })),
-            room: room, 
-            bullets: this.bullets.map(b => ({ 
-                id: b.id, 
-                x: b.x, 
-                y: b.y,
-                width: b.width,
-                height: b.height
-            }))
-        };
+        for (const [userId, player] of this.players.entries()) {
+            const rx = player.currentRoomX;
+            const ry = player.currentRoomY;
+            const room = this.floorMap[ry][rx];
+            
+            if (!room) continue;
 
-        for (const sendEmit of this.networkCallbacks.values()) {
-            sendEmit(snapshot);
+            // Собираем снапшот только для той комнаты, где стоит этот игрок
+            const snapshot: GameSnapshot = {
+                players: Array.from(this.players.values())
+                    .filter(p => p.currentRoomX === rx && p.currentRoomY === ry)
+                    .map(p => ({ 
+                        id: p.id, 
+                        x: p.x, 
+                        y: p.y, 
+                        hp: p.hp, 
+                        maxHp: p.maxHp,
+                        mana: p.mana,
+                        maxMana: p.maxMana,
+                        width: p.width,
+                        height: p.height,
+                        sprite: p.spriteKey 
+                    })),
+                room: room, 
+                bullets: this.bullets
+                    .filter(b => b.currentRoomX === rx && b.currentRoomY === ry)
+                    .map(b => ({ 
+                        id: b.id, 
+                        x: b.x, 
+                        y: b.y,
+                        width: b.width,
+                        height: b.height
+                    }))
+            };
+
+            const sendEmit = this.networkCallbacks.get(userId);
+            if (sendEmit) {
+                sendEmit(snapshot);
+            }
         }
-    }
-
-
-    private spawnTestEnemies() {
-        const room = this.getCurrentRoomState();
-        if (!room) return;
-
-        const enemyId = IdGenerator.generateId('lizard');
-        const padding = 100;
-        const randomX = padding + Math.random() * (GameEngine.ROOM_WIDTH - padding * 2);
-        const randomY = padding + Math.random() * (GameEngine.ROOM_HEIGHT - padding * 2);
-
-        room.enemies.push({
-            id: enemyId,
-            x: randomX,
-            y: randomY,
-            hp: 100,
-            maxHp: 100,
-            width: 64,   
-            height: 64,
-            sprite: 'lizard'
-        });
-
-        console.log(`[GameEngine] 🐊 Свежий ящер заспавнен в комнату! ID: ${enemyId} в координатах [${randomX}, ${randomY}]`);
     }
 
     public stop() {
@@ -367,5 +393,37 @@ export class GameEngine {
             clearInterval(this.gameLoopInterval);
             this.gameLoopInterval = null;
         }
+    }
+
+    private populateDungeonWithEnemies() {
+        for (let y = 0; y < MapGenerator.MATRIX_SIZE; y++) {
+            for (let x = 0; x < MapGenerator.MATRIX_SIZE; x++) {
+                const room = this.floorMap[y][x];
+                
+                // Спавним монстров во всех сгенерированных комнатах, кроме стартовой
+                if (room && room.type !== 'Start') {
+                    const enemyCount = 1 + Math.floor(Math.random() * 3); // от 1 до 3 ящеров на комнату
+                    
+                    for (let i = 0; i < enemyCount; i++) {
+                        const enemyId = IdGenerator.generateId('lizard');
+                        const padding = 100;
+                        const randomX = padding + Math.random() * (GameEngine.ROOM_WIDTH - padding * 2);
+                        const randomY = padding + Math.random() * (GameEngine.ROOM_HEIGHT - padding * 2);
+                        const lizardBite = new Weapon(`bite_${enemyId}`, "Укус завра", FIREBALL);
+                        const newLizard = new Enemy(
+                            enemyId,
+                            'warrior',
+                            randomX,
+                            randomY,
+                            WARRIOR_PRESET_LIZARD,
+                            lizardBite
+                        );
+
+                        room.enemies.push(newLizard);
+                    }
+                }
+            }
+        }
+        console.log(`[GameEngine] Все комнаты лабиринта успешно заселены ящерами!`);
     }
 }

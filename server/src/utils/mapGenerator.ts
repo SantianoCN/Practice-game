@@ -1,7 +1,7 @@
 import { RoomState, RoomType, VectorXY } from '../../../shared/gameTypes';
 
 export class MapGenerator {
-  public static readonly MATRIX_SIZE: number = 7; 
+  public static readonly MATRIX_SIZE: number = 10; 
   private grid: (RoomState | null)[][];
   private roomList: RoomState[];
 

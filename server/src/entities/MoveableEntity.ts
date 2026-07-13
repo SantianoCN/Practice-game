@@ -9,6 +9,8 @@ export default class MoveableEntity {
     public width: number;
     public height: number;
     public spriteKey: string;
+    public currentRoomX: number = 5;
+    public currentRoomY: number = 5;
 
     constructor(id: string, type: 'player' | 'enemy' | 'projectile', x: number, y: number, width: number, height: number) {
         this.id = id;

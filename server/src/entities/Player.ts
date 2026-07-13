@@ -19,6 +19,9 @@ export default class Player extends LivingEntity {
         this.mana = presetStats.maxMana;
         this.speed = presetStats.speed;
         this.spriteKey = presetStats.spriteKey;
+        this.currentRoomX = 5;
+        this.currentRoomY = 5;
+
     }
 
     public setDirection(inputX: number, inputY: number): void {
