@@ -1,15 +1,14 @@
 import { RoomState, RoomType, VectorXY } from '../../../shared/gameTypes';
-import Enemy from '../entities/Enemy';
 
 export class MapGenerator {
-  private readonly matrixSize: number = 5;
+  public static readonly MATRIX_SIZE: number = 7; 
   private grid: (RoomState | null)[][];
   private roomList: RoomState[];
 
   constructor() {
     this.roomList = [];
-    this.grid = Array(this.matrixSize).fill(null).map(() => 
-      Array(this.matrixSize).fill(null))
+    this.grid = Array(MapGenerator.MATRIX_SIZE).fill(null).map(() => 
+      Array(MapGenerator.MATRIX_SIZE).fill(null))
   }
 
   public generate(minRooms: number, maxRooms: number): (RoomState | null)[][] {
@@ -28,13 +27,13 @@ export class MapGenerator {
 
   private reset(): void {
     this.roomList = [];
-    this.grid = Array(this.matrixSize).fill(null).map(() => 
-      Array(this.matrixSize).fill(null))
+    this.grid = Array(MapGenerator.MATRIX_SIZE).fill(null).map(() => 
+      Array(MapGenerator.MATRIX_SIZE).fill(null))
   }
 
   private buildLayout(minRooms: number, maxRooms: number): boolean {
-    const cordX = Math.floor(this.matrixSize / 2);
-    const cordY = Math.floor(this.matrixSize / 2);
+    const cordX = Math.floor(MapGenerator.MATRIX_SIZE / 2);
+    const cordY = Math.floor(MapGenerator.MATRIX_SIZE / 2);
     this.addRoom(cordX, cordY, 'Start');
 
     const queue: VectorXY[] = [{ x: cordX, y: cordY }];
@@ -71,7 +70,7 @@ export class MapGenerator {
   }
 
   private canCreateRoom(x: number, y: number): boolean {
-    if (x >= this.matrixSize || x < 0 || y >= this.matrixSize || y < 0) {
+    if (x >= MapGenerator.MATRIX_SIZE || x < 0 || y >= MapGenerator.MATRIX_SIZE || y < 0) {
       return false;
     }
     if (this.grid[y][x] !== null) {
@@ -95,7 +94,7 @@ export class MapGenerator {
     for (const [dx, dy] of directions) {
       const checkX = x + dx;
       const checkY = y + dy;
-      if (checkX >= 0 && checkX < this.matrixSize && checkY >= 0 && checkY < this.matrixSize) {
+      if (checkX >= 0 && checkX < MapGenerator.MATRIX_SIZE && checkY >= 0 && checkY < MapGenerator.MATRIX_SIZE) {
         if (this.grid[checkY][checkX] !== null) {
           counter += 1;
         }
@@ -105,7 +104,7 @@ export class MapGenerator {
   }
 
   private addRoom(x: number, y: number, type: RoomType): void {
-    const center = Math.floor(this.matrixSize / 2);
+    const center = Math.floor(MapGenerator.MATRIX_SIZE / 2);
     const distance = Math.abs(x - center) + Math.abs(y - center);
     const room: RoomState = {
       gridX: x,
@@ -139,9 +138,9 @@ export class MapGenerator {
     for (const room of this.roomList) {
       const x = room.gridX; const y = room.gridY;
       if (y > 0 && this.grid[y - 1][x] !== null) room.hasDoors.Top = true;
-      if (y < this.matrixSize - 1 && this.grid[y + 1][x] !== null) room.hasDoors.Bottom = true;
+      if (y < MapGenerator.MATRIX_SIZE - 1 && this.grid[y + 1][x] !== null) room.hasDoors.Bottom = true;
       if (x > 0 && this.grid[y][x - 1] !== null) room.hasDoors.Left = true;
-      if (x < this.matrixSize - 1 && this.grid[y][x + 1] !== null) room.hasDoors.Right = true
+      if (x < MapGenerator.MATRIX_SIZE - 1 && this.grid[y][x + 1] !== null) room.hasDoors.Right = true
     }
   }
 }
