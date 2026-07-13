@@ -1,9 +1,10 @@
 import { RoomState, RoomType, VectorXY } from '../../../shared/gameTypes';
+import Enemy from '../entities/Enemy';
 
 export class MapGenerator {
   private readonly matrixSize: number = 5;
-  private grid: (RoomState | null)[][]; // Двумерная матрица этажа. Нужна генератору для быстрой проверки: «а пуста ли соседняя клетка?»
-  private roomList: RoomState[]; // Плоский динамический список всех созданных комнат. Из него удобно фильтровать тупики и отдавать результат клиенту
+  private grid: (RoomState | null)[][];
+  private roomList: RoomState[];
 
   constructor() {
     this.roomList = [];
@@ -118,7 +119,8 @@ export class MapGenerator {
         'Right': false
       },
       respawnedEntity: [],
-      distansToSpawn: distance
+      distansToSpawn: distance,
+      enemies: []
     };
 
     this.grid[y][x] = room;

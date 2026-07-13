@@ -49,7 +49,7 @@ export interface Bullet {
 
 export interface GameSnapshot {
     players: Player[];
-    enemies: Entity[];
+    room: RoomState;
     bullets: Bullet[];
 }
 
@@ -84,10 +84,11 @@ export interface RoomState {
     gridX: number;
     gridY: number;
     isClear: boolean;
-    type: RoomType;
     hasDoors: {[key in Direction]: boolean};
     respawnedEntity: Entity[];
+    enemies: Entity[];
     distansToSpawn: number;
+    type: RoomType;
 }
 
 export interface VectorXY{
