@@ -7,8 +7,9 @@ import { WARRIOR_PRESET_LIZARD } from '../config/enemyPresets';
 import { FIREBALL } from '../config/weaponPresets';
 import Weapon from '../items/Weapon';
 import { IdGenerator } from '../utils/IDGenerator';
+import { MapGenerator } from '../utils/mapGenerator';
 import { CollisionManager } from './CollisionManager';
-import { PlayerAction, GameSnapshot } from '../../../shared/gameTypes';
+import { PlayerAction, GameSnapshot, RoomState } from '../../../shared/gameTypes';
 
 export class GameEngine {
     public roomId: string;
@@ -28,6 +29,8 @@ export class GameEngine {
     private readonly TICK_TIME = 1000 / this.TICK_RATE;
     private static readonly ROOM_WIDTH = 1000;
     private static readonly ROOM_HEIGHT = 1000;
+    private floorGenerator: MapGenerator;
+    private floorMap: (RoomState | null)[][];
 
     constructor(roomId: string) {
         this.roomId = roomId;
@@ -38,9 +41,21 @@ export class GameEngine {
         this.networkCallbacks = new Map();
         this.roomHeight = GameEngine.ROOM_HEIGHT;
         this.roomWidth = GameEngine.ROOM_WIDTH;
+        this.floorGenerator = new MapGenerator();
+        this.floorMap = this.floorGenerator.generate(5, 10);
+        this.logFloorMap();
 
         this.startGameLoop();
         this.spawnTestEnemies();
+    }
+
+    private logFloorMap(): void {
+        console.log(`\n[GameRoom] Сгенерирована карта этажа для комнаты: ${this.roomId}`);
+        const mapRender = this.floorMap
+            .map(row => row.map(cell => (cell !== null ? '██' : '░░')).join(' '))
+            .join('\n');
+        console.log(mapRender);
+        console.log(`=============================================\n`);
     }
 
     public addPlayer(userId: string, name: string, archetype: 'warrior' | 'mage', emitCallback: (snapshot: GameSnapshot) => void) {

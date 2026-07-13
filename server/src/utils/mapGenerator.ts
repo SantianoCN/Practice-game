@@ -115,14 +115,14 @@ export class MapGenerator {
       gridY: y,
       isClear: false,
       type: type,
-      hasDoors: {
+      hasDoor: {
         'Top': false,
         'Bottom': false,
         'Left': false,
         'Right': false
       },
       respawnedEntity: [],
-      distanceToSpawn: distance
+      distansToSpawn: distance
     };
 
     this.grid[y][x] = room;
