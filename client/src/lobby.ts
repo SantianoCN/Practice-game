@@ -21,7 +21,7 @@ createRoomButton.addEventListener('click', async () => {
     await network.connect(token!);
     
     const res = await network.createSession({ name: token!, archetype: 'warrior' });
-    console.log(res); 
+    console.log(res);
 
     if (res.success && res.sessionId) {
       localStorage.setItem('game_session_id', res.sessionId);

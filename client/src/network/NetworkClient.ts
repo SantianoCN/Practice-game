@@ -98,11 +98,11 @@ export class NetworkClient {
 
   public disconnect(): void {
     if (this.socket) {
-      // this.socket.emit('savePlayerData', (response: boolean) => {
-      //   if (response) {
-      //     console.log('Сохранение')
-      //   }
-      // })
+      this.socket.emit('savePlayerData', (response: boolean) => {
+        if (response) {
+          console.log('Сохранение')
+        }
+      })
       this.socket.disconnect();
       this.socket = null;
     }

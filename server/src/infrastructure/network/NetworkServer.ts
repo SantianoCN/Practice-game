@@ -28,9 +28,9 @@ export class NetworkServer {
         console.log('initialized');
     }
 
-    private authenticationMiddleware(socket: Socket, next: (err?: Error) => void) {
+    private async authenticationMiddleware(socket: Socket, next: (err?: Error) => void) {
         const token = socket.handshake.auth.token;
-        
+        console.log(token);
         if (!token || typeof token !== 'string') {
             console.log('[authenticationMiddleware] auth: токен авторизации не обнаружен');
             next(
@@ -38,7 +38,7 @@ export class NetworkServer {
             );
             return;
         }
-        const login = this.accountManager.resolveToken(token);
+        const login = (await this.accountManager.resolveToken(token))?.login;
         if (!login) {
             console.log('[authenticationMiddleware] auth: токен авторизации не обнаружен');
             next(

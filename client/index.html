@@ -1,14 +1,14 @@
-<!-- client/login.html -->
+<!-- client/index.html -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Русы против Ящеров: Авторизация</title>
+    <title>Русы против Ящеров: Roguelike</title>
     <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-    <div class="card">
+    <div id="auth-screen" class="card">
         <h2>Вход в Хаб</h2>
         <form id="loginForm" onsubmit="return false;">
             <div class="input-group">
@@ -19,10 +19,33 @@
                 <label for="password">Пароль</label>
                 <input type="password" id="password" placeholder="Введите пароль" required>
             </div>
-            <button type="submit" id="loginBtn" class="btn btn-primary">Войти в игру</button>
+            <button type="button" id="loginBtn" class="button button-primary">Войти в игру</button>
+            <button type="button" id="registerBtn" class="button button-alt" style="margin-top: 10px;">Зарегистрироваться</button>
             <div id="errorText" class="error-message">Неверный логин или пароль</div>
         </form>
     </div>
-    <script type="module" src="/src/login.ts"></script>
+    <div id="lobby-screen" class="card hidden">
+        <h2>Игровое Лобби</h2>
+        <div id="welcomeText" class="user-welcome">Приветствуем тебя, боец!</div>
+        <button id="logoutBtn" class="button-logout">Выйти из аккаунта</button>
+        <div class="section">
+            <label>Создать новое подземелье</label>
+            <button id="createRoomBtn" class="button button-alt">Создать комнату</button>
+        </div>
+        <div class="section">
+            <label for="sessionIdInput">Подключиться к другу</label>
+            <input type="text" id="sessionIdInput" class="text-center" placeholder="Вставьте ID сессии">
+            <button id="joinRoomBtn" class="button button-success">В бой!</button>
+            <div id="lobbyError" class="error-message">Комната не найдена</div>
+        </div>
+    </div>
+    <div id="game-screen" class="hidden">
+        <div id="topBar">
+            <div>Комната ID: <span id="sessionDisplay">Загрузка...</span></div>
+            <button id="disconnectBtn" class="button button-danger" style="width: auto;">Покинуть бой</button>
+        </div>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

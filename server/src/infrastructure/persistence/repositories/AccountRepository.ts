@@ -36,7 +36,7 @@ export class AccountRepository implements IAccountRepository {
         return accounts;
     }
 
-    async updated(id: string, obj: Partial<Account>): Promise<Account | null> {
+    async update(id: string, obj: Partial<Account>): Promise<Account | null> {
         const existing = await this.prisma.account.findUnique({ where: { id: id}});
         if (existing) {
             const updated = await this.prisma.account.update({
@@ -48,6 +48,14 @@ export class AccountRepository implements IAccountRepository {
                 }
             });
             return this.toDomain(updated);
+        }
+        return null;
+    }
+
+    async updateByLogin(login: string, obj: Partial<Account>): Promise<Account | null> {
+        const account = await this.prisma.account.findFirst({ where: { login: login}});
+        if (account) {
+            return await this.update(account.id, obj);
         }
         return null;
     }
