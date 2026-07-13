@@ -122,20 +122,24 @@ export class MapGenerator {
     };
 
     this.grid[y][x] = room;
-    this.roomList.push(room);
+    this.roomList.push(room)
   }
 
-
-  /**
-   * Анализирует карту на тупики и назначает особые типы комнат (Boss, Treasure, Shop).
-   */
-  private assignSpecialRooms(): void {
+  assignSpecialRooms() {
+    const deadEnds = this.roomList.filter(room => room.type !== 'Start' && this.countNeighbors(room.gridX, room.gridY) === 1);
+    deadEnds.sort((a, b) => b.distansToSpawn - a.distansToSpawn);
+    if (deadEnds.length > 0) deadEnds[0].type = 'Boss';
+    if (deadEnds.length > 1) deadEnds[1].type = 'Treasure';
+    if (deadEnds.length > 2) deadEnds[2].type = 'Shop';
   }
 
-  /**
-   * Сканирует связи между соседними ячейками и выставляет флаги дверей для каждой комнаты.
-   */
-  private calculateDoors(): void {
-    // Заполнение объекта hasDoors на основе соседних комнат
+  calculateDoors() {
+    for (const room of this.roomList) {
+      const x = room.gridX; const y = room.gridY;
+      if (y > 0 && this.grid[y - 1][x] !== null) room.hasDoors.Top = true;
+      if (y < this.matrixSize - 1 && this.grid[y + 1][x] !== null) room.hasDoors.Bottom = true;
+      if (x > 0 && this.grid[y][x - 1] !== null) room.hasDoors.Left = true;
+      if (x < this.matrixSize - 1 && this.grid[y][x + 1] !== null) room.hasDoors.Right = true
+    }
   }
 }
