@@ -1,5 +1,6 @@
 import { io, Socket } from 'socket.io-client';
-import { PlayerAction, LoginData, GameSnapshot } from '../../../shared/gameTypes';
+import { PlayerAction, LoginData, GameSnapshot, SessionCreateRequest, SessionCreateResponse, SessionJoinRequest, SessionJoinResponse } from '../../../shared/gameTypes';
+import { platform } from 'os';
 
 export class NetworkClient {
   private socket: Socket | null = null;
@@ -18,7 +19,7 @@ export class NetworkClient {
 
     this.socket = io(this.serverUrl, { transports: ['websocket'] });
 
-    this.socket.on('connect', () => {
+    this.socket.on('connection', () => {
       console.log('Подключено к серверу! ID:', this.socket?.id);
     });
 
@@ -37,30 +38,57 @@ export class NetworkClient {
     });
   }
 
+  public createSession(request: SessionCreateRequest) {
+    return this.emitWithAck<SessionCreateResponse>(
+      'create-session', 
+      request,
+      'session-create-response'
+    );
+  }
+
+  public joinSession(request: SessionJoinRequest) {
+    return this.emitWithAck<SessionJoinResponse>(
+      'connect-session',
+      request,
+      'session-join-response'
+    );
+  } 
+  
+  public sendPlayerAction(action: PlayerAction): void {
+    if (!this.socket?.connected) {
+        console.warn('нет соединения с сервером');
+        return;
+    }
+    this.socket.emit('playerAction', action);
+}
+
+  private async emitWithAck<T>(
+    event: string, 
+    payload: unknown, 
+    responseEvent: string
+  ): Promise<T> {
+    return new Promise((resolve, reject) => {
+      if (!this.socket?.connected) {
+        reject(new Error('нет соединения с сервером'));
+        return;
+      }
+      this.socket.once(responseEvent, (data: T) => resolve(data));
+      this.socket.emit(event, payload);
+    });
+  }
+
   public onSnapshotUpdate(callback: (data: GameSnapshot) => void): void {
     this.UpdateCallback = callback;
   }
 
-  public sendPlayerAction(action: PlayerAction): void {
-    if (this.socket && this.socket.connected) {
-      this.socket.emit('playerAction', action);
-    } else {
-      console.warn('Нет соединения с сервером!');
-    }
-  }
-
-  public sendPlayerLogin(login: LoginData): void {
-    if (this.socket && this.socket.connected) { 
-      this.socket.emit('login', login)
-    } else {
-      console.warn('Нет соединения с сервером!')
-    }
+  public login(data: LoginData): Promise<{ success: boolean; message?: string }> {
+    return this.emitWithAck('login', data, 'response');
   }
 
   public disconnect(): void {
     if (this.socket) {
       this.socket.emit('savePlayerData', (response: boolean) => {
-        if (response){
+        if (response) {
           console.log('Сохранение')
         }
       })

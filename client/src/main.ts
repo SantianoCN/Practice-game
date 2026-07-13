@@ -1,7 +1,7 @@
 import { NetworkClient } from "./network/NetworClient";
 import { ReadInputs } from "./input/ReadInputs";
 import { GameRender } from "./render/screenRender";
-import { PlayerAction, LoginData, GameSnapshot } from '../../shared/gameTypes';
+import { PlayerAction, GameSnapshot } from '../../shared/gameTypes';
 
 class Game{
   private network: NetworkClient;
@@ -20,7 +20,21 @@ class Game{
     this.isRunning = false;
     this.snapshot = {
       players: [],
-      enemies: [],
+      room: {
+        gridX: 0,
+        gridY: 0,
+        isClear: false,
+        hasDoors: {
+          Top: false,
+          Bottom: false,
+          Right: false,
+          Left: false,
+        },
+        respawnedEntity: [],
+        enemies: [],
+        distansToSpawn: 0,
+        type: 'Start',
+      },
       bullets: []
     };
   }
@@ -47,9 +61,9 @@ class Game{
     this.network.disconnect()
   }
 
-  public sendLogin(login: LoginData) {
+  /*public sendLogin(login: LoginData) {
     this.network.sendPlayerLogin(login)
-  }
+  }*/
 
   public getSnapshot(): {isRunning: boolean, action: PlayerAction, snapshot: GameSnapshot} {
     return {isRunning: this.isRunning, action: this.lastPlayerAction, snapshot: this.snapshot}

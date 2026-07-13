@@ -49,13 +49,21 @@ export interface Bullet {
 
 export interface GameSnapshot {
     players: Player[];
-    enemies: Entity[];
+    room: RoomState;
     bullets: Bullet[];
 }
 
 export interface SessionCreateRequest {
     name: string;
     archetype: 'warrior' | 'mage';
+}
+
+export interface SessionCreateResponse {
+    sessionId: string;
+}
+
+export interface SessionJoinResponse {
+    sessionId: string;
 }
 
 export interface SessionJoinRequest {
@@ -67,4 +75,23 @@ export interface SessionJoinRequest {
 export interface LoginData {
     login: string;
     password: string;
+}
+
+export type RoomType = 'Start' | 'Normal' | 'Boss' | 'Treasure' | 'Shop';
+export type Direction = 'Top' | 'Bottom' | 'Left' | 'Right';
+
+export interface RoomState {
+    gridX: number;
+    gridY: number;
+    isClear: boolean;
+    hasDoors: {[key in Direction]: boolean};
+    respawnedEntity: Entity[];
+    enemies: Entity[];
+    distansToSpawn: number;
+    type: RoomType;
+}
+
+export interface VectorXY{
+    x: number;
+    y: number;
 }
