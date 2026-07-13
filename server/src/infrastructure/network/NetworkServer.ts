@@ -1,10 +1,10 @@
 import { Server, Socket} from 'socket.io';
-import { LoginData, PlayerAction, SessionJoinRequest, SessionCreateRequest, GameSnapshot } from '../../../shared/gameTypes';
-import GameManager from './GameManager';
-import { AccountManager } from './AccountManager';
-import { ClientEvent, ServerEvent } from '../../../shared/networkEvents';
+import { LoginData, PlayerAction, SessionJoinRequest, SessionCreateRequest, GameSnapshot } from '../../../../shared/gameTypes';
+import GameManager from '../../application/managers/GameManager';
+import { AccountManager } from '../../application/managers/AccountManager';
+import { ClientEvent, ServerEvent } from '../../../../shared/networkEvents';
 
-export class NetworkManager {
+export class NetworkServer {
     private io: Server;
     private game: GameManager;
     private accountManager: AccountManager;

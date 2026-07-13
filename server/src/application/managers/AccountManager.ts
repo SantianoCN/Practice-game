@@ -1,5 +1,5 @@
-import { LoginData } from "../../../shared/gameTypes";
-import { IdGenerator } from "../utils/IDGenerator";
+import { LoginData } from "../../../../shared/gameTypes";
+import { IdGenerator } from "../../domain/utils/IDGenerator";
 
 
 class Account {
