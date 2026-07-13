@@ -25,33 +25,33 @@ export class NetworkManager {
             (socket: Socket) => 
                 this.connectUserHandler(socket)
         );
-        console.log('initialized');
+        console.log('[NetworkManager] initialized');
     }
 
     private authenticationMiddleware(socket: Socket, next: (err?: Error) => void) {
         const token = socket.handshake.auth.token;
         
         if (!token || typeof token !== 'string') {
-            console.log('[authenticationMiddleware] auth: токен авторизации не обнаружен');
+            console.log('[NetworkManager][authenticationMiddleware] auth: токен авторизации не обнаружен');
             next(
                 new Error('auth: токен авторизации не обнаружен')
             );
             return;
         }
-        const login = this.accountManager.resolveToken(token);
-        if (!login) {
-            console.log('[authenticationMiddleware] auth: токен авторизации не обнаружен');
+        const account = this.accountManager.resolveToken(token);
+        if (!account) {
+            console.log('[NetworkManager][authenticationMiddleware] auth: токен авторизации не обнаружен');
             next(
                 new Error('auth: токен авторизации не обнаружен')
             );
             return;
         }
-        socket.data.login = login;
+        socket.data.login = account.login;
         next();
     }
 
     public connectUserHandler(socket: Socket) {
-        console.log('соединение установлено');
+        console.log('[NetworkManager] соединение установлено:', socket.id);
         
         socket.on(ClientEvent.CREATE_SESSION,
             (request: SessionCreateRequest) =>
@@ -60,6 +60,9 @@ export class NetworkManager {
         socket.on(ClientEvent.CONNECT_SESSION,
             (request: SessionJoinRequest) => 
                 this.joinSessionHandler(request, socket)
+        );
+        socket.on(ClientEvent.LEAVE_SESSION,
+            () => this.leaveSession(socket)
         );
         socket.on(
             'playerAction', (data: PlayerAction) => 
@@ -73,7 +76,12 @@ export class NetworkManager {
     }
 
     public createSessionHandler(request: SessionCreateRequest, socket: Socket) {
-        if (!socket.data.userId) return;
+        if (!socket.data.userId) {
+            socket.emit(ServerEvent.SESSION_CREATE_RESPONSE,
+                { success: false, message: 'пользователь не авторизован' }
+            );
+            return;
+        } 
         const sessionId = this.game.createSession();
         socket.data.sessionId = sessionId;
         const state = this.game.addPlayer(
@@ -86,24 +94,29 @@ export class NetworkManager {
             }
         );
         if (!state.success) {
+            this.game.removeSession(sessionId);
             socket.emit(ServerEvent.SESSION_CREATE_RESPONSE,
                 { success: false, message: state.message }
             );
             return;
         }
-        socket.data.sessionId = sessionId;
         socket.emit(ServerEvent.SESSION_CREATE_RESPONSE, 
             { success: true, sessionId: sessionId }
         );
     }
 
     public joinSessionHandler(request: SessionJoinRequest, socket: Socket) {
-        if (!socket.data.userId) return;
+        if (!socket.data.userId) {
+             socket.emit(ServerEvent.SESSION_JOIN_RESPONSE, 
+                { success: false, message: 'пользователь не авторизован' }
+            );
+            return;
+        } 
         if (!this.game.sessionExists(request.sessionId)) {
-                socket.emit(ServerEvent.SESSION_JOIN_RESPONSE, 
-                    { success: false, sessionId: '' }
-                );
-                return;
+            socket.emit(ServerEvent.SESSION_JOIN_RESPONSE, 
+                { success: false, sessionId: '', message:  'такой сессии не существует' }
+            );
+            return;
         }
         const state = this.game.addPlayer(
             request.sessionId, 
@@ -122,7 +135,7 @@ export class NetworkManager {
         }
         socket.data.sessionId = request.sessionId;
         socket.emit(ServerEvent.SESSION_JOIN_RESPONSE,
-            { success: true, sessionId: request.sessionId }
+            { success: true, sessionId: request.sessionId, message: "успешное подключение" }
         );
     }
 
@@ -138,12 +151,18 @@ export class NetworkManager {
         );
     }
 
+    public leaveSession(socket: Socket) {
+        if (!socket.data.sessionId || !socket.data.userId) return;
+        this.game.removePlayer(socket.data.sessionId, socket.data.userId);
+        socket.data.sessionId = undefined;
+    }
+
     private disconnectHandler(socket: Socket) {
         const { userId, sessionId } = socket.data;
         if (userId && sessionId) {
             this.game.removePlayer(sessionId, userId);
         }
-        console.log('соединение разорвано:', socket.id);
+        console.log('[NetworkManager] соединение разорвано:', socket.id);
     }
 
     public disconnectSocket(socket: Socket) {

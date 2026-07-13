@@ -86,3 +86,12 @@ export interface LoginResponse {
     refreshToken?: string;
     message: string;
 }
+
+export interface LogoutRequest {
+    token: string;
+}
+
+export interface LogoutResponse {
+    success: boolean;
+    message: string;
+}

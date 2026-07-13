@@ -9,8 +9,9 @@ export default class GameManager {
 
     public createSession(): string {
         const uuid = IdGenerator.generateUUID('session');
-        const engine = new GameEngine(uuid);    // uuid?
+        const engine = new GameEngine(uuid);
         this.sessions.set(uuid, engine);
+        console.log('[GameManager] создана сессия: ', uuid);
         return uuid;
     }
 
@@ -29,6 +30,7 @@ export default class GameManager {
         if (!engine) return;
         engine.stop();
         this.sessions.delete(sessionId);
+        console.log('[GameManager] удалена сессия: ', sessionId);
     }
 
     public addPlayer(
@@ -40,14 +42,14 @@ export default class GameManager {
     ): { success: boolean, message?: string } {
         const isPlayerInSession = Array.from(this.playerSessions.values())
             .some(userIds => userIds.includes(userId));
-        const engine = this.getSession(sessionId);
-        console.log(this.playerSessions.values());
         if (isPlayerInSession) {
             return {
                 success: false,
                 message: 'игрок уже в сессии'
             };
         }
+        const engine = this.getSession(sessionId);
+        console.log('[GameManager] список игроков в сессиях', this.playerSessions.values());
         if (!engine) return {
             success: false,
             message: 'сессия не найдена'
@@ -56,8 +58,9 @@ export default class GameManager {
         const session = this.playerSessions.get(sessionId);
         if (!session) {
             this.playerSessions.set(sessionId, [userId]);
-        } else
+        } else {
             session?.push(userId);
+        }
         return { success: true }
     }
 
@@ -68,7 +71,6 @@ export default class GameManager {
         const engine = this.getSession(sessionId);
         if (!engine) return;
 
-        // Просто удаляем игрока из движка, но НЕ удаляем саму сессию!
         engine.removePlayer(userId);
         const players = this.playerSessions.get(sessionId);
         if (players) {
@@ -78,14 +80,9 @@ export default class GameManager {
             }
             if (players.length === 0) {
                 this.playerSessions.delete(sessionId);
+                this.removeSession(sessionId);
             }
         }
-
-        /* УДАЛИТЕ ИЛИ ЗАКОММЕНТИРУЙТЕ ЭТОТ БЛОК:
-        if (engine.removePlayer(userId)) {
-            this.removeSession(sessionId); 
-        }
-        */
     }
 
     public pushInput(

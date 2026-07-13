@@ -1,224 +1,128 @@
 import { NetworkClient } from "./network/NetworkClient";
-import { ReadInputs } from "./input/ReadInputs";
-import { GameRender } from "./render/screenRender";
-import { PlayerAction, GameSnapshot } from '../../shared/gameTypes';
-import { ClientPlayer, ClientEnemy, ClientBullet } from "./entities/ClientEntities";
+import { AuthView } from "./views/AythView";
+import { LobbyView } from "./views/LobbyView";
+import { GameView } from "./views/GameView";
 
-class Game {
+class MainController {
   private network: NetworkClient;
-  private input: ReadInputs;
-  private renderService: GameRender;
-  private lastPlayerAction: PlayerAction;
-  private isRunning: boolean;
-  private playersMap: Map<string, ClientPlayer> = new Map();
-  private enemiesMap: Map<string, ClientEnemy> = new Map();
-  private bulletsMap: Map<string, ClientBullet> = new Map();
-  private lastFrameTime: number = performance.now();
+  private authView: AuthView;
+  private lobbyView: LobbyView;
+  private gameView: GameView;
+
+  private token: string | null = null;
+  private sessionId: string | null = null;
 
   constructor() {
     this.network = new NetworkClient();
-    this.input = new ReadInputs();
-    const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
-    this.renderService = new GameRender(canvas);
-    this.lastPlayerAction = { keys: { up: false, down: false, left: false, right: false, shoot: false } };
-    this.isRunning = false;
-    this.setupUI();
+    this.authView = new AuthView((token) => this.handleLoginSuccess(token));
+    this.lobbyView = new LobbyView(
+      this.network,
+      "",
+      (sessionId) => this.handleJoinSession(sessionId),
+      () => this.handleLogout()
+    );
+    this.gameView = new GameView(this.network, () => this.handleLeaveSession());
+
+    this.init();
   }
 
-  private setupUI() {
-    const disconnectBtn = document.getElementById('disconnectBtn') as HTMLButtonElement;
-    if (disconnectBtn) {
-      disconnectBtn.addEventListener('click', () => {
-        this.stopGame();
-        localStorage.removeItem('game_session_id');
-        window.location.href = '/lobby.html';
-      });
-    }
-  }
+  private async init() {
+    this.token = localStorage.getItem('session_token');
+    this.sessionId = localStorage.getItem('game_session_id');
 
-  public async startGame() {
-    if (this.isRunning) return;
-    this.isRunning = true;
-    const token = localStorage.getItem('session_token');
-    const sessionId = localStorage.getItem('game_session_id');
-    if (!token || !sessionId) {
-      window.location.href = '/lobby.html';
-      return;
-    }
-    
-    const sessionDisplay = document.getElementById('sessionDisplay') as HTMLSpanElement;
-    if (sessionDisplay) {
-      sessionDisplay.innerText = sessionId;
-    }
+    if (!this.token) {
+      this.showAuthScreen();
+    } else {
+      try {
+        // Подключаем сокет под существующим токеном
+        await this.network.connect(this.token);
 
-    try {
-      await this.network.connect(token!);
-      const sessionResult = await this.network.joinSession({ 
-        sessionId: sessionId, 
-        name: token, 
-        archetype: 'warrior' 
-      });
-      if (sessionResult.success) {
-        console.log('Успешное подключение к игровой сессии:', sessionResult.sessionId);
-      } else {
-        console.log('Ошибка подключения:', sessionResult.message);
-      }
-    } catch (error) {
-      console.error('Не удалось запустить сетевую игру:', error);
-      this.isRunning = false;
-      return;
-    }
-
-    this.input.saveListener((action: PlayerAction) => {
-      this.lastPlayerAction = action;
-      this.network.sendPlayerAction(action);
-    });
-
-    this.network.onSnapshotUpdate((snapshot: GameSnapshot) => {
-      this.reconcileEntities(snapshot);
-    });
-
-    this.gameLoop();
-  }
-
-  private reconcileEntities(snapshot: GameSnapshot) {
-    const activeIds = new Set<string>();
-
-    snapshot.players.forEach(serverPlayer => {
-      activeIds.add(serverPlayer.id);
-
-      const localPlayer = this.playersMap.get(serverPlayer.id);
-
-      if (!localPlayer) {
-        const newPlayer = new ClientPlayer(
-          serverPlayer.id,
-          serverPlayer.x,
-          serverPlayer.y,
-          serverPlayer.width,
-          serverPlayer.height,
-          serverPlayer.hp,
-          serverPlayer.maxHp,
-          serverPlayer.mana,
-          serverPlayer.maxMana,
-          serverPlayer.sprite
-        );
-        this.playersMap.set(serverPlayer.id, newPlayer);
-      } else {
-        localPlayer.targetX = serverPlayer.x;
-        localPlayer.targetY = serverPlayer.y;
-        localPlayer.hp = serverPlayer.hp;
-        localPlayer.maxHp = serverPlayer.maxHp;
-        localPlayer.mana = serverPlayer.mana;
-        localPlayer.maxMana = serverPlayer.maxMana;
-        localPlayer.sprite = serverPlayer.sprite;
-      }
-    });
-
-    snapshot.enemies.forEach(serverEnemy => {
-      activeIds.add(serverEnemy.id);
-
-      const localEnemy = this.enemiesMap.get(serverEnemy.id);
-
-      if (!localEnemy) {
-        const newEnemy = new ClientEnemy(
-          serverEnemy.id,
-          serverEnemy.x,
-          serverEnemy.y,
-          serverEnemy.width,
-          serverEnemy.height,
-          serverEnemy.hp,
-          serverEnemy.maxHp,
-          serverEnemy.sprite
-        );
-        this.enemiesMap.set(serverEnemy.id, newEnemy);
-      } else {
-        localEnemy.targetX = serverEnemy.x;
-        localEnemy.targetY = serverEnemy.y;
-        localEnemy.hp = serverEnemy.hp;
-        localEnemy.maxHp = serverEnemy.maxHp;
-        localEnemy.sprite = serverEnemy.sprite;
-      }
-    });
-
-    snapshot.bullets.forEach(serverBullet => {
-      activeIds.add(serverBullet.id);
-
-      const localBullet = this.bulletsMap.get(serverBullet.id);
-
-      if (!localBullet) {
-        const newBullet = new ClientBullet(
-          serverBullet.id,
-          serverBullet.x,
-          serverBullet.y,
-          serverBullet.width,
-          serverBullet.height,
-        );
-        this.bulletsMap.set(serverBullet.id, newBullet);
-      } else {
-        const dx = serverBullet.x - localBullet.targetX;
-        const dy = serverBullet.y - localBullet.targetY;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance > 0) {
-          localBullet.speed = distance / 0.05; 
+        if (this.sessionId) {
+          // Если игрок вылетел во время боя, возвращаем на Canvas
+          this.showGameScreen(this.sessionId);
+        } else {
+          this.showLobbyScreen(this.token);
         }
-        localBullet.targetX = serverBullet.x;
-        localBullet.targetY = serverBullet.y;
-      }
-    });
-
-    for (const [id, player] of this.playersMap.entries()) {
-      if (!activeIds.has(id)) {
-        player.isDying = true;
-      }
-    }
-    for (const [id, enemy] of this.enemiesMap.entries()) {
-      if (!activeIds.has(id)) {
-        enemy.isDying = true;
-      }
-    }
-    for (const [id, bullet] of this.bulletsMap.entries()) {
-      if (!activeIds.has(id)) {
-        bullet.isDying = true;
+      } catch (err) {
+        this.handleLogout();
       }
     }
   }
 
-  public stopGame() {
-    this.isRunning = false;
+  private showAuthScreen() {
+    this.lobbyView.hide();
+    this.gameView.hide();
+    this.authView.show();
+  }
+
+  private showLobbyScreen(token: string) {
+    this.authView.hide();
+    this.gameView.hide();
+    this.lobbyView.show(token);
+  }
+
+  private showGameScreen(sessionId: string) {
+    this.authView.hide();
+    this.lobbyView.hide();
+    this.gameView.show(sessionId);
+  }
+
+  private async handleLoginSuccess(token: string) {
+    this.token = token;
+    localStorage.setItem('session_token', token);
+    
+    try {
+      await this.network.connect(token);
+      this.showLobbyScreen(token);
+    } catch (err) {
+      this.handleLogout();
+    }
+  }
+
+  private handleJoinSession(sessionId: string) {
+    this.sessionId = sessionId;
+    localStorage.setItem('game_session_id', sessionId);
+    this.showGameScreen(sessionId);
+  }
+
+  private handleLeaveSession() {
+    this.gameView.hide();
+    
     this.network.disconnect();
+    
+    localStorage.removeItem('game_session_id');
+    this.sessionId = null;
+
+    if (this.token) {
+      // Быстро переподключаем сокет для лобби
+      this.network.connect(this.token).then(() => {
+        this.showLobbyScreen(this.token!);
+      }).catch(() => {
+        this.handleLogout();
+      });
+    }
   }
 
-  public gameLoop() {
-    if (!this.isRunning) return;
-
-    const currentTime = performance.now();
-    const dt = (currentTime - this.lastFrameTime) / 1000;
-    this.lastFrameTime = currentTime;
-
-    this.playersMap.forEach((player, id) => {
-      player.updateInterpolation(dt);
-      if (player.isDying && player.hasReachedTarget()) {
-        this.playersMap.delete(id);
+  private async handleLogout() {
+    if (this.token) {
+      try {
+        await fetch('http://localhost:3000/logout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: this.token })
+        });
+      } catch (err) {
+        console.error('Сервер логаута недоступен:', err);
       }
-    });
-    this.enemiesMap.forEach((enemy, id) => {
-      enemy.updateInterpolation(dt);
-      if (enemy.isDying && enemy.hasReachedTarget()) {
-        this.enemiesMap.delete(id);
-      }
-    });
-    this.bulletsMap.forEach((bullet, id) => {
-      bullet.updateInterpolation(dt);
-      if (bullet.isDying && bullet.hasReachedTarget()) {
-        this.bulletsMap.delete(id);
-      }
-    });
+    }
 
-    this.renderService.render(this.playersMap, this.enemiesMap, this.bulletsMap);
-
-    requestAnimationFrame(() => this.gameLoop());
+    this.network.disconnect();
+    localStorage.removeItem('session_token');
+    localStorage.removeItem('game_session_id');
+    this.token = null;
+    this.sessionId = null;
+    this.showAuthScreen();
   }
 }
 
-const game = new Game();
-game.startGame();
+new MainController();

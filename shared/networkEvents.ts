@@ -9,6 +9,7 @@ export const ServerEvent = {
 export const ClientEvent = {
     CREATE_SESSION: 'create-session',
     CONNECT_SESSION: 'connect-session',
+    LEAVE_SESSION: 'leave-session',
     PLAYER_ACTION: 'playerAction',  
 } as const;
 

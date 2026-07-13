@@ -1,7 +1,6 @@
 import { LoginData } from "../../../shared/gameTypes";
 import { IdGenerator } from "../utils/IDGenerator";
 
-
 class Account {
     public login: string;
     public passwordHash: string;
@@ -21,14 +20,17 @@ export class AccountManager {
         const goida = new Account('ГОЙДА', '123');
         const drocheslav = new Account('Дрочеслав', '123');
         const vseslav = new Account('Всеслав', '123');
+        const testPlayer = new Account('1', '1');
 
 
-        this.accounts = [goida, drocheslav, vseslav];
+        this.accounts = [goida, drocheslav, vseslav, testPlayer];
     }
     
     public login(data: LoginData): string | null {
-        if (!data.login || !data.password) 
+        if (!data.login || !data.password) {
+            console.log(`[AccountManager] Некоректные данные для логинации.`);
             return null;
+        }
 
         const account = this.accounts.find(
             (acc) =>
@@ -39,22 +41,26 @@ export class AccountManager {
             account.passwordHash === data.password) {
             const token = IdGenerator.generateUUID('token');
             account.refreshToken = token;
+            console.log(`[AccountManager] Пользователь ${data.login} залогинен.`);
             return token;
         }
+        
         return null;
     }
 
     public register(data: LoginData): string | null {
-        if (!data.login || !data.password) 
+        if (!data.login || !data.password) {
+            console.log(`[AccountManager] Некоректные данные для регистрации.`);
             return null;
-
+        }
         const account = this.accounts.find(
             (acc) =>
                 acc.login === data.login
         );
-        if (account) 
+        if (account) {
+            console.log(`[AccountManager] Пользователь ${data.login} уже зарегистрирован.`);
             return null;
-
+        }
         const token = IdGenerator.generateUUID('token');
         this.accounts.push(
             new Account(
@@ -63,15 +69,25 @@ export class AccountManager {
                 token
             )
         );
+        console.log(`[AccountManager] Пользователь ${data.login} зарегистрирован.`);
         return token;
     }
 
-    // возвращает id клиента, если токен авторизован
-    // null если токен не найден
-    public resolveToken(token: string): string | null  {
+    public logout(token: string): boolean {
+        const account = this.resolveToken(token)
+        if (account) {
+            account.refreshToken = '';
+            console.log(`[AccountManager] Пользователь ${account.login} вышел из аккаунта.`);
+            return true;
+        }
+        return false;
+    }
+
+    // возвращает залогиненого и зарегистриравоного найденого пользователя
+    public resolveToken(token: string):  Account | undefined {
         const account = this.accounts.find(
             (acc) => acc.refreshToken === token
         );
-        return account?.login ?? null;
+        return account;
     }
 }
