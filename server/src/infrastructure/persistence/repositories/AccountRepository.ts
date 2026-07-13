@@ -1,15 +1,16 @@
 import { PrismaClient } from '@prisma/client'
-import { IRepository } from '../../../domain/repositories/IRepository'
 import { Account } from '../../../domain/entities/DbEntities/Account'
+import { IAccountRepository } from '../../../domain/repositories/IAccountRepository';
 
-export class AccountRepository implements IRepository<Account, string> {
+export class AccountRepository implements IAccountRepository {
     constructor(private prisma: PrismaClient) { }
 
     async save(obj: Account): Promise<Account> {
         const created = await this.prisma.account.create({
             data: {
                 login: obj.login,
-                passwordHash: obj.passwordHash
+                passwordHash: obj.passwordHash,
+                refreshToken: obj.refreshToken
             }
         });
         return created;
@@ -17,6 +18,16 @@ export class AccountRepository implements IRepository<Account, string> {
 
     async get(id: string): Promise<Account | null> {
         const account = await this.prisma.account.findUnique({ where: { id: id }});
+        return account ? account : null;
+    }
+
+    async getByLogin(login: string): Promise<Account | null> {
+        const account = await this.prisma.account.findFirst({ where: { login: login }});
+        return account ? account : null;
+    }
+
+    async getByToken(token: string): Promise<Account | null> {
+        const account = await this.prisma.account.findFirst({ where: { refreshToken: token }});
         return account ? account : null;
     }
 
