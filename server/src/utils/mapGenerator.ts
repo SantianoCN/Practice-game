@@ -111,7 +111,7 @@ export class MapGenerator {
       gridY: y,
       isClear: false,
       type: type,
-      hasDoor: {
+      hasDoors: {
         'Top': false,
         'Bottom': false,
         'Left': false,
