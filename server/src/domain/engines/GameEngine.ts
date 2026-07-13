@@ -1,16 +1,15 @@
 import Player from '../entities/Player';
 import Enemy from '../entities/Enemy';
 import Bullet from '../entities/Bullet';
-import './CollisionManager';
-import { WARRIOR_PRESET, MAGE_PRESET } from '../config/playerPresets';
-import { WARRIOR_PRESET_LIZARD } from '../config/enemyPresets';
-import { FIREBALL } from '../config/weaponPresets';
+import { WARRIOR_PRESET, MAGE_PRESET } from '../../config/playerPresets';
+import { WARRIOR_PRESET_LIZARD } from '../../config/enemyPresets';
+import { FIREBALL } from '../../config/weaponPresets';
 import Weapon from '../items/Weapon';
 import { IdGenerator } from '../utils/IDGenerator';
 import { MapGenerator } from '../utils/mapGenerator';
-import { CollisionManager } from './CollisionManager';
-import { PlayerAction, GameSnapshot, RoomState } from '../../../shared/gameTypes';
-   
+import { PlayerAction, GameSnapshot, RoomState } from '../../../../shared/gameTypes';
+import { CollisionEngine } from './CollisionEngine';
+
 export class GameEngine {
     public roomId: string;
     
@@ -143,7 +142,7 @@ export class GameEngine {
             const bulletsInRoom = this.bullets.filter(b => b.currentRoomX === active.rx && b.currentRoomY === active.ry);
             const areDoorsOpen = room.enemies.length === 0;
 
-            CollisionManager.processCollisions(
+            CollisionEngine.processCollisions(
                 bulletsInRoom, 
                 playersInRoom, 
                 room.enemies, 

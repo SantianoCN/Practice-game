@@ -1,5 +1,5 @@
 import LivingEntity from './LivingEntity';
-import { EntityStats } from '../config/types';
+import { EntityStats } from '../../config/types';
 import Weapon from '../items/Weapon';
 
 export default class Player extends LivingEntity {

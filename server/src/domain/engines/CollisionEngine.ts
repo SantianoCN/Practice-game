@@ -1,7 +1,7 @@
 import Bullet from "../entities/Bullet";
 import LivingEntity from "../entities/LivingEntity";
 
-export class CollisionManager {
+export class CollisionEngine {
     public static processCollisions(
         bullets: Bullet[], 
         players: LivingEntity[], 

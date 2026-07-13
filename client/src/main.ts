@@ -1,5 +1,5 @@
 import { NetworkClient } from "./network/NetworkClient";
-import { AuthView } from "./views/AythView";
+import { AuthView } from "./views/AuthView";
 import { LobbyView } from "./views/LobbyView";
 import { GameView } from "./views/GameView";
 
@@ -70,7 +70,9 @@ class MainController {
   private async handleLoginSuccess(token: string) {
     this.token = token;
     localStorage.setItem('session_token', token);
-    
+    //this.network.disconnect();
+    //this.network.connect(token);
+
     try {
       await this.network.connect(token);
       this.showLobbyScreen(token);

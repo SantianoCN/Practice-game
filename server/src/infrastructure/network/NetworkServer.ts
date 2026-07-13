@@ -1,10 +1,10 @@
 import { Server, Socket} from 'socket.io';
-import { LoginData, PlayerAction, SessionJoinRequest, SessionCreateRequest, GameSnapshot } from '../../../shared/gameTypes';
-import GameManager from './GameManager';
-import { AccountManager } from './AccountManager';
-import { ClientEvent, ServerEvent } from '../../../shared/networkEvents';
+import { LoginData, PlayerAction, SessionJoinRequest, SessionCreateRequest, GameSnapshot } from '../../../../shared/gameTypes';
+import GameManager from '../../application/managers/GameManager';
+import { AccountManager } from '../../application/managers/AccountManager';
+import { ClientEvent, ServerEvent } from '../../../../shared/networkEvents';
 
-export class NetworkManager {
+export class NetworkServer {
     private io: Server;
     private game: GameManager;
     private accountManager: AccountManager;
@@ -28,9 +28,9 @@ export class NetworkManager {
         console.log('[NetworkManager] initialized');
     }
 
-    private authenticationMiddleware(socket: Socket, next: (err?: Error) => void) {
+    private async authenticationMiddleware(socket: Socket, next: (err?: Error) => void) {
         const token = socket.handshake.auth.token;
-        
+        console.log(token);
         if (!token || typeof token !== 'string') {
             console.log('[NetworkManager][authenticationMiddleware] auth: токен авторизации не обнаружен');
             next(
@@ -38,15 +38,15 @@ export class NetworkManager {
             );
             return;
         }
-        const account = this.accountManager.resolveToken(token);
-        if (!account) {
-            console.log('[NetworkManager][authenticationMiddleware] auth: токен авторизации не обнаружен');
+        const login = (await this.accountManager.resolveToken(token))?.login;
+        if (!login) {
+            console.log('[authenticationMiddleware] auth: токен авторизации не обнаружен');
             next(
                 new Error('auth: токен авторизации не обнаружен')
             );
             return;
         }
-        socket.data.login = account.login;
+        socket.data.login = login;
         next();
     }
 

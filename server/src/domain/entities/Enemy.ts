@@ -1,6 +1,6 @@
 import LivingEntity from './LivingEntity';
 import Player from './Player';
-import { EntityStats } from '../config/types';
+import { EntityStats } from '../../config/types';
 import Weapon from '../items/Weapon';
 
 export default class Enemy extends LivingEntity {

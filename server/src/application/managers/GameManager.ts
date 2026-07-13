@@ -1,6 +1,6 @@
-import { IdGenerator } from "../utils/IDGenerator";
-import { GameEngine } from "./GameEngine";
-import { PlayerAction, GameSnapshot } from '../../../shared/gameTypes';
+import { IdGenerator } from "../../domain/utils/IDGenerator";
+import { GameEngine } from "../../domain/engines/GameEngine";
+import { PlayerAction, GameSnapshot } from '../../../../shared/gameTypes';
 
 export default class GameManager {
     private sessions: Map<string, GameEngine> = new Map();

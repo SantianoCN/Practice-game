@@ -1,4 +1,4 @@
-import { RoomState, RoomType, VectorXY } from '../../../shared/gameTypes';
+import { RoomState, RoomType, VectorXY } from '../../../../shared/gameTypes';
 
 export class MapGenerator {
   public static readonly MATRIX_SIZE: number = 10; 
