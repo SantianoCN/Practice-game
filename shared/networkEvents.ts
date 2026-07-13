@@ -1,4 +1,3 @@
-
 export const ServerEvent = {
     SESSION_CREATE_RESPONSE: 'session-create-response',
     SESSION_JOIN_RESPONSE: 'session-join-response', 

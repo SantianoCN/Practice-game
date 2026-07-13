@@ -1,4 +1,4 @@
-import Enemy from "../server/src/entities/Enemy";
+import Enemy from "../server/src/domain/entities/Enemy";
 
 export interface PlayerAction {
     keys: {
@@ -87,7 +87,7 @@ export type RoomType = 'Start' | 'Normal' | 'Boss' | 'Treasure' | 'Shop';
 export type Direction = 'Top' | 'Bottom' | 'Left' | 'Right';
 
 export interface RoomState {
-    gridX: number;
+    gridX: number;  
     gridY: number;
     isClear: boolean;
     hasDoors: {[key in Direction]: boolean};
