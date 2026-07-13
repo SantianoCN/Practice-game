@@ -1,5 +1,4 @@
 import Enemy from "../server/src/entities/Enemy";
-import LivingEntity from "../server/src/entities/LivingEntity";
 
 export interface PlayerAction {
     keys: {

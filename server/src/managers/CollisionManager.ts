@@ -1,5 +1,3 @@
-// server/src/managers/CollisionManager.ts
-
 import Bullet from "../entities/Bullet";
 import LivingEntity from "../entities/LivingEntity";
 
@@ -7,20 +5,18 @@ export class CollisionManager {
     public static processCollisions(
         bullets: Bullet[], 
         players: LivingEntity[], 
-        enemies: LivingEntity[], // Теперь здесь снова полноценные классы!
+        enemies: LivingEntity[],
         widthRoom: number, 
         heightRoom: number,
         hasDoors: { Top: boolean, Bottom: boolean, Left: boolean, Right: boolean },
-        areDoorsOpen: boolean // Комната зачищена -> двери открыты
+        areDoorsOpen: boolean
     ): void {
         const entities = players.concat(enemies);
     
-        // 1. Проверяем столкновения сущностей с границами экрана
         for (const entity of entities) {
             this.collisionEntity(entity, heightRoom, widthRoom, hasDoors, areDoorsOpen);
         }
     
-        // 2. Проверяем столкновения пуль
         for (const bullet of bullets) {
             if (bullet.isDestroyed) continue;
             if (this.collisionBullet(bullet, heightRoom, widthRoom)) continue;
@@ -46,7 +42,6 @@ export class CollisionManager {
         return false;
     }
     
-    // Пули всегда взрываются при касании границ экрана, в другие комнаты они не улетают
     private static collisionBullet(bullet: Bullet, height: number, width: number): boolean {
         if (bullet.x < 0 || bullet.x > width || bullet.y < 0 || bullet.y > height) {
             bullet.destroy();
@@ -55,7 +50,6 @@ export class CollisionManager {
         return false;
     }
     
-    // Умное столкновение игроков и монстров со стенами и дверями
     private static collisionEntity(
         entity: LivingEntity, 
         height: number, 
@@ -67,9 +61,7 @@ export class CollisionManager {
         const doorSize = 100; // Ширина проема двери на Canvas
         const isPlayer = entity.type === 'player';
 
-        // 1. Столкновение с ЛЕВОЙ границей
         if (entityBound.left < 0) {
-            // Игрок может пройти только если есть левая дверь, она открыта и игрок идет ровно по центру высоты
             const inDoorway = entity.y > (height / 2 - doorSize / 2) && entity.y < (height / 2 + doorSize / 2);
             if (isPlayer && hasDoors.Left && areDoorsOpen && inDoorway) {
                 // Разрешаем выйти за экран — переход обработает GameEngine
@@ -79,7 +71,6 @@ export class CollisionManager {
             }
         }
 
-        // 2. Столкновение с ПРАВОЙ границей
         if (entityBound.right > width) {
             const inDoorway = entity.y > (height / 2 - doorSize / 2) && entity.y < (height / 2 + doorSize / 2);
             if (isPlayer && hasDoors.Right && areDoorsOpen && inDoorway) {
@@ -90,7 +81,6 @@ export class CollisionManager {
             }
         }
 
-        // 3. Столкновение с ВЕРХНЕЙ границей
         if (entityBound.top < 0) {
             // Игрок может пройти только если есть верхняя дверь, она открыта и игрок идет ровно по центру ширины
             const inDoorway = entity.x > (width / 2 - doorSize / 2) && entity.x < (width / 2 + doorSize / 2);
@@ -102,7 +92,6 @@ export class CollisionManager {
             }
         }
 
-        // 4. Столкновение с НИЖНЕЙ границей
         if (entityBound.bottom > height) {
             const inDoorway = entity.x > (width / 2 - doorSize / 2) && entity.x < (width / 2 + doorSize / 2);
             if (isPlayer && hasDoors.Bottom && areDoorsOpen && inDoorway) {

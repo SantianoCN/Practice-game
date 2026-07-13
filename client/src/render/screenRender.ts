@@ -1,4 +1,5 @@
 import { ClientPlayer, ClientEnemy, ClientBullet } from '../entities/ClientEntities';
+import { RoomState } from '../../../shared/gameTypes'; // Импортируем тип комнаты
 
 export class GameRender {
   private context: CanvasRenderingContext2D;
@@ -10,29 +11,70 @@ export class GameRender {
     if (!ctx) {
       throw new Error('Cannot get 2D context')
     }
-    this.context = ctx
+    this.context = ctx;
   }
 
-  public render(playersMap: Map<string, ClientPlayer>, enemiesMap: Map<string, ClientEnemy>, bulletsMap: Map<string, ClientBullet>): void {
+  public render(
+    playersMap: Map<string, ClientPlayer>, 
+    enemiesMap: Map<string, ClientEnemy>, 
+    bulletsMap: Map<string, ClientBullet>,
+    room: RoomState | null
+  ): void {
     this.clear();
-    this.drawScreen(playersMap, enemiesMap, bulletsMap);
+    this.drawScreen(playersMap, enemiesMap, bulletsMap, room);
   }
 
   private clear(): void {
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height)
   }
 
-  private drawScreen(playersMap: Map<string, ClientPlayer>, enemiesMap: Map<string, ClientEnemy>, bulletsMap: Map<string, ClientBullet>): void {
-    this.drawMap();
+  private drawScreen(
+    playersMap: Map<string, ClientPlayer>, 
+    enemiesMap: Map<string, ClientEnemy>, 
+    bulletsMap: Map<string, ClientBullet>,
+    room: RoomState | null
+  ): void {
+    this.drawMap(room);
     this.drawBullets(bulletsMap);
     this.drawPlayers(playersMap);
     this.drawEnemies(enemiesMap);
     this.drawParticles();
   }
 
-  private drawMap(): void {    
-    this.context.fillStyle = 'white';
-    this.context.fillRect(0, 0, this.canvas.width, this.canvas.height)
+  private drawMap(room: RoomState | null): void {    
+    if (!room) {
+        this.context.fillStyle = 'white';
+        this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        return;
+    }
+
+    let floorColor = '#ecf0f1'; 
+    if (room.type === 'Start') floorColor = '#eaeded'; 
+    if (room.type === 'Boss') floorColor = '#fadbd8';
+    if (room.type === 'Treasure') floorColor = '#fef9e7'; 
+    if (room.type === 'Shop') floorColor = '#d6eaf8';
+
+    this.context.fillStyle = floorColor;
+    this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+    const doorColor = room.isClear ? '#8e44ad' : '#c0392b'; 
+    this.context.fillStyle = doorColor;
+
+    const doorWidth = 100;
+    const doorThickness = 15;
+
+    if (room.hasDoors.Top) {
+        this.context.fillRect(this.canvas.width / 2 - doorWidth / 2, 0, doorWidth, doorThickness);
+    }
+    if (room.hasDoors.Bottom) {
+        this.context.fillRect(this.canvas.width / 2 - doorWidth / 2, this.canvas.height - doorThickness, doorWidth, doorThickness);
+    }
+    if (room.hasDoors.Left) {
+        this.context.fillRect(0, this.canvas.height / 2 - doorWidth / 2, doorThickness, doorWidth);
+    }
+    if (room.hasDoors.Right) {
+        this.context.fillRect(this.canvas.width - doorThickness, this.canvas.height / 2 - doorWidth / 2, doorThickness, doorWidth);
+    }
   }
 
   private drawBullets(bulletsMap: Map<string, ClientBullet>): void {

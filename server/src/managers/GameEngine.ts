@@ -15,7 +15,6 @@ export class GameEngine {
     public roomId: string;
     
     private players: Map<string, Player>;
-    // private enemies: Enemy[]; использую this.room.enemies
     private bullets: Bullet[];
     private lastFrameTime: number = Date.now();
     private roomWidth: number;
@@ -27,8 +26,8 @@ export class GameEngine {
     private gameLoopInterval: ReturnType<typeof setInterval> | null = null;
     private readonly TICK_RATE = 20;
     private readonly TICK_TIME = 1000 / this.TICK_RATE;
-    private static readonly ROOM_WIDTH = 1000;
-    private static readonly ROOM_HEIGHT = 1000;
+    private static readonly ROOM_WIDTH = 800;
+    private static readonly ROOM_HEIGHT = 600;
     private floorGenerator: MapGenerator;
     private floorMap: (RoomState | null)[][];
     private currentRoomX: number;
@@ -37,7 +36,6 @@ export class GameEngine {
     constructor(roomId: string) {
         this.roomId = roomId;
         this.players = new Map();
-        // this.enemies = []; использую this.room.enemies
         this.bullets = [];
         this.inputQueue = new Map();
         this.networkCallbacks = new Map();
@@ -109,7 +107,7 @@ export class GameEngine {
         // 2. Двигаем игроков
         for (const player of this.players.values()) {
             player.updateEntity(deltaTime);
-            this.checkRoomTransition(player); // Переходы теперь считаются индивидуально для каждого игрока!
+            this.checkRoomTransition(player);
         }
 
         // 3. Двигаем пули (снаряды)
@@ -137,16 +135,12 @@ export class GameEngine {
             const room = active.roomState;
             const playersInRoom = active.players;
 
-            // ИСПРАВЛЕНО: Монстры теперь — настоящие классы. Двигаем их напрямую!
             for (const enemy of room.enemies) {
                 enemy.updateEntity(deltaTime);
-                enemy.updateTarget(playersInRoom); // Таргетируем только тех, кто в одной комнате с монстром
+                enemy.updateTarget(playersInRoom);
             }
 
-            // Фильтруем пули, которые находятся именно в этой комнате
             const bulletsInRoom = this.bullets.filter(b => b.currentRoomX === active.rx && b.currentRoomY === active.ry);
-
-            // Проверяем коллизии локально для этой комнаты (двери открыты, если врагов не осталось)
             const areDoorsOpen = room.enemies.length === 0;
 
             CollisionManager.processCollisions(
@@ -156,20 +150,17 @@ export class GameEngine {
                 this.roomWidth, 
                 this.roomHeight,
                 room.hasDoors,
-                areDoorsOpen // Передаем статус открытых дверей
+                areDoorsOpen 
             );
 
-            // Если все враги в комнате повержены, открываем двери
             if (room.enemies.length === 0 && !room.isClear) {
                 room.isClear = true;
                 console.log(`[GameEngine] Комната [${active.rx}, ${active.ry}] зачищена! Двери открыты.`);
             }
         }
 
-        // Очищаем уничтоженные пули глобально
         this.bullets = this.bullets.filter(b => !b.isDestroyed);
         
-        // Очищаем мертвых врагов во всех комнатах на этаже
         for (const row of this.floorMap) {
             for (const room of row) {
                 if (room) {
@@ -219,13 +210,11 @@ export class GameEngine {
             isTransition = true;
         }
 
-        // Если переход состоялся и следующая комната существует на сгенерированной сетке
         if (isTransition) {
             if (nextX >= 0 && nextX < MapGenerator.MATRIX_SIZE && 
                 nextY >= 0 && nextY < MapGenerator.MATRIX_SIZE && 
                 this.floorMap[nextY][nextX] !== null) {
                 
-                // Смещаем конкретного игрока в новую комнату
                 player.currentRoomX = nextX;
                 player.currentRoomY = nextY;
                 player.x = spawnX;
@@ -264,22 +253,6 @@ export class GameEngine {
         }
         this.inputQueue.clear();
     }
-
-    /*private checkCollisions() {
-        const room = this.getCurrentRoomState();
-        const hasDoors = room ? room.hasDoors : { Top: false, Bottom: false, Left: false, Right: false };
-        const roomEnemies = room ? room.enemies : [];
-
-        // Передаем в коллизии врагов текущей комнаты вместо старого глобального массива
-        CollisionManager.processCollisions(
-            this.bullets, 
-            Array.from(this.players.values()), 
-            roomEnemies, 
-            this.roomWidth, 
-            this.roomHeight,
-            hasDoors
-        );
-    }*/
 
     private spawnProjectile(
         owner: Player | Enemy,

@@ -13,6 +13,7 @@ export class GameView {
   private input: ReadInputs;
   private renderService: GameRender;
   private lastPlayerAction: PlayerAction;
+  private currentRoomState: any = null;
 
   private isRunning: boolean = false;
   private lastFrameTime: number = performance.now();
@@ -75,6 +76,7 @@ export class GameView {
 
   private reconcileEntities(snapshot: GameSnapshot) {
     const activeIds = new Set<string>();
+    this.currentRoomState = snapshot.room; 
 
     snapshot.players.forEach(serverPlayer => {
       activeIds.add(serverPlayer.id);
@@ -105,7 +107,7 @@ export class GameView {
       }
     });
 
-    snapshot.enemies.forEach(serverEnemy => {
+    snapshot.room.enemies.forEach(serverEnemy => {
       activeIds.add(serverEnemy.id);
       const localEnemy = this.enemiesMap.get(serverEnemy.id);
 
@@ -118,7 +120,7 @@ export class GameView {
           serverEnemy.height,
           serverEnemy.hp,
           serverEnemy.maxHp,
-          serverEnemy.sprite
+          serverEnemy.spriteKey
         );
         this.enemiesMap.set(serverEnemy.id, newEnemy);
       } else {
@@ -126,7 +128,7 @@ export class GameView {
         localEnemy.targetY = serverEnemy.y;
         localEnemy.hp = serverEnemy.hp;
         localEnemy.maxHp = serverEnemy.maxHp;
-        localEnemy.sprite = serverEnemy.sprite;
+        localEnemy.sprite = serverEnemy.spriteKey;
       }
     });
 
@@ -186,7 +188,12 @@ export class GameView {
       if (bullet.isDying && bullet.hasReachedTarget()) this.bulletsMap.delete(id);
     });
 
-    this.renderService.render(this.playersMap, this.enemiesMap, this.bulletsMap);
+    this.renderService.render(
+        this.playersMap, 
+        this.enemiesMap, 
+        this.bulletsMap, 
+        this.currentRoomState
+    );
 
     requestAnimationFrame(() => this.gameLoop());
   }
