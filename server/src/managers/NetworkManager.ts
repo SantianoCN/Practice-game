@@ -1,121 +1,141 @@
-import { Server, Socket } from 'socket.io';
-import { randomUUID } from 'crypto';
+import { Server, Socket} from 'socket.io';
 import { LoginData, PlayerAction, SessionJoinRequest, SessionCreateRequest, GameSnapshot } from '../../../shared/gameTypes';
 import GameManager from './GameManager';
-import { IdGenerator } from '../utils/IDGenerator';
+import { AccountManager } from './AccountManager';
+import { ClientEvent, ServerEvent } from '../../../shared/networkEvents';
 
 export class NetworkManager {
     private io: Server;
     private game: GameManager;
-    //private accountService: AccountManager;
+    private accountManager: AccountManager;
 
-    constructor(io: Server, gameManager: GameManager) {
+    constructor(
+        io: Server,
+        gameManager: GameManager,
+        accountManager: AccountManager
+    ) {
         this.io = io;
         this.game = gameManager;
+        this.accountManager = accountManager;
     }
 
     public init() {
+        this.io.use((socket, next) => this.authenticationMiddleware(socket, next))
         this.io.on('connection', 
             (socket: Socket) => 
                 this.connectUserHandler(socket)
         );
-        console.log('initialized');
+        console.log('[NetworkManager] initialized');
+    }
+
+    private authenticationMiddleware(socket: Socket, next: (err?: Error) => void) {
+        const token = socket.handshake.auth.token;
+        
+        if (!token || typeof token !== 'string') {
+            console.log('[NetworkManager][authenticationMiddleware] auth: токен авторизации не обнаружен');
+            next(
+                new Error('auth: токен авторизации не обнаружен')
+            );
+            return;
+        }
+        const account = this.accountManager.resolveToken(token);
+        if (!account) {
+            console.log('[NetworkManager][authenticationMiddleware] auth: токен авторизации не обнаружен');
+            next(
+                new Error('auth: токен авторизации не обнаружен')
+            );
+            return;
+        }
+        socket.data.login = account.login;
+        next();
     }
 
     public connectUserHandler(socket: Socket) {
-        console.log('соединение установлено');
+        console.log('[NetworkManager] соединение установлено:', socket.id);
         
-        // авторизация подключения
-        socket.once('login', 
-            (data: LoginData) => 
-                this.authorizeConnection(socket, data)
-        );
-        // отключение сокета
-        socket.on('disconnect',
-            () => {
-                this.disconnectHandler(socket)
-            }
-        )
-    }
-    
-    public async authorizeConnection(socket: Socket, data: LoginData) {
-        if (!data.login || !data.password) {
-            console.log(data);
-            socket.emit('response', { success: false, message: 'wrong data' } );
-            this.disconnectSocket(socket);
-            return;
-        }
-
-        // const userId = await accountService.login(data)
-        // if (!userId) {
-        //     socket.emit('response', { success: false, message: 'incorrect login or password' } );
-        //     this.close();
-        //     return;
-        // }
-        //
-        //await accountService.saveId(userId);
-        
-        // создание/подключение к игровой сессии
-        socket.on('create-session',
+        socket.on(ClientEvent.CREATE_SESSION,
             (request: SessionCreateRequest) =>
                 this.createSessionHandler(request, socket)
         );
-        socket.on('connect-session',
+        socket.on(ClientEvent.CONNECT_SESSION,
             (request: SessionJoinRequest) => 
                 this.joinSessionHandler(request, socket)
         );
-        socket.on('leave-session',
-            () =>
-                this.leaveSession(socket) 
+        socket.on(ClientEvent.LEAVE_SESSION,
+            () => this.leaveSession(socket)
         );
         socket.on(
             'playerAction', (data: PlayerAction) => 
                 this.playerActionHandler(data, socket)
         );
+        socket.on('disconnect', () => 
+            this.disconnectHandler(socket)
+        );
 
-        //socket.emit('response', { success: true, userId: 'userId'});
-        socket.data.userId = IdGenerator.generateUUID('player');
-        socket.emit('response', { success: true });
+        socket.data.userId = socket.data.login;
     }
 
     public createSessionHandler(request: SessionCreateRequest, socket: Socket) {
-        if (!socket.data.userId) return;
+        if (!socket.data.userId) {
+            socket.emit(ServerEvent.SESSION_CREATE_RESPONSE,
+                { success: false, message: 'пользователь не авторизован' }
+            );
+            return;
+        } 
         const sessionId = this.game.createSession();
         socket.data.sessionId = sessionId;
-        this.game.addPlayer(
+        const state = this.game.addPlayer(
             sessionId, 
             socket.data.userId, 
             request.name,
             request.archetype,
             (snapshot: GameSnapshot) => {
-                socket.emit('snapshot', snapshot);
+                socket.emit(ServerEvent.SNAPSHOT, snapshot);
             }
         );
-        socket.emit('session-create-response', 
+        if (!state.success) {
+            this.game.removeSession(sessionId);
+            socket.emit(ServerEvent.SESSION_CREATE_RESPONSE,
+                { success: false, message: state.message }
+            );
+            return;
+        }
+        socket.emit(ServerEvent.SESSION_CREATE_RESPONSE, 
             { success: true, sessionId: sessionId }
         );
     }
 
     public joinSessionHandler(request: SessionJoinRequest, socket: Socket) {
-        if (!socket.data.userId) return;
+        if (!socket.data.userId) {
+             socket.emit(ServerEvent.SESSION_JOIN_RESPONSE, 
+                { success: false, message: 'пользователь не авторизован' }
+            );
+            return;
+        } 
         if (!this.game.sessionExists(request.sessionId)) {
-                socket.emit('error', 
-                    { message: 'не удается найти сессию' }
-                );
-                return;
+            socket.emit(ServerEvent.SESSION_JOIN_RESPONSE, 
+                { success: false, sessionId: '', message:  'такой сессии не существует' }
+            );
+            return;
         }
-        this.game.addPlayer(
+        const state = this.game.addPlayer(
             request.sessionId, 
             socket.data.userId,
             request.name,
             request.archetype,
             (snapshot: GameSnapshot) => {
-                socket.emit('snapshot', snapshot); 
+                socket.emit(ServerEvent.SNAPSHOT, snapshot); 
             }
-        )
+        );
+        if (!state.success) {
+            socket.emit(ServerEvent.SESSION_JOIN_RESPONSE,
+                { success: false, message: state.message }
+            );
+            return;
+        }
         socket.data.sessionId = request.sessionId;
-        socket.emit('session-join-response',
-            { success: true, sessionId: request.sessionId }
+        socket.emit(ServerEvent.SESSION_JOIN_RESPONSE,
+            { success: true, sessionId: request.sessionId, message: "успешное подключение" }
         );
     }
 
@@ -131,14 +151,9 @@ export class NetworkManager {
         );
     }
 
-    public leaveSession( 
-        socket: Socket
-    ) {
+    public leaveSession(socket: Socket) {
         if (!socket.data.sessionId || !socket.data.userId) return;
-        this.game.removePlayer(
-            socket.data.sessionId, 
-            socket.data.userId
-        );
+        this.game.removePlayer(socket.data.sessionId, socket.data.userId);
         socket.data.sessionId = undefined;
     }
 
@@ -147,7 +162,7 @@ export class NetworkManager {
         if (userId && sessionId) {
             this.game.removePlayer(sessionId, userId);
         }
-        console.log('соединение разорвано:', socket.id);
+        console.log('[NetworkManager] соединение разорвано:', socket.id);
     }
 
     public disconnectSocket(socket: Socket) {

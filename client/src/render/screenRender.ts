@@ -1,4 +1,4 @@
-import { GameSnapshot, Player, Entity, Bullet } from '../../../shared/gameTypes';
+import { ClientPlayer, ClientEnemy, ClientBullet } from '../entities/ClientEntities';
 
 export class GameRender {
   private context: CanvasRenderingContext2D;
@@ -13,20 +13,20 @@ export class GameRender {
     this.context = ctx
   }
 
-  public render(snapshot: GameSnapshot): void {
+  public render(playersMap: Map<string, ClientPlayer>, enemiesMap: Map<string, ClientEnemy>, bulletsMap: Map<string, ClientBullet>): void {
     this.clear();
-    this.drawScreen(snapshot)
+    this.drawScreen(playersMap, enemiesMap, bulletsMap);
   }
 
   private clear(): void {
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height)
   }
 
-  private drawScreen(snapshot: GameSnapshot): void {
+  private drawScreen(playersMap: Map<string, ClientPlayer>, enemiesMap: Map<string, ClientEnemy>, bulletsMap: Map<string, ClientBullet>): void {
     this.drawMap();
-    this.drawBullets(snapshot.bullets);
-    this.drawPlayers(snapshot.players);
-    this.drawEnemies(snapshot.enemies);
+    this.drawBullets(bulletsMap);
+    this.drawPlayers(playersMap);
+    this.drawEnemies(enemiesMap);
     this.drawParticles();
   }
 
@@ -35,24 +35,42 @@ export class GameRender {
     this.context.fillRect(0, 0, this.canvas.width, this.canvas.height)
   }
 
-  private drawBullets(bulets: Bullet[]): void {
-    bulets.forEach(bullet => {
+  private drawBullets(bulletsMap: Map<string, ClientBullet>): void {
+    bulletsMap.forEach(bullet => {
       this.context.fillStyle = 'black';
-      this.context.fillRect(bullet.x - bullet.width / 2, bullet.y - bullet.height / 2, bullet.width, bullet.height)
-    })
+      
+      this.context.fillRect(
+        bullet.renderX - bullet.width / 2, 
+        bullet.renderY - bullet.height / 2, 
+        bullet.width, 
+        bullet.height
+      );
+    });
   }
   
-  private drawPlayers(players: Player[]): void {
-    players.forEach(player => {
-      this.context.fillStyle ='green';
-      this.context.fillRect(player.x - player.width / 2, player.y - player.height / 2, player.width, player.height)
+  private drawPlayers(playersMap: Map<string, ClientPlayer>): void {
+    playersMap.forEach(player => {
+      this.context.fillStyle = 'green';
+      
+      this.context.fillRect(
+        player.renderX - player.width / 2, 
+        player.renderY - player.height / 2, 
+        player.width, 
+        player.height
+      );
     });
   }
 
-  private drawEnemies(enemys: Entity[]): void {
-    enemys.forEach(enemy => {
-      this.context.fillStyle ='red';
-      this.context.fillRect(enemy.x - enemy.width / 2, enemy.y - enemy.height / 2, enemy.width, enemy.height)
+  private drawEnemies(enemiesMap: Map<string, ClientEnemy>): void {
+    enemiesMap.forEach(enemy => {
+      this.context.fillStyle = 'red';
+      
+      this.context.fillRect(
+        enemy.renderX - enemy.width / 2, 
+        enemy.renderY - enemy.height / 2, 
+        enemy.width, 
+        enemy.height
+      );
     });
   }
 

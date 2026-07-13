@@ -25,7 +25,7 @@ export class GameEngine {
     private networkCallbacks: Map<string, (snapshot: GameSnapshot) => void>;
 
     private gameLoopInterval: ReturnType<typeof setInterval> | null = null;
-    private readonly TICK_RATE = 60;
+    private readonly TICK_RATE = 20;
     private readonly TICK_TIME = 1000 / this.TICK_RATE;
     private static readonly ROOM_WIDTH = 1000;
     private static readonly ROOM_HEIGHT = 1000;
@@ -76,12 +76,14 @@ export class GameEngine {
         
         this.players.set(userId, newPlayer);
         this.networkCallbacks.set(userId, emitCallback);
+        console.log('[GameEngine] игрок: ', userId, ', добавлен в сессию: ', this.roomId);
     }
 
     public removePlayer(userId: string): boolean {
         this.players.delete(userId);
         this.networkCallbacks.delete(userId);
         this.inputQueue.delete(userId);
+        console.log('[GameEngine] игрок: ', userId, ', удалён из сессии: ', this.roomId);
         return this.players.size === 0;
     }
 
@@ -93,9 +95,9 @@ export class GameEngine {
         this.gameLoopInterval = setInterval(() => {
             this.update();
         }, this.TICK_TIME);
+        console.log('[GameEngine] сессия:', this.roomId, " запущена");
     }
 
-    // Один кадр жизни сервера (каждые 16.6 миллисекунд)
     private update() {
         const currentTime = Date.now();
         const deltaTime = (currentTime - this.lastFrameTime) / 1000;
@@ -392,6 +394,7 @@ export class GameEngine {
         if (this.gameLoopInterval) {
             clearInterval(this.gameLoopInterval);
             this.gameLoopInterval = null;
+            console.log('[GameEngine] сессия:', this.roomId, " остановлена");
         }
     }
 

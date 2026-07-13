@@ -1,85 +1,128 @@
-import { NetworkClient } from "./network/NetworClient";
-import { ReadInputs } from "./input/ReadInputs";
-import { GameRender } from "./render/screenRender";
-import { PlayerAction, GameSnapshot } from '../../shared/gameTypes';
+import { NetworkClient } from "./network/NetworkClient";
+import { AuthView } from "./views/AythView";
+import { LobbyView } from "./views/LobbyView";
+import { GameView } from "./views/GameView";
 
-class Game{
+class MainController {
   private network: NetworkClient;
-  private input: ReadInputs;
-  private renderServise: GameRender;
-  private lastPlayerAction: PlayerAction;
-  private isRunning: boolean;
-  private snapshot: GameSnapshot
+  private authView: AuthView;
+  private lobbyView: LobbyView;
+  private gameView: GameView;
+
+  private token: string | null = null;
+  private sessionId: string | null = null;
 
   constructor() {
     this.network = new NetworkClient();
-    this.input = new ReadInputs();
-    const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement
-    this.renderServise = new GameRender(canvas);
-    this.lastPlayerAction = {keys: { up: false, down: false, left: false, right: false, shoot: false }};
-    this.isRunning = false;
-    this.snapshot = {
-      players: [],
-      enemies: [],
-      bullets: []
-    };
+    this.authView = new AuthView((token) => this.handleLoginSuccess(token));
+    this.lobbyView = new LobbyView(
+      this.network,
+      "",
+      (sessionId) => this.handleJoinSession(sessionId),
+      () => this.handleLogout()
+    );
+    this.gameView = new GameView(this.network, () => this.handleLeaveSession());
+
+    this.init();
   }
 
-  // Изменено: метод стал асинхронным для соблюдения порядка авторизации
-  public async startGame() {
-    if (this.isRunning) {
-      return;
+  private async init() {
+    this.token = localStorage.getItem('session_token');
+    this.sessionId = localStorage.getItem('game_session_id');
+
+    if (!this.token) {
+      this.showAuthScreen();
     } else {
-      this.isRunning = true;
-    }
+      try {
+        // Подключаем сокет под существующим токеном
+        await this.network.connect(this.token);
 
+        if (this.sessionId) {
+          // Если игрок вылетел во время боя, возвращаем на Canvas
+          this.showGameScreen(this.sessionId);
+        } else {
+          this.showLobbyScreen(this.token);
+        }
+      } catch (err) {
+        this.handleLogout();
+      }
+    }
+  }
+
+  private showAuthScreen() {
+    this.lobbyView.hide();
+    this.gameView.hide();
+    this.authView.show();
+  }
+
+  private showLobbyScreen(token: string) {
+    this.authView.hide();
+    this.gameView.hide();
+    this.lobbyView.show(token);
+  }
+
+  private showGameScreen(sessionId: string) {
+    this.authView.hide();
+    this.lobbyView.hide();
+    this.gameView.show(sessionId);
+  }
+
+  private async handleLoginSuccess(token: string) {
+    this.token = token;
+    localStorage.setItem('session_token', token);
+    
     try {
-      // 1. Подключаемся и ждем фактического коннекта сокета
-      await this.network.connect();
+      await this.network.connect(token);
+      this.showLobbyScreen(token);
+    } catch (err) {
+      this.handleLogout();
+    }
+  }
 
-      // 2. Проходим авторизацию
-      const loginResult = await this.network.login({ login: 'testUser', password: 'testPassword' });
-      console.log('Авторизация выполнена успешно:', loginResult);
+  private handleJoinSession(sessionId: string) {
+    this.sessionId = sessionId;
+    localStorage.setItem('game_session_id', sessionId);
+    this.showGameScreen(sessionId);
+  }
 
-      // 3. Создаем сессию
-      const sessionResult = await this.network.createSession({ name: 'Русич', archetype: 'warrior' });
-      console.log('Сессия создана! ID:', sessionResult.sessionId);
+  private handleLeaveSession() {
+    this.gameView.hide();
+    
+    this.network.disconnect();
+    
+    localStorage.removeItem('game_session_id');
+    this.sessionId = null;
 
-    } catch (error) {
-      console.error('Не удалось запустить сетевую игру:', error);
-      this.isRunning = false;
-      return;
+    if (this.token) {
+      // Быстро переподключаем сокет для лобби
+      this.network.connect(this.token).then(() => {
+        this.showLobbyScreen(this.token!);
+      }).catch(() => {
+        this.handleLogout();
+      });
+    }
+  }
+
+  private async handleLogout() {
+    if (this.token) {
+      try {
+        await fetch('http://localhost:3000/logout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: this.token })
+        });
+      } catch (err) {
+        console.error('Сервер логаута недоступен:', err);
+      }
     }
 
-    this.input.saveListener((action: PlayerAction) => {
-      this.lastPlayerAction = action;
-      this.network.sendPlayerAction(action)
-    });
-
-    this.network.onSnapshotUpdate((snapshot: GameSnapshot) => {
-      this.snapshot = snapshot;
-    });
-
-    this.gameLoop();
-  }
-
-  public stopGame() {
-    this.isRunning = false;
-    this.network.disconnect()
-  }
-
-  public getSnapshot(): {isRunning: boolean, action: PlayerAction, snapshot: GameSnapshot} {
-    return {isRunning: this.isRunning, action: this.lastPlayerAction, snapshot: this.snapshot}
-  }
-
-  public gameLoop() {
-    if (!this.isRunning) return
-
-    this.renderServise.render(this.snapshot);
-
-    requestAnimationFrame(() => this.gameLoop())
+    this.network.disconnect();
+    localStorage.removeItem('session_token');
+    localStorage.removeItem('game_session_id');
+    this.token = null;
+    this.sessionId = null;
+    this.showAuthScreen();
   }
 }
 
-const game = new Game();
-game.startGame();
+new MainController();

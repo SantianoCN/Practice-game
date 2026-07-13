@@ -62,11 +62,15 @@ export interface SessionCreateRequest {
 }
 
 export interface SessionCreateResponse {
-    sessionId: string;
+    success: boolean;
+    sessionId?: string;
+    message?: string;
 }
 
 export interface SessionJoinResponse {
-    sessionId: string;
+    success: boolean;
+    sessionId?: string;
+    message?: string;
 }
 
 export interface SessionJoinRequest {
@@ -97,4 +101,19 @@ export interface RoomState {
 export interface VectorXY{
     x: number;
     y: number;
+}
+
+export interface LoginResponse {
+    success: boolean;
+    refreshToken?: string;
+    message: string;
+}
+
+export interface LogoutRequest {
+    token: string;
+}
+
+export interface LogoutResponse {
+    success: boolean;
+    message: string;
 }
