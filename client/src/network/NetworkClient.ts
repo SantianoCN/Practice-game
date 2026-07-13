@@ -83,7 +83,7 @@ export class NetworkClient {
       };
 
       const timeout = setTimeout(() => {
-        this.socket?.off(responseEvent, handler); // ← снимаем листенер
+        this.socket?.off(responseEvent, handler);
         reject(new Error('сервер не ответил вовремя'));
       }, 5000);
 

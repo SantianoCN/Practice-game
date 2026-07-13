@@ -1,5 +1,5 @@
 import { ClientPlayer, ClientEnemy, ClientBullet } from '../entities/ClientEntities';
-import { RoomState } from '../../../shared/gameTypes'; // Импортируем тип комнаты
+import { RoomState } from '../../../shared/gameTypes';
 
 export class GameRender {
   private context: CanvasRenderingContext2D;

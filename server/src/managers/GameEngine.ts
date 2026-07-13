@@ -10,13 +10,13 @@ import { IdGenerator } from '../utils/IDGenerator';
 import { MapGenerator } from '../utils/mapGenerator';
 import { CollisionManager } from './CollisionManager';
 import { PlayerAction, GameSnapshot, RoomState } from '../../../shared/gameTypes';
-
+   
 export class GameEngine {
     public roomId: string;
     
     private players: Map<string, Player>;
     private bullets: Bullet[];
-    private lastFrameTime: number = Date.now();
+    private lastFrameTime: number = performance.now();
     private roomWidth: number;
     private roomHeight: number;
 
@@ -97,7 +97,7 @@ export class GameEngine {
     }
 
     private update() {
-        const currentTime = Date.now();
+        const currentTime = performance.now();
         const deltaTime = (currentTime - this.lastFrameTime) / 1000;
         this.lastFrameTime = currentTime;
 
@@ -246,7 +246,7 @@ export class GameEngine {
 
             if (input.keys?.shoot) {
                 const activeWeapon = player.getActiveWeapon();
-                const now = Date.now();
+                const now = performance.now();
                 const dir = this.getDirectionToClosestEnemy(player);
                 this.spawnProjectile(player, activeWeapon, dir.vx, dir.vy, now);
             }
