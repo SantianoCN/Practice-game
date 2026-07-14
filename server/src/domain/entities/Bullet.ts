@@ -1,5 +1,5 @@
 import MoveableEntity from './MoveableEntity';
-import { WeaponConfig } from '../../config/types';
+import { ProjectileConfig } from '../../../../shared/gameTypes';
 
 export default class Bullet extends MoveableEntity {
     public ownerId: string;
@@ -9,7 +9,7 @@ export default class Bullet extends MoveableEntity {
     public distanceTraveled: number;
     public isDestroyed: boolean;
 
-    constructor(id: string, ownerType: 'player' | 'enemy', ownerId: string, startX: number, startY: number, targetVx: number, targetVy: number, config: WeaponConfig) {
+    constructor(id: string, ownerType: 'player' | 'enemy', ownerId: string, startX: number, startY: number, targetVx: number, targetVy: number, config: ProjectileConfig) {
         super(id, 'projectile', startX, startY, 8, 8);
         this.vx = targetVx;
         this.vy = targetVy;
@@ -22,7 +22,7 @@ export default class Bullet extends MoveableEntity {
         
         this.distanceTraveled = 0;
         this.isDestroyed = false;
-        this.spriteKey = 'red_ball';
+        this.sprite = config.sprite;
     }
 
     override updatePosition(deltaTime: number): void {

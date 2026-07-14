@@ -3,6 +3,7 @@ import { LoginData, PlayerAction, SessionJoinRequest, SessionCreateRequest, Game
 import GameManager from '../../application/managers/GameManager';
 import { AccountManager } from '../../application/managers/AccountManager';
 import { ClientEvent, ServerEvent } from '../../../../shared/networkEvents';
+import { PLAYER_CLASSES } from '../../config/playerPresets';
 
 export class NetworkServer {
     private io: Server;
@@ -52,6 +53,8 @@ export class NetworkServer {
 
     public connectUserHandler(socket: Socket) {
         console.log('[NetworkManager] соединение установлено:', socket.id);
+
+        socket.emit('class-presets', PLAYER_CLASSES);
         
         socket.on(ClientEvent.CREATE_SESSION,
             (request: SessionCreateRequest) =>
@@ -89,6 +92,7 @@ export class NetworkServer {
             socket.data.userId, 
             request.name,
             request.archetype,
+            request.weaponId,
             (snapshot: GameSnapshot) => {
                 socket.emit(ServerEvent.SNAPSHOT, snapshot);
             }
@@ -123,6 +127,7 @@ export class NetworkServer {
             socket.data.userId,
             request.name,
             request.archetype,
+            request.weaponId,
             (snapshot: GameSnapshot) => {
                 socket.emit(ServerEvent.SNAPSHOT, snapshot); 
             }

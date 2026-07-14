@@ -1,12 +1,10 @@
-import Enemy from "../server/src/domain/entities/Enemy";
-
 export interface PlayerAction {
     keys: {
         up: boolean;
         down: boolean;
         left: boolean;
         right: boolean;
-        shoot: boolean;
+        attack: boolean;
     };
 }
 
@@ -14,39 +12,96 @@ export interface EntityStats {
     maxHp: number;
     maxMana: number;
     speed: number;
-    spriteKey: string;
+    sprite: string;
+    archetype: string;
 }
 
-export interface Entity {
+export interface ProjectileConfig {
+    damage: number;
+    range: number;
+    speed: number;
+    sprite: string;
+}
+
+export interface WeaponConfig {
+    cooldownMs: number;
+    projectile: ProjectileConfig;
+    sprite: string;
+}
+
+export interface StartingWeaponPreset {
+    key: string;             
+    name: string;            
+    description: string;     
+    config: WeaponConfig;    
+}
+
+export interface PlayerClassPreset {
+    key: string;             
+    name: string;            
+    description: string;     
+    stats: EntityStats;      
+    startingWeapons: StartingWeaponPreset[];
+}
+
+export interface BaseNetworkEntity {
     id: string;
     x: number;
     y: number;
-    hp: number;
-    maxHp: number;
     width: number;
     height: number;
     sprite: string;
 }
 
-export interface Player {
-    id: string;
-    x: number;
-    y: number;
+export interface Bullet extends BaseNetworkEntity {}
+
+export interface Entity extends BaseNetworkEntity {
     hp: number;
     maxHp: number;
+}
+
+export interface Player extends Entity {
     mana: number;
     maxMana: number;
-    width: number;
-    height: number;
-    sprite: string;
 }
 
-export interface Bullet {
-    id: string;
+export type RoomType = 'Start' | 'Normal' | 'Boss' | 'Treasure' | 'Shop';
+export type Direction = 'Top' | 'Bottom' | 'Left' | 'Right';
+
+export interface RoomState {
+    gridX: number;  
+    gridY: number;
+    isClear: boolean;
+    hasDoors: {[key in Direction]: boolean};
+    respawnedEntities: Entity[];
+    enemies: Entity[];
+    distanceToSpawn: number;
+    type: RoomType;
+}
+
+export interface VectorXY {
     x: number;
     y: number;
-    width: number;
-    height: number;
+}
+
+export interface LoginData {
+    login: string;
+    password: string;
+}
+
+export interface LoginResponse {
+    success: boolean;
+    refreshToken?: string;
+    message: string;
+}
+
+export interface LogoutRequest {
+    token: string;
+}
+
+export interface LogoutResponse {
+    success: boolean;
+    message: string;
 }
 
 export interface GameSnapshot {
@@ -57,7 +112,8 @@ export interface GameSnapshot {
 
 export interface SessionCreateRequest {
     name: string;
-    archetype: 'warrior' | 'mage';
+    archetype: string;
+    weaponId: string;
 }
 
 export interface SessionCreateResponse {
@@ -75,44 +131,6 @@ export interface SessionJoinResponse {
 export interface SessionJoinRequest {
     sessionId: string;
     name: string;
-    archetype: 'warrior' | 'mage';
-}
-
-export interface LoginData {
-    login: string;
-    password: string;
-}
-
-export type RoomType = 'Start' | 'Normal' | 'Boss' | 'Treasure' | 'Shop';
-export type Direction = 'Top' | 'Bottom' | 'Left' | 'Right';
-
-export interface RoomState {
-    gridX: number;  
-    gridY: number;
-    isClear: boolean;
-    hasDoors: {[key in Direction]: boolean};
-    respawnedEntity: Entity[];
-    enemies: Enemy[];
-    distansToSpawn: number;
-    type: RoomType;
-}
-
-export interface VectorXY{
-    x: number;
-    y: number;
-}
-
-export interface LoginResponse {
-    success: boolean;
-    refreshToken?: string;
-    message: string;
-}
-
-export interface LogoutRequest {
-    token: string;
-}
-
-export interface LogoutResponse {
-    success: boolean;
-    message: string;
+    archetype: string;
+    weaponId: string;
 }

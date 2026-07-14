@@ -1,6 +1,6 @@
-import { PlayerAction } from '../../../shared/gameTypes';
+import { PlayerAction } from '../../../../shared/gameTypes';
 
-export class ReadInputs {
+export class KeyboardListener {
   private keys: Record<string, boolean> = {};
   private listeners: Array<(action: PlayerAction) => void> = [];
 
@@ -28,7 +28,7 @@ private getPlayerAction(): PlayerAction {
       down: this.keys['ArrowDown'] || this.keys['KeyS'] || false,
       left: this.keys['ArrowLeft'] || this.keys['KeyA'] || false,
       right: this.keys['ArrowRight'] || this.keys['KeyD'] || false,
-      shoot: this.keys['Space'] || false
+      attack: this.keys['Space'] || false
     }
   };
 }

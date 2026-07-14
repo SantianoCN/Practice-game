@@ -60,7 +60,7 @@ app.post('/login', async (req: Request<{}, {}, LoginData>, res: Response<LoginRe
     });
 });
 
-app.post('/logout', (req: Request<{}, {}, LogoutRequest>, res: Response<LogoutResponse>) => {
+app.post('/logout', async (req: Request<{}, {}, LogoutRequest>, res: Response<LogoutResponse>) => {
     const { token } = req.body;
     if (!token) {
         res.status(400).send({
@@ -69,7 +69,7 @@ app.post('/logout', (req: Request<{}, {}, LogoutRequest>, res: Response<LogoutRe
         });
         return;
     }
-    const isLoggedOut = accountManager.logout(token);
+    const isLoggedOut = await accountManager.logout(token);
     if (!isLoggedOut) {
         res.status(400).send({
             success: false,
@@ -85,29 +85,6 @@ app.post('/logout', (req: Request<{}, {}, LogoutRequest>, res: Response<LogoutRe
 
 app.get('/status', (req, res) => {
     res.send({ status: "working", message: "Игровой сервер запущен. Слава Роду!" });
-});
-
-app.post('/logout', (req: Request<{}, {}, LogoutRequest>, res: Response<LogoutResponse>) => {
-    const { token } = req.body;
-    if (!token) {
-        res.status(400).send({
-            success: false,
-            message: 'Токен не предоставлен'
-        });
-        return;
-    }
-    const isLoggedOut = accountManager.logout(token);
-    if (!isLoggedOut) {
-        res.status(400).send({
-            success: false,
-            message: 'Неверный токен или пользователь уже вышел'
-        });
-        return;
-    }
-    res.send({
-        success: true,
-        message: 'Пользователь успешно разавторизовался'
-    });
 });
 
 const networkManager = new NetworkServer(

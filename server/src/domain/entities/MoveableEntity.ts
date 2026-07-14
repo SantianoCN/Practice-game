@@ -8,7 +8,7 @@ export default class MoveableEntity {
     public speed: number;
     public width: number;
     public height: number;
-    public spriteKey: string;
+    public sprite: string;
     public currentRoomX: number = 5;
     public currentRoomY: number = 5;
 
@@ -22,7 +22,7 @@ export default class MoveableEntity {
         this.speed = 100;
         this.width = width;
         this.height = height;
-        this.spriteKey = 'default_box';
+        this.sprite = 'default_box';
     }
 
     public updatePosition(deltaTime: number): void {

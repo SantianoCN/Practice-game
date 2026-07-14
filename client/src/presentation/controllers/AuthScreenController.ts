@@ -1,6 +1,6 @@
-import { LoginData } from '../../../shared/gameTypes';
+import { LoginData } from '../../../../shared/gameTypes';
 
-export class AuthView {
+export class AuthScreenController {
   private container: HTMLDivElement;
   private usernameInput: HTMLInputElement;
   private passwordInput: HTMLInputElement;

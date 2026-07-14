@@ -1,30 +1,32 @@
-import { NetworkClient } from '../network/NetworkClient';
-import { ReadInputs } from '../input/ReadInputs';
-import { GameRender } from '../render/screenRender';
-import { PlayerAction, GameSnapshot } from '../../../shared/gameTypes';
-import { ClientPlayer, ClientEnemy, ClientBullet } from '../entities/ClientEntities';
+import { NetworkService } from '../../infrastructure/network/NetworkService';
+import { KeyboardListener } from '../../infrastructure/input/KeyboardListener';
+import { CanvasRenderer } from '../render/CanvasRenderer';
+import { PlayerAction, GameSnapshot } from '../../../../shared/gameTypes';
+import { BulletEntity } from '../../domain/entities/BulletEntity';
+import { PlayerEntity } from '../../domain/entities/PlayerEntity';
+import { EnemyEntity } from '../../domain/entities/EnemyEntity';
 
-export class GameView {
+export class GameScreenController {
   private container: HTMLDivElement;
   private sessionDisplay: HTMLSpanElement;
   private disconnectBtn: HTMLButtonElement;
 
-  private network: NetworkClient;
-  private input: ReadInputs;
-  private renderService: GameRender;
+  private network: NetworkService;
+  private input: KeyboardListener;
+  private renderService: CanvasRenderer;
   private lastPlayerAction: PlayerAction;
   private currentRoomState: any = null;
 
   private isRunning: boolean = false;
   private lastFrameTime: number = performance.now();
 
-  private playersMap: Map<string, ClientPlayer> = new Map();
-  private enemiesMap: Map<string, ClientEnemy> = new Map();
-  private bulletsMap: Map<string, ClientBullet> = new Map();
+  private playersMap: Map<string, PlayerEntity> = new Map();
+  private enemiesMap: Map<string, EnemyEntity> = new Map();
+  private bulletsMap: Map<string, BulletEntity> = new Map();
 
   private onDisconnect: () => void;
 
-  constructor(network: NetworkClient, onDisconnect: () => void) {
+  constructor(network: NetworkService, onDisconnect: () => void) {
     this.container = document.getElementById('game-screen') as HTMLDivElement;
     this.sessionDisplay = document.getElementById('sessionDisplay') as HTMLSpanElement;
     this.disconnectBtn = document.getElementById('disconnectBtn') as HTMLButtonElement;
@@ -32,12 +34,11 @@ export class GameView {
     this.network = network;
     this.onDisconnect = onDisconnect;
 
-    this.input = new ReadInputs();
+    this.input = new KeyboardListener();
     const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
-    this.renderService = new GameRender(canvas);
+    this.renderService = new CanvasRenderer(canvas);
 
-    this.lastPlayerAction = { keys: { up: false, down: false, left: false, right: false, shoot: false } };
-
+    this.lastPlayerAction = { keys: { up: false, down: false, left: false, right: false, attack: false } };
     this.init();
   }
 
@@ -45,7 +46,8 @@ export class GameView {
     this.container.classList.remove('hidden');
     this.sessionDisplay.innerText = sessionId;
     this.isRunning = true;
-
+    this.currentRoomState = null; 
+    this.renderService.reset();
     this.playersMap.clear();
     this.enemiesMap.clear();
     this.bulletsMap.clear();
@@ -83,7 +85,7 @@ export class GameView {
       const localPlayer = this.playersMap.get(serverPlayer.id);
 
       if (!localPlayer) {
-        const newPlayer = new ClientPlayer(
+        const newPlayer = new PlayerEntity(
           serverPlayer.id,
           serverPlayer.x,
           serverPlayer.y,
@@ -112,7 +114,7 @@ export class GameView {
       const localEnemy = this.enemiesMap.get(serverEnemy.id);
 
       if (!localEnemy) {
-        const newEnemy = new ClientEnemy(
+        const newEnemy = new EnemyEntity(
           serverEnemy.id,
           serverEnemy.x,
           serverEnemy.y,
@@ -120,7 +122,7 @@ export class GameView {
           serverEnemy.height,
           serverEnemy.hp,
           serverEnemy.maxHp,
-          serverEnemy.spriteKey
+          serverEnemy.sprite
         );
         this.enemiesMap.set(serverEnemy.id, newEnemy);
       } else {
@@ -128,7 +130,7 @@ export class GameView {
         localEnemy.targetY = serverEnemy.y;
         localEnemy.hp = serverEnemy.hp;
         localEnemy.maxHp = serverEnemy.maxHp;
-        localEnemy.sprite = serverEnemy.spriteKey;
+        localEnemy.sprite = serverEnemy.sprite;
       }
     });
 
@@ -137,7 +139,7 @@ export class GameView {
       const localBullet = this.bulletsMap.get(serverBullet.id);
 
       if (!localBullet) {
-        const newBullet = new ClientBullet(
+        const newBullet = new BulletEntity(
           serverBullet.id,
           serverBullet.x,
           serverBullet.y,

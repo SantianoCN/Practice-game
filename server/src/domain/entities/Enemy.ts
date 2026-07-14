@@ -1,6 +1,6 @@
 import LivingEntity from './LivingEntity';
 import Player from './Player';
-import { EntityStats } from '../../config/types';
+import { EntityStats } from '../../../../shared/gameTypes';
 import Weapon from '../items/Weapon';
 
 export default class Enemy extends LivingEntity {
@@ -8,8 +8,8 @@ export default class Enemy extends LivingEntity {
     public targetId: string | null;
     public currentWeapon: Weapon;
 
-    constructor(id: string, archetype: string, x: number, y: number, presetStats: EntityStats, startWeapon: Weapon) {
-        super(id, 'enemy', x, y, 32, 32, archetype);
+    constructor(id: string, x: number, y: number, presetStats: EntityStats, startWeapon: Weapon) {
+        super(id, 'enemy', x, y, 32, 32, presetStats.archetype);
         this.aiState = 'chase';
         this.targetId = null;
         this.currentWeapon = startWeapon;
@@ -17,7 +17,7 @@ export default class Enemy extends LivingEntity {
         this.maxHp = presetStats.maxHp;
         this.hp = presetStats.maxHp;
         this.speed = presetStats.speed;
-        this.spriteKey = presetStats.spriteKey;
+        this.sprite = presetStats.sprite;
     }
 
     public updateTarget(allPlayers: Player[]): void {

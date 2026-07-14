@@ -37,7 +37,8 @@ export default class GameManager {
         sessionId: string,
         userId: string,
         name: string,
-        archetype: 'warrior' | 'mage',
+        archetype: string,
+        weaponId: string,
         emitCallback: (snapshot: GameSnapshot) => void
     ): { success: boolean, message?: string } {
         const isPlayerInSession = Array.from(this.playerSessions.values())
@@ -54,7 +55,7 @@ export default class GameManager {
             success: false,
             message: 'сессия не найдена'
         }
-        engine.addPlayer(userId, name, archetype, emitCallback);
+        engine.addPlayer(userId, name, weaponId, archetype, emitCallback);
         const session = this.playerSessions.get(sessionId);
         if (!session) {
             this.playerSessions.set(sessionId, [userId]);

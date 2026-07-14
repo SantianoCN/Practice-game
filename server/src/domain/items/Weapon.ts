@@ -1,24 +1,20 @@
-import { WeaponConfig } from '../../config/types';
+import { WeaponConfig, ProjectileConfig } from '../../../../shared/gameTypes';
 import Bullet from '../entities/Bullet';
 
 export default class Weapon {
     public id: string;
     public name: string;
-    private damage: number;
-    private range: number;
     private fireRateMs: number;
-    private bulletSpeed: number;
+    private projectile: ProjectileConfig;
     private lastFiredTime: number;
+    private sprite: string;
 
     constructor(id: string, name: string, config: WeaponConfig) {
         this.id = id;
         this.name = name;
-        
-        this.damage = config.damage;
-        this.range = config.range;
+        this.projectile = config.projectile;
         this.fireRateMs = config.cooldownMs;
-        this.bulletSpeed = config.speed;
-        
+        this.sprite = config.sprite;
         this.lastFiredTime = 0;
     }
 
@@ -33,11 +29,11 @@ export default class Weapon {
 
         this.lastFiredTime = currentTime;
 
-        const bulletConfig: WeaponConfig = {
-            damage: this.damage,
-            range: this.range,
-            speed: this.bulletSpeed,
-            cooldownMs: this.fireRateMs
+        const bulletConfig: ProjectileConfig = {
+            damage: this.projectile.damage,
+            range: this.projectile.range,
+            speed: this.projectile.speed,
+            sprite: this.projectile.sprite
         };
 
         return new Bullet(bulletId, ownerType, ownerId, startX, startY, targetVx, targetVy, bulletConfig);

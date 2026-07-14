@@ -1,5 +1,5 @@
 import LivingEntity from './LivingEntity';
-import { EntityStats } from '../../config/types';
+import { EntityStats } from '../../../../shared/gameTypes';
 import Weapon from '../items/Weapon';
 
 export default class Player extends LivingEntity {
@@ -7,8 +7,8 @@ export default class Player extends LivingEntity {
     public inventory: Weapon[];
     public currentWeaponIndex: number;
 
-    constructor(id: string, name: string, archetype: string, x: number, y: number, presetStats: EntityStats, startWeapon: Weapon) {
-        super(id, 'player', x, y, 32, 32, archetype);
+    constructor(id: string, name: string, x: number, y: number, presetStats: EntityStats, startWeapon: Weapon) {
+        super(id, 'player', x, y, 32, 32, presetStats.archetype);
         this.name = name;
         this.inventory = [startWeapon];
         this.currentWeaponIndex = 0;
@@ -18,10 +18,9 @@ export default class Player extends LivingEntity {
         this.maxMana = presetStats.maxMana;
         this.mana = presetStats.maxMana;
         this.speed = presetStats.speed;
-        this.spriteKey = presetStats.spriteKey;
+        this.sprite = presetStats.sprite;
         this.currentRoomX = 5;
         this.currentRoomY = 5;
-
     }
 
     public setDirection(inputX: number, inputY: number): void {

@@ -1,6 +1,7 @@
-import { NetworkClient } from '../network/NetworkClient';
+import { NetworkService } from '../../infrastructure/network/NetworkService';
+import { StartingWeaponPreset } from '../../../../shared/gameTypes'
 
-export class LobbyView {
+export class LobbyScreenController {
   private container: HTMLDivElement;
   private welcomeText: HTMLDivElement;
   private createRoomBtn: HTMLButtonElement;
@@ -8,15 +9,21 @@ export class LobbyView {
   private sessionIdInput: HTMLInputElement;
   private lobbyError: HTMLDivElement;
   private logoutBtn: HTMLButtonElement;
-
-  private network: NetworkClient;
+  private classSelect: HTMLSelectElement;
+  private classDescription: HTMLDivElement;
+  private weaponSelect: HTMLSelectElement;
+  private weaponDescription: HTMLDivElement;
+  private network: NetworkService;
   private token: string;
   
+  private selectedArchetype: string = 'warrior';
+  private selectedWeaponId: string = '';
+
   private onJoinSession: (sessionId: string) => void;
   private onLogout: () => void;
 
   constructor(
-    network: NetworkClient,
+    network: NetworkService,
     token: string,
     onJoinSession: (sessionId: string) => void,
     onLogout: () => void
@@ -28,6 +35,10 @@ export class LobbyView {
     this.sessionIdInput = document.getElementById('sessionIdInput') as HTMLInputElement;
     this.lobbyError = document.getElementById('lobbyError') as HTMLDivElement;
     this.logoutBtn = document.getElementById('logoutBtn') as HTMLButtonElement;
+    this.classSelect = document.getElementById('classSelect') as HTMLSelectElement;
+    this.classDescription = document.getElementById('classDescription') as HTMLDivElement;
+    this.weaponSelect = document.getElementById('weaponSelect') as HTMLSelectElement;
+    this.weaponDescription = document.getElementById('weaponDescription') as HTMLDivElement;
 
     this.network = network;
     this.token = token;
@@ -51,7 +62,12 @@ export class LobbyView {
   private init(): void {
     this.createRoomBtn.addEventListener('click', async () => {
       try {
-        const res = await this.network.createSession({ name: this.token, archetype: 'warrior' });
+        const res = await this.network.createSession({ 
+          name: this.token!, 
+          archetype: this.selectedArchetype,
+          weaponId: this.selectedWeaponId
+        });
+        
         if (res.success && res.sessionId) {
           this.onJoinSession(res.sessionId);
         } else {
@@ -70,7 +86,13 @@ export class LobbyView {
       }
 
       try {
-        const res = await this.network.joinSession({ sessionId, name: this.token, archetype: 'warrior' });
+        const res = await this.network.joinSession({ 
+          sessionId, 
+          name: this.token!, 
+          archetype: this.selectedArchetype,
+          weaponId: this.selectedWeaponId
+        });
+        
         if (res.success && res.sessionId) {
           this.onJoinSession(res.sessionId);
         } else {
@@ -84,6 +106,54 @@ export class LobbyView {
     this.logoutBtn.addEventListener('click', () => {
       this.onLogout();
     });
+  }
+
+  public updateClassPresets(presets: any): void {
+    this.classSelect.innerHTML = ''; 
+
+    Object.entries(presets).forEach(([key, value]: [string, any]) => {
+      const option = document.createElement('option');
+      option.value = key;
+      option.textContent = `${value.name}`;
+      this.classSelect.appendChild(option);
+    });
+
+    const updateClassHandler = () => {
+      const selectedClass = this.classSelect.value;
+      const classPreset = presets[selectedClass];
+      
+      this.classDescription.innerText = classPreset?.description || '';
+      
+      this.selectedArchetype = selectedClass; 
+
+      this.updateWeaponSelection(classPreset?.startingWeapons || []);
+    };
+
+    this.classSelect.addEventListener('change', updateClassHandler);
+    updateClassHandler();
+  }
+
+  private updateWeaponSelection(weapons: StartingWeaponPreset[]): void {
+    this.weaponSelect.innerHTML = ''; 
+
+    weapons.forEach((weapon: StartingWeaponPreset) => {
+      const option = document.createElement('option');
+      option.value = weapon.key;
+      option.textContent = weapon.name;
+      this.weaponSelect.appendChild(option);
+    });
+
+    const updateWeaponHandler = () => {
+      const selectedWeaponId = this.weaponSelect.value;
+      const weapon = weapons.find(w => w.key === selectedWeaponId);
+      
+      this.weaponDescription.innerText = weapon?.description || '';
+      
+      this.selectedWeaponId = selectedWeaponId; 
+    };
+
+    this.weaponSelect.addEventListener('change', updateWeaponHandler);
+    updateWeaponHandler(); 
   }
 
   private showError(message: string): void {

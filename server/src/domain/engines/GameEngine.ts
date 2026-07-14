@@ -1,14 +1,18 @@
 import Player from '../entities/Player';
 import Enemy from '../entities/Enemy';
 import Bullet from '../entities/Bullet';
-import { WARRIOR_PRESET, MAGE_PRESET } from '../../config/playerPresets';
 import { WARRIOR_PRESET_LIZARD } from '../../config/enemyPresets';
-import { FIREBALL } from '../../config/weaponPresets';
+import { STAFF } from '../../config/weaponPresets';
 import Weapon from '../items/Weapon';
 import { IdGenerator } from '../utils/IDGenerator';
 import { MapGenerator } from '../utils/mapGenerator';
-import { PlayerAction, GameSnapshot, RoomState } from '../../../../shared/gameTypes';
+import { PlayerAction, GameSnapshot, RoomState as SharedRoomState } from '../../../../shared/gameTypes';
 import { CollisionEngine } from './CollisionEngine';
+import { PLAYER_CLASSES } from '../../config/playerPresets'; 
+
+export interface ServerRoomState extends Omit<SharedRoomState, 'enemies'> {
+    enemies: Enemy[];
+}
 
 export class GameEngine {
     public roomId: string;
@@ -19,7 +23,7 @@ export class GameEngine {
     private roomWidth: number;
     private roomHeight: number;
 
-    private inputQueue: Map<string, PlayerAction>;
+    private playerInputs: Map<string, PlayerAction>;
     private networkCallbacks: Map<string, (snapshot: GameSnapshot) => void>;
 
     private gameLoopInterval: ReturnType<typeof setInterval> | null = null;
@@ -28,32 +32,23 @@ export class GameEngine {
     private static readonly ROOM_WIDTH = 800;
     private static readonly ROOM_HEIGHT = 600;
     private floorGenerator: MapGenerator;
-    private floorMap: (RoomState | null)[][];
-    private currentRoomX: number;
-    private currentRoomY: number;
+    private floorMap: (ServerRoomState | null)[][];
 
     constructor(roomId: string) {
         this.roomId = roomId;
         this.players = new Map();
         this.bullets = [];
-        this.inputQueue = new Map();
+        this.playerInputs = new Map();
         this.networkCallbacks = new Map();
         this.roomHeight = GameEngine.ROOM_HEIGHT;
         this.roomWidth = GameEngine.ROOM_WIDTH;
         this.floorGenerator = new MapGenerator();
         this.floorMap = this.floorGenerator.generate(5, 10);
 
-        this.currentRoomX = Math.floor(MapGenerator.MATRIX_SIZE / 2);
-        this.currentRoomY = Math.floor(MapGenerator.MATRIX_SIZE / 2);
-
         this.logFloorMap();
 
         this.startGameLoop();
         this.populateDungeonWithEnemies();
-    }
-
-    private getCurrentRoomState(): RoomState | null {
-        return this.floorMap[this.currentRoomY][this.currentRoomX]
     }
 
     private logFloorMap(): void {
@@ -65,27 +60,57 @@ export class GameEngine {
         console.log(`=============================================\n`);
     }
 
-    public addPlayer(userId: string, name: string, archetype: 'warrior' | 'mage', emitCallback: (snapshot: GameSnapshot) => void) {
-        const preset = archetype === 'mage' ? MAGE_PRESET : WARRIOR_PRESET;
-        const weaponId = IdGenerator.generateId('weapon');
-        const startWeapon = new Weapon(weaponId, "Огненый посох", FIREBALL);
-        const newPlayer = new Player(userId, name, archetype, 400, 400, preset, startWeapon);
+    public addPlayer(
+        userId: string, 
+        name: string,
+        weaponId: string, 
+        archetype: string, 
+        emitCallback: (snapshot: GameSnapshot) => void
+    ) {
+        let selectedPreset = PLAYER_CLASSES[archetype];
+    
+        if (!selectedPreset) {
+            console.warn(`[GameEngine] Получен неизвестный класс: "${archetype}" от игрока ${userId}. Сбрасываем на warrior.`);
+            selectedPreset = PLAYER_CLASSES.warrior;
+        }
+
+        const weaponPreset = selectedPreset.startingWeapons.find(w => w.key === weaponId) 
+        || selectedPreset.startingWeapons[0];
+
+        const weaponInstanceId = IdGenerator.generateId('weapon');
+        const startWeapon = new Weapon(
+            weaponInstanceId, 
+            weaponPreset.name, 
+            weaponPreset.config
+        );
         
+        const newPlayer = new Player(
+            userId, 
+            name, 
+            400, 
+            400, 
+            selectedPreset.stats, 
+            startWeapon
+        );
+
         this.players.set(userId, newPlayer);
         this.networkCallbacks.set(userId, emitCallback);
+        this.playerInputs.set(userId, {
+            keys: { up: false, down: false, left: false, right: false, attack: false }
+        });
         console.log('[GameEngine] игрок: ', userId, ', добавлен в сессию: ', this.roomId);
     }
 
     public removePlayer(userId: string): boolean {
         this.players.delete(userId);
         this.networkCallbacks.delete(userId);
-        this.inputQueue.delete(userId);
+        this.playerInputs.delete(userId); 
         console.log('[GameEngine] игрок: ', userId, ', удалён из сессии: ', this.roomId);
         return this.players.size === 0;
     }
 
     public pushInput(userId: string, actionData: PlayerAction) {
-        this.inputQueue.set(userId, actionData);
+        this.playerInputs.set(userId, actionData);
     }
 
     private startGameLoop() {
@@ -115,7 +140,7 @@ export class GameEngine {
         }
 
         // Группируем активных игроков по комнатам, чтобы обновлять только те комнаты, где кто-то есть
-        const activeRooms = new Map<string, { rx: number, ry: number, players: Player[], roomState: RoomState }>();
+        const activeRooms = new Map<string, { rx: number, ry: number, players: Player[], roomState: ServerRoomState }>();
         for (const player of this.players.values()) {
             const rx = player.currentRoomX;
             const ry = player.currentRoomY;
@@ -193,19 +218,19 @@ export class GameEngine {
         // Проверяем выход за границы экрана с учетом наличия дверей в этой комнате
         if (player.y < padding && room.hasDoors.Top) {
             nextY -= 1;
-            spawnY = this.roomHeight - player.height - padding * 3;
+            spawnY = this.roomHeight - player.height / 2;
             isTransition = true;
         } else if (player.y > this.roomHeight - padding && room.hasDoors.Bottom) {
             nextY += 1;
-            spawnY = player.height + padding * 3;
+            spawnY = player.height / 2;
             isTransition = true;
         } else if (player.x < padding && room.hasDoors.Left) {
             nextX -= 1;
-            spawnX = this.roomWidth - player.width - padding * 3;
+            spawnX = this.roomWidth - player.width / 2;
             isTransition = true;
         } else if (player.x > this.roomWidth - padding && room.hasDoors.Right) {
             nextX += 1;
-            spawnX = player.width + padding * 3;
+            spawnX = player.width / 2;
             isTransition = true;
         }
 
@@ -222,7 +247,7 @@ export class GameEngine {
                 player.vy = 0;
                 
                 // Удаляем пули, которые принадлежали этому игроку в старой комнате
-                this.bullets = this.bullets.filter(b => b.ownerId !== player.id);
+                //this.bullets = this.bullets.filter(b => b.ownerId !== player.id);
                 
                 console.log(`[GameRoom] Игрок ${player.name} перешел в комнату [${nextX}, ${nextY}]`);
             }
@@ -230,7 +255,7 @@ export class GameEngine {
     }
 
     private processInputs() {
-        for (const [userId, input] of this.inputQueue.entries()) {
+        for (const [userId, input] of this.playerInputs.entries()) {
             const player = this.players.get(userId);
             if (!player) continue;
 
@@ -243,14 +268,13 @@ export class GameEngine {
 
             player.setDirection(vx, vy);
 
-            if (input.keys?.shoot) {
+            if (input.keys?.attack) { 
                 const activeWeapon = player.getActiveWeapon();
                 const now = performance.now();
                 const dir = this.getDirectionToClosestEnemy(player);
                 this.spawnProjectile(player, activeWeapon, dir.vx, dir.vy, now);
             }
         }
-        this.inputQueue.clear();
     }
 
     private spawnProjectile(
@@ -286,7 +310,7 @@ export class GameEngine {
     }
 
     private getDirectionToClosestEnemy(player: Player): { vx: number, vy: number } {
-        const room = this.getCurrentRoomState();
+        const room = this.floorMap[player.currentRoomY][player.currentRoomX];
         if (!room || room.enemies.length === 0) {
             return { vx: 1, vy: 0 };
         }
@@ -305,7 +329,6 @@ export class GameEngine {
                 closestEnemy = enemy;
             }
         }
-
 
         if (!closestEnemy) return { vx: 1, vy: 0 };
 
@@ -341,7 +364,7 @@ export class GameEngine {
                         maxMana: p.maxMana,
                         width: p.width,
                         height: p.height,
-                        sprite: p.spriteKey 
+                        sprite: p.sprite 
                     })),
                 room: room, 
                 bullets: this.bullets
@@ -351,7 +374,8 @@ export class GameEngine {
                         x: b.x, 
                         y: b.y,
                         width: b.width,
-                        height: b.height
+                        height: b.height,
+                        sprite: b.sprite
                     }))
             };
 
@@ -375,19 +399,17 @@ export class GameEngine {
             for (let x = 0; x < MapGenerator.MATRIX_SIZE; x++) {
                 const room = this.floorMap[y][x];
                 
-                // Спавним монстров во всех сгенерированных комнатах, кроме стартовой
                 if (room && room.type !== 'Start') {
-                    const enemyCount = 1 + Math.floor(Math.random() * 3); // от 1 до 3 ящеров на комнату
+                    const enemyCount = 1 + Math.floor(Math.random() * 3);
                     
                     for (let i = 0; i < enemyCount; i++) {
                         const enemyId = IdGenerator.generateId('lizard');
                         const padding = 100;
                         const randomX = padding + Math.random() * (GameEngine.ROOM_WIDTH - padding * 2);
                         const randomY = padding + Math.random() * (GameEngine.ROOM_HEIGHT - padding * 2);
-                        const lizardBite = new Weapon(`bite_${enemyId}`, "Укус завра", FIREBALL);
+                        const lizardBite = new Weapon(`bite_${enemyId}`, "Укус завра", STAFF);
                         const newLizard = new Enemy(
                             enemyId,
-                            'warrior',
                             randomX,
                             randomY,
                             WARRIOR_PRESET_LIZARD,

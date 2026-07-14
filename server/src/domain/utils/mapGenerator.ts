@@ -1,9 +1,14 @@
-import { RoomState, RoomType, VectorXY } from '../../../../shared/gameTypes';
+import { RoomState as SharedRoomState, RoomType, VectorXY } from '../../../../shared/gameTypes';
+import Enemy from '../entities/Enemy';
+
+export interface ServerRoomState extends Omit<SharedRoomState, 'enemies'> {
+    enemies: Enemy[];
+}
 
 export class MapGenerator {
   public static readonly MATRIX_SIZE: number = 10; 
-  private grid: (RoomState | null)[][];
-  private roomList: RoomState[];
+  private grid: (ServerRoomState | null)[][];
+  private roomList: ServerRoomState[];
 
   constructor() {
     this.roomList = [];
@@ -11,7 +16,7 @@ export class MapGenerator {
       Array(MapGenerator.MATRIX_SIZE).fill(null))
   }
 
-  public generate(minRooms: number, maxRooms: number): (RoomState | null)[][] {
+  public generate(minRooms: number, maxRooms: number): (ServerRoomState | null)[][] {
     let isSuccessful = false;
 
     while (!isSuccessful) {
@@ -106,7 +111,7 @@ export class MapGenerator {
   private addRoom(x: number, y: number, type: RoomType): void {
     const center = Math.floor(MapGenerator.MATRIX_SIZE / 2);
     const distance = Math.abs(x - center) + Math.abs(y - center);
-    const room: RoomState = {
+    const room: ServerRoomState = {
       gridX: x,
       gridY: y,
       isClear: false,
@@ -117,8 +122,8 @@ export class MapGenerator {
         'Left': false,
         'Right': false
       },
-      respawnedEntity: [],
-      distansToSpawn: distance,
+      respawnedEntities: [],
+      distanceToSpawn: distance,
       enemies: []
     };
 
@@ -128,7 +133,7 @@ export class MapGenerator {
 
   assignSpecialRooms() {
     const deadEnds = this.roomList.filter(room => room.type !== 'Start' && this.countNeighbors(room.gridX, room.gridY) === 1);
-    deadEnds.sort((a, b) => b.distansToSpawn - a.distansToSpawn);
+    deadEnds.sort((a, b) => b.distanceToSpawn - a.distanceToSpawn);
     if (deadEnds.length > 0) deadEnds[0].type = 'Boss';
     if (deadEnds.length > 1) deadEnds[1].type = 'Treasure';
     if (deadEnds.length > 2) deadEnds[2].type = 'Shop';
