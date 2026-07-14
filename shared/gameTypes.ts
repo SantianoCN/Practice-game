@@ -68,11 +68,14 @@ export interface Player extends Entity {
 export type RoomType = 'Start' | 'Normal' | 'Boss' | 'Treasure' | 'Shop';
 export type Direction = 'Top' | 'Bottom' | 'Left' | 'Right';
 
+
 export interface RoomState {
     gridX: number;  
     gridY: number;
     isClear: boolean;
     hasDoors: {[key in Direction]: boolean};
+    obstacles: BaseNetworkEntity[];
+    chests: BaseNetworkEntity[];
     respawnedEntities: Entity[];
     enemies: Entity[];
     distanceToSpawn: number;
@@ -102,6 +105,14 @@ export interface LogoutRequest {
 export interface LogoutResponse {
     success: boolean;
     message: string;
+}
+
+export interface Chest {
+    
+}
+
+export interface Obstacle {
+
 }
 
 export interface GameSnapshot {

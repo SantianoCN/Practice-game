@@ -4,7 +4,7 @@ import { STAFF, SWORD, ICE_STAFF, AXE } from './weaponPresets'; // Импорт�
 export const WARRIOR_PRESET: EntityStats = {
     maxHp: 150,          
     maxMana: 20,         
-    speed: 90,          
+    speed: 190,          
     sprite: 'green_box',
     archetype: 'warrior'
 };
@@ -12,7 +12,7 @@ export const WARRIOR_PRESET: EntityStats = {
 export const MAGE_PRESET: EntityStats = {
     maxHp: 80,
     maxMana: 150,
-    speed: 110,
+    speed: 210,
     sprite: 'blue_box',
     archetype: 'mage'
 };

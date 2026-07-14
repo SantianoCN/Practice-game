@@ -8,7 +8,11 @@ import { IdGenerator } from '../utils/IDGenerator';
 import { MapGenerator } from '../utils/mapGenerator';
 import { PlayerAction, GameSnapshot, RoomState as SharedRoomState } from '../../../../shared/gameTypes';
 import { CollisionEngine } from './CollisionEngine';
-import { PLAYER_CLASSES } from '../../config/playerPresets'; 
+import { PLAYER_CLASSES } from '../../config/playerPresets';
+import { Chest } from '../entities/Chest';
+import { Obstacle } from '../entities/Obstacle';
+import { RoomGridGenerator } from '../utils/roomGridGenerator';
+import GridMapper from '../utils/GridMapper';
 
 export interface ServerRoomState extends Omit<SharedRoomState, 'enemies'> {
     enemies: Enemy[];
@@ -16,7 +20,7 @@ export interface ServerRoomState extends Omit<SharedRoomState, 'enemies'> {
 
 export class GameEngine {
     public roomId: string;
-    
+
     private players: Map<string, Player>;
     private bullets: Bullet[];
     private lastFrameTime: number = performance.now();
@@ -44,6 +48,7 @@ export class GameEngine {
         this.roomWidth = GameEngine.ROOM_WIDTH;
         this.floorGenerator = new MapGenerator();
         this.floorMap = this.floorGenerator.generate(5, 10);
+        this.populateAllRoomsWithGrid();
 
         this.logFloorMap();
 
@@ -61,35 +66,35 @@ export class GameEngine {
     }
 
     public addPlayer(
-        userId: string, 
+        userId: string,
         name: string,
-        weaponId: string, 
-        archetype: string, 
+        weaponId: string,
+        archetype: string,
         emitCallback: (snapshot: GameSnapshot) => void
     ) {
         let selectedPreset = PLAYER_CLASSES[archetype];
-    
+
         if (!selectedPreset) {
             console.warn(`[GameEngine] Получен неизвестный класс: "${archetype}" от игрока ${userId}. Сбрасываем на warrior.`);
             selectedPreset = PLAYER_CLASSES.warrior;
         }
 
-        const weaponPreset = selectedPreset.startingWeapons.find(w => w.key === weaponId) 
-        || selectedPreset.startingWeapons[0];
+        const weaponPreset = selectedPreset.startingWeapons.find(w => w.key === weaponId)
+            || selectedPreset.startingWeapons[0];
 
         const weaponInstanceId = IdGenerator.generateId('weapon');
         const startWeapon = new Weapon(
-            weaponInstanceId, 
-            weaponPreset.name, 
+            weaponInstanceId,
+            weaponPreset.name,
             weaponPreset.config
         );
-        
+
         const newPlayer = new Player(
-            userId, 
-            name, 
-            400, 
-            400, 
-            selectedPreset.stats, 
+            userId,
+            name,
+            400,
+            400,
+            selectedPreset.stats,
             startWeapon
         );
 
@@ -104,7 +109,7 @@ export class GameEngine {
     public removePlayer(userId: string): boolean {
         this.players.delete(userId);
         this.networkCallbacks.delete(userId);
-        this.playerInputs.delete(userId); 
+        this.playerInputs.delete(userId);
         console.log('[GameEngine] игрок: ', userId, ', удалён из сессии: ', this.roomId);
         return this.players.size === 0;
     }
@@ -127,17 +132,6 @@ export class GameEngine {
 
         // 1. Разгребаем накопленные инпуты игроков
         this.processInputs();
-
-        // 2. Двигаем игроков
-        for (const player of this.players.values()) {
-            player.updateEntity(deltaTime);
-            this.checkRoomTransition(player);
-        }
-
-        // 3. Двигаем пули (снаряды)
-        for (const bullet of this.bullets) {
-            bullet.updatePosition(deltaTime);
-        }
 
         // Группируем активных игроков по комнатам, чтобы обновлять только те комнаты, где кто-то есть
         const activeRooms = new Map<string, { rx: number, ry: number, players: Player[], roomState: ServerRoomState }>();
@@ -168,13 +162,15 @@ export class GameEngine {
             const areDoorsOpen = room.enemies.length === 0;
 
             CollisionEngine.processCollisions(
-                bulletsInRoom, 
-                playersInRoom, 
-                room.enemies, 
-                this.roomWidth, 
+                bulletsInRoom,
+                playersInRoom,
+                room.enemies,
+                this.roomWidth,
                 this.roomHeight,
                 room.hasDoors,
-                areDoorsOpen 
+                room.obstacles,
+                room.chests,
+                areDoorsOpen
             );
 
             if (room.enemies.length === 0 && !room.isClear) {
@@ -183,8 +179,19 @@ export class GameEngine {
             }
         }
 
+        // 2. Двигаем игроков
+        for (const player of this.players.values()) {
+            player.updateEntity(deltaTime);
+            this.checkRoomTransition(player);
+        }
+
+        // 3. Двигаем пули (снаряды)
+        for (const bullet of this.bullets) {
+            bullet.updatePosition(deltaTime);
+        }
+
         this.bullets = this.bullets.filter(b => !b.isDestroyed);
-        
+
         for (const row of this.floorMap) {
             for (const room of row) {
                 if (room) {
@@ -208,7 +215,7 @@ export class GameEngine {
             return;
         }
 
-        const padding = 15; 
+        const padding = 15;
         let nextX = rx;
         let nextY = ry;
         let spawnX = player.x;
@@ -235,20 +242,20 @@ export class GameEngine {
         }
 
         if (isTransition) {
-            if (nextX >= 0 && nextX < MapGenerator.MATRIX_SIZE && 
-                nextY >= 0 && nextY < MapGenerator.MATRIX_SIZE && 
+            if (nextX >= 0 && nextX < MapGenerator.MATRIX_SIZE &&
+                nextY >= 0 && nextY < MapGenerator.MATRIX_SIZE &&
                 this.floorMap[nextY][nextX] !== null) {
-                
+
                 player.currentRoomX = nextX;
                 player.currentRoomY = nextY;
                 player.x = spawnX;
                 player.y = spawnY;
-                player.vx = 0; 
+                player.vx = 0;
                 player.vy = 0;
-                
+
                 // Удаляем пули, которые принадлежали этому игроку в старой комнате
                 //this.bullets = this.bullets.filter(b => b.ownerId !== player.id);
-                
+
                 console.log(`[GameRoom] Игрок ${player.name} перешел в комнату [${nextX}, ${nextY}]`);
             }
         }
@@ -268,7 +275,7 @@ export class GameEngine {
 
             player.setDirection(vx, vy);
 
-            if (input.keys?.attack) { 
+            if (input.keys?.attack) {
                 const activeWeapon = player.getActiveWeapon();
                 const now = performance.now();
                 const dir = this.getDirectionToClosestEnemy(player);
@@ -340,6 +347,44 @@ export class GameEngine {
         return { vx: dx / len, vy: dy / len };
     }
 
+    private populateAllRoomsWithGrid() {
+        for (let y = 0; y < this.floorMap.length; y++) {
+            for (let x = 0; x < this.floorMap[y].length; x++) {
+                const room = this.floorMap[y][x];
+
+                if (room !== null) {
+                    const roomGrid = RoomGridGenerator.populate(
+                        this.roomWidth,
+                        this.roomHeight,
+                        1 // кол-во сундуков?
+                    );
+
+                    room.obstacles = roomGrid.obstacles.map(ob =>
+                        GridMapper.mapObstacleToBaseNetworkEntity(
+                            ob.id,
+                            ob.startGridX,
+                            ob.startGridY,
+                            ob.endGridX,
+                            ob.endGridY,
+                            RoomGridGenerator.CELL_SIZE,
+                            'black'
+                        )
+                    );
+
+                    room.chests = roomGrid.chests.map(c =>
+                        GridMapper.mapChestToBaseNetworkEntity(
+                            c.id,
+                            c.gridX,
+                            c.gridY,
+                            RoomGridGenerator.CELL_SIZE,
+                            'orange'
+                        )
+                    );
+                }
+            }
+        }
+    }
+
     private broadcastState() {
         if (this.players.size === 0) return;
 
@@ -347,36 +392,36 @@ export class GameEngine {
             const rx = player.currentRoomX;
             const ry = player.currentRoomY;
             const room = this.floorMap[ry][rx];
-            
+
             if (!room) continue;
 
             // Собираем снапшот только для той комнаты, где стоит этот игрок
             const snapshot: GameSnapshot = {
                 players: Array.from(this.players.values())
                     .filter(p => p.currentRoomX === rx && p.currentRoomY === ry)
-                    .map(p => ({ 
-                        id: p.id, 
-                        x: p.x, 
-                        y: p.y, 
-                        hp: p.hp, 
+                    .map(p => ({
+                        id: p.id,
+                        x: p.x,
+                        y: p.y,
+                        hp: p.hp,
                         maxHp: p.maxHp,
                         mana: p.mana,
                         maxMana: p.maxMana,
                         width: p.width,
                         height: p.height,
-                        sprite: p.sprite 
+                        sprite: p.sprite
                     })),
-                room: room, 
+                room: room,
                 bullets: this.bullets
                     .filter(b => b.currentRoomX === rx && b.currentRoomY === ry)
-                    .map(b => ({ 
-                        id: b.id, 
-                        x: b.x, 
+                    .map(b => ({
+                        id: b.id,
+                        x: b.x,
                         y: b.y,
                         width: b.width,
                         height: b.height,
                         sprite: b.sprite
-                    }))
+                    })),
             };
 
             const sendEmit = this.networkCallbacks.get(userId);
@@ -398,10 +443,10 @@ export class GameEngine {
         for (let y = 0; y < MapGenerator.MATRIX_SIZE; y++) {
             for (let x = 0; x < MapGenerator.MATRIX_SIZE; x++) {
                 const room = this.floorMap[y][x];
-                
+
                 if (room && room.type !== 'Start') {
                     const enemyCount = 1 + Math.floor(Math.random() * 3);
-                    
+
                     for (let i = 0; i < enemyCount; i++) {
                         const enemyId = IdGenerator.generateId('lizard');
                         const padding = 100;

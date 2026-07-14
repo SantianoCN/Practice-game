@@ -122,6 +122,8 @@ export class MapGenerator {
         'Left': false,
         'Right': false
       },
+      obstacles: [],
+      chests: [],
       respawnedEntities: [],
       distanceToSpawn: distance,
       enemies: []

@@ -1,5 +1,6 @@
 import Bullet from "../entities/Bullet";
 import LivingEntity from "../entities/LivingEntity";
+import MoveableEntity from "../entities/MoveableEntity";
 
 export class CollisionEngine {
     public static processCollisions(
@@ -9,12 +10,22 @@ export class CollisionEngine {
         widthRoom: number, 
         heightRoom: number,
         hasDoors: { Top: boolean, Bottom: boolean, Left: boolean, Right: boolean },
+        obstacles: { x: number, y: number, width: number, height: number }[],
+        chests: { x: number, y: number, width: number, height: number }[],
         areDoorsOpen: boolean
     ): void {
         const entities = players.concat(enemies);
     
         for (const entity of entities) {
-            this.collisionEntity(entity, heightRoom, widthRoom, hasDoors, areDoorsOpen);
+            this.collisionEntity(
+                entity, 
+                heightRoom, 
+                widthRoom, 
+                hasDoors, 
+                obstacles, 
+                chests, 
+                areDoorsOpen
+            );
         }
     
         for (const bullet of bullets) {
@@ -51,15 +62,47 @@ export class CollisionEngine {
     }
     
     private static collisionEntity(
-        entity: LivingEntity, 
+        entity: MoveableEntity, 
         height: number, 
         width: number,
         hasDoors: { Top: boolean, Bottom: boolean, Left: boolean, Right: boolean },
+        obstacles: { x: number, y: number, width: number, height: number }[],
+        chests: { x: number, y: number, width: number, height: number }[],
         areDoorsOpen: boolean
     ): void {
         const entityBound = entity.getBounds();
         const doorSize = 100; // Ширина проема двери на Canvas
         const isPlayer = entity.type === 'player';
+
+        for (let i = 0; i < obstacles.length; i++) {
+            const obstacle = obstacles[i];
+            const obLeft = obstacle.x - obstacle.width / 2;
+            const obRight = obstacle.x + obstacle.width / 2;
+            const obTop = obstacle.y - obstacle.height / 2;
+            const obBottom = obstacle.y + obstacle.height / 2;
+
+            if (entityBound.right > obLeft && entityBound.left < obRight) {
+                if ((entityBound.top > obTop && entityBound.top < obBottom) 
+                    || (entityBound.bottom < obBottom) && (entityBound.bottom > obTop)){
+                    if (entityBound.left < obLeft) {
+                        entity.x = entity.x - 1;
+                    } else 
+                        entity.x = entity.x + 1;
+                    entity.vx = 0;
+                }
+            }
+
+            if (entityBound.bottom > obTop && entityBound.top < obBottom) {
+                if ((entityBound.left > obLeft && entityBound.left < obRight)
+                    || (entityBound.right < obRight) && (entityBound.right > obLeft)) {
+                    if (entityBound.top < obTop) { 
+                        entity.y = entity.y - 1;
+                    } else
+                        entity.y = entity.y + 1;
+                    entity.vy = 0;   
+                }
+            }
+        }
 
         if (entityBound.left < 0) {
             const inDoorway = entity.y > (height / 2 - doorSize / 2) && entity.y < (height / 2 + doorSize / 2);

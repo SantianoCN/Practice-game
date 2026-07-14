@@ -1,7 +1,7 @@
 import { NetworkService } from '../../infrastructure/network/NetworkService';
 import { KeyboardListener } from '../../infrastructure/input/KeyboardListener';
 import { CanvasRenderer } from '../render/CanvasRenderer';
-import { PlayerAction, GameSnapshot } from '../../../../shared/gameTypes';
+import { PlayerAction, GameSnapshot, BaseNetworkEntity } from '../../../../shared/gameTypes';
 import { BulletEntity } from '../../domain/entities/BulletEntity';
 import { PlayerEntity } from '../../domain/entities/PlayerEntity';
 import { EnemyEntity } from '../../domain/entities/EnemyEntity';
@@ -193,7 +193,7 @@ export class GameScreenController {
     this.renderService.render(
         this.playersMap, 
         this.enemiesMap, 
-        this.bulletsMap, 
+        this.bulletsMap,
         this.currentRoomState
     );
 
