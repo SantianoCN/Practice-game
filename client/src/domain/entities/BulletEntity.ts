@@ -2,6 +2,7 @@ import { InterpolatedEntity } from "./InterpolatedEntity";
 
 export class BulletEntity extends InterpolatedEntity {
     public speed: number = 300;
+    public sprite: string;
 
   constructor(
     id: string, 
@@ -9,8 +10,10 @@ export class BulletEntity extends InterpolatedEntity {
     startY: number, 
     width: number, 
     height: number, 
+    sprite: string = 'default'
   ) {
     super(id, startX, startY, width, height);
+    this.sprite = sprite
   }
 
   public override updateInterpolation(dt: number, lerpSpeed: number = 12): void {

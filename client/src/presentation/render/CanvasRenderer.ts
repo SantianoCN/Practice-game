@@ -4,6 +4,10 @@ import { PlayerEntity } from '../../domain/entities/PlayerEntity';
 import { EnemyEntity } from '../../domain/entities/EnemyEntity';
 import { ServerRoomState } from '../../../../server/src/domain/utils/mapGenerator';
 import { Chest } from '../../../../server/src/domain/entities/Chest';
+import { TextureRenderer, EntityRenderer, BoxRenderer } from './SupportRenderer';
+
+import warriorImgUrl from './Assets/Warrior.png'; 
+import mageImgUrl from './Assets/Mage.png'; 
 
 interface MapCell {
   state: 'unseen' | 'visible' | 'visited';
@@ -16,6 +20,10 @@ export class CanvasRenderer {
   private visitedMatrix: MapCell[][] = [];
   private readonly matrixSize = 10;
 
+  // Словари фабрик отрисовщиков
+  private playerRenderers: Record<string, EntityRenderer>;
+  private enemyRenderers: Record<string, EntityRenderer>;
+
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     const ctx = canvas.getContext('2d');
@@ -24,6 +32,19 @@ export class CanvasRenderer {
     }
     this.initVisitedMatrix()
     this.context = ctx;
+
+    // Регистрация отрисовщиков для ИГРОКОВ по полю `sprite`
+    this.playerRenderers = {
+      'Warrior': new TextureRenderer(warriorImgUrl), // Подключаем локальную текстуру Воина
+      'green_box': new TextureRenderer(warriorImgUrl),
+      'Mage': new TextureRenderer(mageImgUrl)
+    };
+
+    // Регистрация отрисовщиков для ВРАГОВ по полю `sprite`
+    this.enemyRenderers = {
+      'red_box': new BoxRenderer('red'),
+      'orange_box': new BoxRenderer('orange')
+    };
   }
 
   public render(
@@ -288,25 +309,53 @@ export class CanvasRenderer {
 
   private drawBullets(bulletsMap: Map<string, BulletEntity>): void {
     bulletsMap.forEach(bullet => {
-      this.context.fillStyle = 'black';
+      /*this.context.fillStyle = 'black';
 
       this.context.fillRect(
         bullet.renderX - bullet.width / 2,
         bullet.renderY - bullet.height / 2,
         bullet.width,
         bullet.height
-      );
+      );*/
+
+      let bulletColor = 'black';
+      switch (bullet.sprite) {
+        case 'red_ball':
+          bulletColor = 'red';
+          break
+        case 'blue_ball':
+          bulletColor = 'blue';
+          break
+        default:
+          bulletColor = 'black'
+      }
+      
+      this.context.save();
+      this.context.beginPath();
+      
+      // Рисуем окружность с центром в renderX/renderY. Радиус равен половине ширины bullet.width
+      const radius = bullet.width / 2;
+      this.context.arc(bullet.renderX, bullet.renderY, radius, 0, Math.PI * 2);
+      
+      // Добавляем красивый неоновый эффект свечения магии
+      this.context.shadowBlur = 8;
+      this.context.shadowColor = bulletColor;
+      
+      this.context.fillStyle = bulletColor;
+      this.context.fill();
+      
+      this.context.restore(); 
     });
   }
 
   private drawPlayers(playersMap: Map<string, PlayerEntity>): void {
     playersMap.forEach(player => {
-      switch (player.sprite) {
-        case 'green_box':
-          this.context.fillStyle = 'green';
-          break;
-        case 'blue_box':
-          this.context.fillStyle = 'blue';
+      const renderer = this.playerRenderers[player.sprite];
+
+      if (renderer) {
+        renderer.draw(this.context, player);
+      } else {
+        this.drawFallback(player);
       }
 
       this.context.fillRect(
@@ -320,12 +369,12 @@ export class CanvasRenderer {
 
   private drawEnemies(enemiesMap: Map<string, EnemyEntity>): void {
     enemiesMap.forEach(enemy => {
-      switch (enemy.sprite) {
-        case 'red_box':
-          this.context.fillStyle = 'red';
-          break;
-        case 'orange_box':
-          this.context.fillStyle = 'orange';
+      const renderer = this.enemyRenderers[enemy.sprite];
+
+      if (renderer) {
+        renderer.draw(this.context, enemy);
+      } else {
+        this.drawFallback(enemy);
       }
 
       this.context.fillRect(
@@ -566,8 +615,19 @@ export class CanvasRenderer {
         this.context.fillRect(x + 2, y + 1, w / 3, 2);
     }
 }
- 
+
+  private drawFallback(entity: any): void {
+    this.context.fillStyle = '#ff00ff';
+    this.context.fillRect(
+      entity.renderX - entity.width / 2, 
+      entity.renderY - entity.height / 2, 
+      entity.width, 
+      entity.height
+    );
+  }
+
   private drawParticles(): void {
 
   }
 }
+

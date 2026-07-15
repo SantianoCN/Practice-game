@@ -7,6 +7,7 @@ export abstract class InterpolatedEntity {
   public width: number;
   public height: number;
   public isDying: boolean = false;
+  public lastFacing: 'left' | 'right' = 'right';
 
   constructor(id: string, startX: number, startY: number, width: number, height: number) {
     this.id = id;
