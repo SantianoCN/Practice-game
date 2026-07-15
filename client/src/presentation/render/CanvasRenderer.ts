@@ -214,14 +214,33 @@ export class CanvasRenderer {
 
   private drawBullets(bulletsMap: Map<string, BulletEntity>): void {
     bulletsMap.forEach(bullet => {
-      this.context.fillStyle = 'black';
+      let bulletColor = 'black';
+      switch (bullet.sprite) {
+        case 'red_ball':
+          bulletColor = 'red';
+          break
+        case 'blue_ball':
+          bulletColor = 'blue';
+          break
+        default:
+          bulletColor = 'black'
+      }
       
-      this.context.fillRect(
-        bullet.renderX - bullet.width / 2, 
-        bullet.renderY - bullet.height / 2, 
-        bullet.width, 
-        bullet.height
-      );
+      this.context.save();
+      this.context.beginPath();
+      
+      // Рисуем окружность с центром в renderX/renderY. Радиус равен половине ширины bullet.width
+      const radius = bullet.width / 2;
+      this.context.arc(bullet.renderX, bullet.renderY, radius, 0, Math.PI * 2);
+      
+      // Добавляем красивый неоновый эффект свечения магии
+      this.context.shadowBlur = 8;
+      this.context.shadowColor = bulletColor;
+      
+      this.context.fillStyle = bulletColor;
+      this.context.fill();
+      
+      this.context.restore(); 
     });
   }
   

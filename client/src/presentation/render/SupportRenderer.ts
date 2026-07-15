@@ -1,4 +1,4 @@
-interface EntityRenderer {
+export interface EntityRenderer {
   draw(context: CanvasRenderingContext2D, entity: any): void;
 }
 
@@ -9,12 +9,10 @@ export class TextureRenderer implements EntityRenderer {
   constructor(imagePath: string) {
     this.texture = new Image();
     
-    // Обработчик успешной загрузки локального файла
     this.texture.onload = () => {
       this.isLoaded = true;
     };
 
-    // Обработчик ошибки (если путь к картинке указан неверно)
     this.texture.onerror = () => {
       console.error(`[TextureRenderer] Не удалось загрузить текстуру по пути: ${imagePath}`);
       this.isLoaded = false;
@@ -24,7 +22,6 @@ export class TextureRenderer implements EntityRenderer {
   }
 
   public draw(context: CanvasRenderingContext2D, entity: any): void {
-    // Получаем направление ('left' или 'right'), рассчитанное в GameScreenController
     const facing = entity.lastFacing || 'right';
 
     // Если локальная картинка загружена и готова к выводу

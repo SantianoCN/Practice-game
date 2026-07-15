@@ -162,6 +162,7 @@ export class GameScreenController {
           serverBullet.width,
           serverBullet.height,
         );
+        newBullet.sprite = serverBullet.sprite;
         this.bulletsMap.set(serverBullet.id, newBullet);
       } else {
         const dx = serverBullet.x - localBullet.targetX;
@@ -172,6 +173,7 @@ export class GameScreenController {
         }
         localBullet.targetX = serverBullet.x;
         localBullet.targetY = serverBullet.y;
+        localBullet.sprite = serverBullet.sprite; 
       }
     });
 
