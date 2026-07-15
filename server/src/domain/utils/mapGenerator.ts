@@ -1,8 +1,11 @@
-import { RoomState as SharedRoomState, RoomType, VectorXY } from '../../../../shared/gameTypes';
+import { RoomState as SharedRoomState, RoomType, VectorXY, BaseNetworkEntity } from '../../../../shared/gameTypes';
+import { Chest } from '../entities/Chest';
 import Enemy from '../entities/Enemy';
 
-export interface ServerRoomState extends Omit<SharedRoomState, 'enemies'> {
+export interface ServerRoomState extends Omit<SharedRoomState, 'enemies' | 'chests' | 'droppedItems'> {
     enemies: Enemy[];
+    chests: Chest[];
+    droppedItems: BaseNetworkEntity[];
 }
 
 export class MapGenerator {
@@ -124,6 +127,7 @@ export class MapGenerator {
       },
       obstacles: [],  
       chests: [],
+      droppedItems: [],
       respawnedEntities: [],
       distanceToSpawn: distance,
       enemies: []

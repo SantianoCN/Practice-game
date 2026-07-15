@@ -5,18 +5,13 @@ import { WARRIOR_PRESET_LIZARD } from '../../config/enemyPresets';
 import { STAFF } from '../../config/weaponPresets';
 import Weapon from '../items/Weapon';
 import { IdGenerator } from '../utils/IDGenerator';
-import { MapGenerator } from '../utils/mapGenerator';
+import { MapGenerator, ServerRoomState } from '../utils/mapGenerator';
 import { PlayerAction, GameSnapshot, RoomState as SharedRoomState } from '../../../../shared/gameTypes';
 import { CollisionEngine } from './CollisionEngine';
 import { PLAYER_CLASSES } from '../../config/playerPresets';
-import { Chest } from '../entities/Chest';
-import { Obstacle } from '../entities/Obstacle';
 import { RoomGridGenerator } from '../utils/RoomGridGenerator';
 import GridMapper from '../utils/GridMapper';
-
-export interface ServerRoomState extends Omit<SharedRoomState, 'enemies'> {
-    enemies: Enemy[];
-}
+import { Chest } from '../entities/Chest';
 
 export class GameEngine {
     public roomId: string;
@@ -170,6 +165,7 @@ export class GameEngine {
                 room.hasDoors,
                 room.obstacles,
                 room.chests,
+                room.droppedItems,
                 areDoorsOpen
             );
 
@@ -358,10 +354,8 @@ export class GameEngine {
                     //     this.roomHeight,
                     //     1 // кол-во сундуков?
                     // );
-
                     const { obstacles, chests } = RoomGridGenerator.generatePersistence(room);
-
-                    console.log('asdasdsa');
+                    room.chests = chests;
 
                     room.obstacles = obstacles.map(ob =>
                         GridMapper.mapObstacleToBaseNetworkEntity(
@@ -375,15 +369,7 @@ export class GameEngine {
                         )
                     );
 
-                    room.chests = chests.map(c =>
-                        GridMapper.mapChestToBaseNetworkEntity(
-                            c.id,
-                            c.gridX,
-                            c.gridY,
-                            RoomGridGenerator.CELL_SIZE,
-                            'orange'
-                        )
-                    );
+                    room.chests = chests;
                 }
             }
         }
@@ -426,6 +412,7 @@ export class GameEngine {
                         height: b.height,
                         sprite: b.sprite
                     })),
+                droppedItems: room.droppedItems
             };
 
             const sendEmit = this.networkCallbacks.get(userId);

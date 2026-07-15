@@ -1,3 +1,6 @@
+import { DroppedItems } from "../server/src/domain/engines/CollisionEngine";
+import { ServerRoomState } from "../server/src/domain/utils/mapGenerator";
+
 export interface PlayerAction {
     keys: {
         up: boolean;
@@ -53,6 +56,16 @@ export interface BaseNetworkEntity {
     sprite: string;
 }
 
+export interface Particle {
+    id: string;
+    type: string;
+    sprite: string;
+}
+
+export interface Chest extends BaseNetworkEntity {
+    items: Particle[];
+} 
+
 export interface Bullet extends BaseNetworkEntity {}
 
 export interface Entity extends BaseNetworkEntity {
@@ -67,7 +80,6 @@ export interface Player extends Entity {
 
 export type RoomType = 'Start' | 'Normal' | 'Boss' | 'Treasure' | 'Shop';
 export type Direction = 'Top' | 'Bottom' | 'Left' | 'Right';
-
 
 export interface RoomState {
     gridX: number;  
@@ -107,18 +119,11 @@ export interface LogoutResponse {
     message: string;
 }
 
-export interface Chest {
-    
-}
-
-export interface Obstacle {
-
-}
-
 export interface GameSnapshot {
     players: Player[];
-    room: RoomState;
+    room: ServerRoomState;
     bullets: Bullet[];
+    droppedItems: DroppedItems;
 }
 
 export interface SessionCreateRequest {

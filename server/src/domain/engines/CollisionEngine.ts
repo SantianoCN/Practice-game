@@ -1,6 +1,13 @@
+import { BaseNetworkEntity } from "../../../../shared/gameTypes";
 import Bullet from "../entities/Bullet";
+import { Chest } from "../entities/Chest";
 import LivingEntity from "../entities/LivingEntity";
+import { LootableItem } from "../entities/LootableItem";
 import MoveableEntity from "../entities/MoveableEntity";
+import { IdGenerator } from "../utils/IDGenerator";
+import { RoomGridGenerator } from "../utils/RoomGridGenerator";
+
+export type DroppedItems = Map<string, { x: number, y: number, width: number, height: number }>;
 
 export class CollisionEngine {
     public static processCollisions(
@@ -11,7 +18,8 @@ export class CollisionEngine {
         heightRoom: number,
         hasDoors: { Top: boolean, Bottom: boolean, Left: boolean, Right: boolean },
         obstacles: { x: number, y: number, width: number, height: number }[],
-        chests: { x: number, y: number, width: number, height: number }[],
+        chests: Chest[],
+        droppedItems: BaseNetworkEntity[],
         areDoorsOpen: boolean
     ): void {
         const entities = players.concat(enemies);
@@ -25,6 +33,12 @@ export class CollisionEngine {
                 obstacles, 
                 chests, 
                 areDoorsOpen
+            );
+            this.collisionChests (
+                entity, 
+                chests,
+                droppedItems, 
+                RoomGridGenerator.CELL_SIZE
             );
         }
     
@@ -52,6 +66,57 @@ export class CollisionEngine {
         }
         return false;
     }
+
+    private static collisionChests(
+        entity: MoveableEntity, 
+        chests: Chest[], 
+        droppedItems: BaseNetworkEntity[], 
+        cellSize: number
+    ) {
+        const entityBound = entity.getBounds();
+
+        for (const chest of chests) {
+            if (chest.isOpened) continue;
+            const chLeft = chest.gridX * cellSize;
+            const chRight = chest.gridX * cellSize + cellSize;
+            const chTop = chest.gridY * cellSize;
+            const chBottom = chest.gridY * cellSize + cellSize;
+            
+            if (entityBound.right > chLeft && entityBound.left < chRight) {
+                if ((entityBound.top > chTop && entityBound.top < chBottom) 
+                    || (entityBound.bottom < chBottom) && (entityBound.bottom > chTop)){
+                    for (const item of chest.loot) {
+                        const id = IdGenerator.generateId('item');
+                        const x = (chest.gridX - 1) * cellSize;
+                        const y = chTop + 20;
+                        const height = cellSize / 2; 
+                        const width = height;
+                        
+                        droppedItems.push({ id, x, y, width, height, sprite: 'blue'});
+                        chest.isOpened = true;
+                        console.log('[CollisionEngine] Открыт сундук, дроп: ' + item.type);
+                        console.log(droppedItems);
+                    }
+                }
+            }
+
+            if (entityBound.bottom > chTop && entityBound.top < chBottom) {
+                if ((entityBound.left > chLeft && entityBound.left < chRight)
+                    || (entityBound.right < chRight) && (entityBound.right > chLeft)) {
+                    for (const item of chest.loot) {
+                        const id = IdGenerator.generateId('item');
+                        const x = (chest.gridX - 1) * cellSize;
+                        const y = chTop + 20;
+                        const height = cellSize / 2; 
+                        const width = height;
+                        droppedItems.push({ id, x, y, width, height, sprite: 'blue'});
+                        chest.isOpened = true;
+                        console.log('[CollisionEngine] Открыт сундук, дроп: ' + item.type);
+                    }
+                }
+            }
+        }
+    }
     
     private static collisionBullet(bullet: Bullet, height: number, width: number): boolean {
         if (bullet.x < 0 || bullet.x > width || bullet.y < 0 || bullet.y > height) {
@@ -67,7 +132,7 @@ export class CollisionEngine {
         width: number,
         hasDoors: { Top: boolean, Bottom: boolean, Left: boolean, Right: boolean },
         obstacles: { x: number, y: number, width: number, height: number }[],
-        chests: { x: number, y: number, width: number, height: number }[],
+        chests: Chest[],
         areDoorsOpen: boolean
     ): void {
         const entityBound = entity.getBounds();

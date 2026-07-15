@@ -25,7 +25,7 @@ export const rooms = [
             {
                 "gridX": 18,
                 "gridY": 12,
-                "items": ["sword", "shield"]
+                "items": ["weapon", "weapon"]
             },
             {
                 "gridX": 22,
@@ -186,12 +186,12 @@ export const rooms = [
             {
                 "gridX": 16,
                 "gridY": 13,
-                "items": ["sword"]
+                "items": ["weapon"]
             },
             {
                 "gridX": 24,
                 "gridY": 13,
-                "items": ["shield"]
+                "items": ["weapon"]
             },
             {
                 "gridX": 16,
@@ -295,7 +295,7 @@ export const rooms = [
             {
                 "gridX": 16,
                 "gridY": 12,
-                "items": ["sword"]
+                "items": ["weapon"]
             },
             {
                 "gridX": 24,
@@ -310,7 +310,7 @@ export const rooms = [
             {
                 "gridX": 24,
                 "gridY": 18,
-                "items": ["shield"]
+                "items": ["weapon"]
             }
         ]
     },
@@ -409,7 +409,7 @@ export const rooms = [
             {
                 "gridX": 26,
                 "gridY": 15,
-                "items": ["shield"]
+                "items": ["weapon"]
             }
         ]
     }

@@ -2,6 +2,9 @@ import { BaseNetworkEntity, RoomState } from '../../../../shared/gameTypes';
 import { BulletEntity } from '../../domain/entities/BulletEntity';
 import { PlayerEntity } from '../../domain/entities/PlayerEntity';
 import { EnemyEntity } from '../../domain/entities/EnemyEntity';
+import { ServerRoomState } from '../../../../server/src/domain/utils/mapGenerator';
+import { Chest } from '../../../../server/src/domain/entities/Chest';
+import { DroppedItems } from '../../../../server/src/domain/engines/CollisionEngine';
 
 interface MapCell {
   state: 'unseen' | 'visible' | 'visited';
@@ -28,9 +31,8 @@ export class CanvasRenderer {
     playersMap: Map<string, PlayerEntity>,
     enemiesMap: Map<string, EnemyEntity>,
     bulletsMap: Map<string, BulletEntity>,
-    room: RoomState | null
+    room: ServerRoomState | null
   ): void {
-
     this.clear();
     this.drawScreen(playersMap, enemiesMap, bulletsMap, room);
     if (!room) return;
@@ -47,7 +49,7 @@ export class CanvasRenderer {
     );
   }
 
-  private updateVisitedRooms(room: RoomState): void {
+  private updateVisitedRooms(room: ServerRoomState): void {
     const x = room.gridX;
     const y = room.gridY;
     if (x < 0 || x >= this.matrixSize || y < 0 || y >= this.matrixSize) return;
@@ -87,11 +89,15 @@ export class CanvasRenderer {
     playersMap: Map<string, PlayerEntity>,
     enemiesMap: Map<string, EnemyEntity>,
     bulletsMap: Map<string, BulletEntity>,
-    room: RoomState | null
+    room: ServerRoomState | null
   ): void {
     this.drawMap(room);
     this.drawObstacles(room?.obstacles ?? []);
-    this.drawChests(room?.chests ?? []); 
+    if (room?.chests)
+      this.drawChests(room.chests);
+    console.log(room);
+    if (room?.droppedItems)
+      this.drawDroppedItems(room.droppedItems);
     this.drawBullets(bulletsMap);
     this.drawPlayers(playersMap);
     this.drawEnemies(enemiesMap);
@@ -100,7 +106,7 @@ export class CanvasRenderer {
     this.drawMiniMap(room.gridX, room.gridY);
   }
 
-  private drawMap(room: RoomState | null): void {
+  private drawMap(room: ServerRoomState | null): void {
     if (!room) {
       this.context.fillStyle = 'white';
       this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -258,18 +264,223 @@ export class CanvasRenderer {
     }
   }
 
-  private drawChests(chests: BaseNetworkEntity[]): void {
+  private drawChests(chests: Chest[]): void {
+    if (!chests || chests.length === 0) return;
+
+    const cellSize = 20; // размер ячейки
+
     for (const chest of chests) {
-      this.context.fillStyle = chest.sprite === 'chest_open' ? '#c9a227' : 'orange';
-      this.context.fillRect(
-        chest.x - chest.width / 2,
-        chest.y - chest.height / 2,
-        chest.width,
-        chest.height
-      );
+      // Вычисляем позицию в пикселях
+      const x = chest.gridX * cellSize;
+      const y = chest.gridY * cellSize;
+      const w = cellSize;
+      const h = cellSize;
+
+      // Проверяем, открыт ли сундук
+      const isOpened = chest.isOpened || false;
+
+      // === Тень ===
+      this.context.shadowColor = 'rgba(0, 0, 0, 0.25)';
+      this.context.shadowBlur = 8;
+      this.context.shadowOffsetX = 2;
+      this.context.shadowOffsetY = 2;
+
+      // === Основная часть ===
+      const bodyColor = isOpened ? '#8B7D3C' : '#E67E22';
+      this.context.fillStyle = bodyColor;
+      this.context.fillRect(x, y, w, h);
+
+      // Убираем тень для деталей
+      this.context.shadowColor = 'transparent';
+      this.context.shadowBlur = 0;
+      this.context.shadowOffsetX = 0;
+      this.context.shadowOffsetY = 0;
+
+      // === Контур ===
+      this.context.strokeStyle = isOpened ? '#5C4A2A' : '#8B5A00';
+      this.context.lineWidth = 1;
+      this.context.strokeRect(x, y, w, h);
+
+      // === Деревянные доски (текстура) ===
+      this.context.strokeStyle = isOpened ? '#7A6B3A' : '#CC7A00';
+      this.context.lineWidth = 0.5;
+
+      // Горизонтальные линии (доски)
+      for (let i = 1; i < 3; i++) {
+        const lineY = y + (h * i) / 3;
+        this.context.beginPath();
+        this.context.moveTo(x + 2, lineY);
+        this.context.lineTo(x + w - 2, lineY);
+        this.context.stroke();
+      }
+
+      // Вертикальная линия посередине (стык досок)
+      this.context.beginPath();
+      this.context.moveTo(x + w / 2, y + 2);
+      this.context.lineTo(x + w / 2, y + h - 2);
+      this.context.stroke();
+
+      // === Крышка ===
+      if (!isOpened) {
+        // Крышка закрытого сундука
+        this.context.fillStyle = '#D35400';
+
+        // Верхняя часть крышки (треугольник)
+        this.context.beginPath();
+        this.context.moveTo(x + 2, y);
+        this.context.lineTo(x + w / 2, y - 3);
+        this.context.lineTo(x + w - 2, y);
+        this.context.closePath();
+        this.context.fill();
+        this.context.strokeStyle = '#8B5A00';
+        this.context.lineWidth = 0.8;
+        this.context.stroke();
+
+        // Петли крышки
+        this.context.fillStyle = '#DAA520';
+        this.context.fillRect(x + 3, y - 1, 2, 2);
+        this.context.fillRect(x + w - 5, y - 1, 2, 2);
+
+        // Замок
+        this.context.fillStyle = '#F1C40F';
+        // Основа замка
+        this.context.fillRect(x + w / 2 - 3, y + h / 2 - 3, 6, 5);
+        // Дужка замка
+        this.context.fillStyle = '#DAA520';
+        this.context.fillRect(x + w / 2 - 1, y + h / 2 - 5, 2, 3);
+        // Скважина
+        this.context.fillStyle = '#4A3520';
+        this.context.fillRect(x + w / 2 - 1, y + h / 2 - 1, 2, 1);
+      } else {
+        // Открытая крышка (откинута назад)
+        this.context.fillStyle = '#6B5D2C';
+        this.context.beginPath();
+        this.context.moveTo(x + 2, y - 1);
+        this.context.lineTo(x + w / 2, y - 5);
+        this.context.lineTo(x + w - 2, y - 1);
+        this.context.closePath();
+        this.context.fill();
+        this.context.strokeStyle = '#4A3520';
+        this.context.lineWidth = 0.8;
+        this.context.stroke();
+
+        // Внутренность сундука
+        this.context.fillStyle = '#3D2B1F';
+        this.context.fillRect(x + 2, y + 2, w - 4, h - 4);
+
+        // Свечение от предметов внутри
+        this.context.fillStyle = 'rgba(255, 215, 0, 0.15)';
+        this.context.fillRect(x + 3, y + 3, w - 6, h - 6);
+
+        // Открытый замок (висит сбоку)
+        this.context.fillStyle = '#8B7D3C';
+        this.context.fillRect(x + w - 4, y + h / 2 - 2, 3, 3);
+        // Цепь
+        this.context.fillStyle = '#A0926B';
+        this.context.fillRect(x + w - 2, y + h / 2 - 1, 1, 5);
+      }
+
+      // === Индикатор предметов ===
+      if (chest.loot && chest.loot.length > 0 && !isOpened) {
+        // Маленькая точка, показывающая что есть loot
+        this.context.fillStyle = 'rgba(255, 215, 0, 0.8)';
+        this.context.beginPath();
+        this.context.arc(x + w / 2, y - 4, 2, 0, Math.PI * 2);
+        this.context.fill();
+      }
     }
   }
 
+  private drawDroppedItems(droppedItems: BaseNetworkEntity[]): void {
+    if (!droppedItems || droppedItems.length === 0) return;
+
+    for (const item of droppedItems) {
+        const x = item.x - item.width / 2;
+        const y = item.y - item.height / 2;
+        const w = item.width;
+        const h = item.height;
+
+        // === Тень ===
+        this.context.shadowColor = 'rgba(0, 0, 0, 0.2)';
+        this.context.shadowBlur = 5;
+        this.context.shadowOffsetX = 1;
+        this.context.shadowOffsetY = 2;
+
+        // === Цвет из sprite ===
+        let color = '#95A5A6';
+        let glowColor = 'rgba(0, 0, 0, 0)';
+
+        switch (item.sprite) {
+            case 'sword':
+            case 'weapon':
+                color = '#E74C3C';
+                glowColor = 'rgba(231, 76, 60, 0.2)';
+                break;
+            case 'gold':
+                color = '#F1C40F';
+                glowColor = 'rgba(241, 196, 15, 0.2)';
+                break;
+            case 'mana':
+                color = '#3498DB';
+                glowColor = 'rgba(52, 152, 219, 0.2)';
+                break;
+            case 'potion':
+                color = '#2ECC71';
+                glowColor = 'rgba(46, 204, 113, 0.2)';
+                break;
+            case 'shield':
+                color = '#1ABC9C';
+                glowColor = 'rgba(26, 188, 156, 0.2)';
+                break;
+            case 'bow':
+            case 'arrow':
+                color = '#27AE60';
+                glowColor = 'rgba(39, 174, 96, 0.2)';
+                break;
+            case 'ring':
+            case 'amulet':
+                color = '#9B59B6';
+                glowColor = 'rgba(155, 89, 182, 0.2)';
+                break;
+            case 'armor':
+            case 'helmet':
+                color = '#5D6D7E';
+                glowColor = 'rgba(93, 109, 126, 0.2)';
+                break;
+            default:
+                color = '#95A5A6';
+                glowColor = 'rgba(149, 165, 166, 0.2)';
+        }
+
+        // === Свечение ===
+        if (glowColor !== 'rgba(0, 0, 0, 0)') {
+            this.context.fillStyle = glowColor;
+            this.context.beginPath();
+            this.context.arc(item.x, item.y, Math.max(w, h) * 1.2, 0, Math.PI * 2);
+            this.context.fill();
+        }
+
+        // === Основной квадрат ===
+        this.context.fillStyle = color;
+        this.context.fillRect(x, y, w, h);
+
+        // Убираем тень для деталей
+        this.context.shadowColor = 'transparent';
+        this.context.shadowBlur = 0;
+        this.context.shadowOffsetX = 0;
+        this.context.shadowOffsetY = 0;
+
+        // === Обводка ===
+        this.context.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+        this.context.lineWidth = 1;
+        this.context.strokeRect(x, y, w, h);
+
+        // === Блик ===
+        this.context.fillStyle = 'rgba(255, 255, 255, 0.15)';
+        this.context.fillRect(x + 2, y + 1, w / 3, 2);
+    }
+}
+ 
   private drawParticles(): void {
 
   }
