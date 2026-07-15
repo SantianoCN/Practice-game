@@ -2,125 +2,15 @@ import { RoomState } from '../../../../shared/gameTypes';
 import { BulletEntity } from '../../domain/entities/BulletEntity';
 import { PlayerEntity } from '../../domain/entities/PlayerEntity';
 import { EnemyEntity } from '../../domain/entities/EnemyEntity';
+import { TextureRenderer, EntityRenderer, BoxRenderer } from './SupportRenderer';
+
+import warriorImgUrl from './Assets/Warrior.png'; 
+import mageImgUrl from './Assets/Mage.png'; 
 
 interface MapCell {
   state: 'unseen' | 'visible' | 'visited';
   type?: 'Start' | 'Normal' | 'Boss' | 'Treasure' | 'Shop';
 }
-
-// Универсальный интерфейс для рендеринга любых живых существ
-  interface EntityRenderer {
-    draw(context: CanvasRenderingContext2D, entity: any): void;
-  }
-
-class TextureRenderer implements EntityRenderer {
-  private texture: HTMLImageElement;
-  private isLoaded: boolean = false;
-
-  constructor(imagePath: string) {
-    this.texture = new Image();
-    
-    // Обработчик успешной загрузки локального файла
-    this.texture.onload = () => {
-      this.isLoaded = true;
-    };
-
-    // Обработчик ошибки (если путь к картинке указан неверно)
-    this.texture.onerror = () => {
-      console.error(`[TextureRenderer] Не удалось загрузить текстуру по пути: ${imagePath}`);
-      this.isLoaded = false;
-    };
-
-    this.texture.src = imagePath; // Запускаем скачивание картинки браузером
-  }
-
-  public draw(context: CanvasRenderingContext2D, entity: any): void {
-    // Получаем направление ('left' или 'right'), рассчитанное в GameScreenController
-    const facing = entity.lastFacing || 'right';
-
-    // Если локальная картинка загружена и готова к выводу
-    if (this.isLoaded && this.texture.naturalWidth !== 0) {
-      context.save(); // Сохраняем чистый холст перед трансформацией
-
-      if (facing === 'left') {
-        // Зеркальный разворот влево:
-        // 1. Переносим центр координат в точку нахождения игрока
-        context.translate(entity.renderX, entity.renderY);
-        // 2. Инвертируем холст по горизонтальной оси X
-        context.scale(-1, 1);
-        
-        // 3. Рисуем. Так как центр смещен, координаты считаются от 0 (центра игрока)
-        context.drawImage(
-          this.texture, 
-          -entity.width / 2, 
-          -entity.height / 2, 
-          entity.width, 
-          entity.height
-        );
-      } else {
-        // Обычная отрисовка вправо (без изменения матрицы холста)
-        context.drawImage(
-          this.texture, 
-          entity.renderX - entity.width / 2, 
-          entity.renderY - entity.height / 2, 
-          entity.width, 
-          entity.height
-        );
-      }
-
-      context.restore(); // Возвращаем холст в исходное состояние для других сущностей
-    } else {
-      // Резервный фолбек (фиолетовый квадрат), если картинка еще грузится или путь неверен
-      context.fillStyle = '#ff00ff';
-      context.fillRect(
-        entity.renderX - entity.width / 2, 
-        entity.renderY - entity.height / 2, 
-        entity.width, 
-        entity.height
-      );
-    }
-
-    // Отрисовка полоски здоровья (HP Bar) над головой персонажа
-    if (entity.hp !== undefined && entity.maxHp !== undefined) {
-      this.drawHpBar(context, entity);
-    }
-  }
-
-  private drawHpBar(context: CanvasRenderingContext2D, entity: any): void {
-    const barWidth = entity.width;
-    const barHeight = 5;
-    const barX = entity.renderX - barWidth / 2;
-    const barY = entity.renderY - entity.height / 2 - 10; // На 10 пикселей выше головы
-
-    // Подложка
-    context.fillStyle = 'rgba(0, 0, 0, 0.6)';
-    context.fillRect(barX, barY, barWidth, barHeight);
-
-    // Здоровье
-    const hpPercentage = Math.max(0, entity.hp / entity.maxHp);
-    context.fillStyle = '#2ecc71'; 
-    context.fillRect(barX, barY, barWidth * hpPercentage, barHeight);
-  }
-}
-
-class BoxRenderer implements EntityRenderer {
-  private color: string;
-
-  constructor(color: string) {
-    this.color = color;
-  }
-
-  public draw(context: CanvasRenderingContext2D, entity: any): void {
-    context.fillStyle = this.color;
-    context.fillRect(
-      entity.renderX - entity.width / 2,
-      entity.renderY - entity.height / 2,
-      entity.width,
-      entity.height
-    );
-  }
-}
-
 
 export class CanvasRenderer {
   private context: CanvasRenderingContext2D;
@@ -143,9 +33,9 @@ export class CanvasRenderer {
 
     // Регистрация отрисовщиков для ИГРОКОВ по полю `sprite`
     this.playerRenderers = {
-      'Warrior': new TextureRenderer('assets/Warrior.png'), // Подключаем локальную текстуру Воина
-      'green_box': new BoxRenderer('green'),
-      'blue_box': new BoxRenderer('blue')
+      'Warrior': new TextureRenderer(warriorImgUrl), // Подключаем локальную текстуру Воина
+      'green_box': new TextureRenderer(warriorImgUrl),
+      'Mage': new TextureRenderer(mageImgUrl)
     };
 
     // Регистрация отрисовщиков для ВРАГОВ по полю `sprite`
