@@ -122,7 +122,7 @@ export class MapGenerator {
         'Left': false,
         'Right': false
       },
-      obstacles: [],
+      obstacles: [],  
       chests: [],
       respawnedEntities: [],
       distanceToSpawn: distance,

@@ -1,15 +1,96 @@
 import { Chest } from "../entities/Chest";
 import { Obstacle } from "../entities/Obstacle";
-import Weapon from "../items/Weapon";
 import { IdGenerator } from "./IDGenerator";
+import { rooms } from '../rooms/rooms'
+import { RoomState } from "../../../../shared/gameTypes";
+import { LootableItem } from "../entities/LootableItem";
+import Weapon from "../items/Weapon";
+import { ICE_STAFF, SLASH, SWORD } from "../../config/weaponPresets";
 
 
 export class RoomGridGenerator {
-    public static readonly CELL_SIZE = 20;
+    public  static readonly CELL_SIZE = 20;
     private static readonly MAX_OBSTACLE_PLACE = 4;
     private static readonly MIN_OBSTACLE_COUNT = 1;
     private static readonly MAX_OBSTACLE_COUNT = 4;
     private static readonly MIN_GAP = 1;
+
+    public static generatePersistence(roomState: RoomState): {
+        obstacles: Obstacle[],
+        chests: Chest[]
+    } {
+        const availableRooms = rooms.filter(
+            room => room.type === roomState.type
+        );
+
+        if (availableRooms.length > 0) {
+            const roomIdx = Math.floor(Math.random() * availableRooms.length);
+            const room = availableRooms[roomIdx];
+            
+            const chests: Chest[] = [];
+            for (const chest of room.chests) {
+                const lootableItems: LootableItem[] = [];
+                for (const item of chest.items) {
+                    switch(item) {
+                        case "weapon": {
+                            const availableWeapons = [ICE_STAFF, SWORD];
+                            const weaponIdx = Math.floor(
+                                Math.random() 
+                                * availableWeapons.length
+                            );
+                            const weapon = new Weapon(
+                                IdGenerator.generateId('weapon-loot'),
+                                'name',
+                                availableWeapons[weaponIdx]
+                            );
+                            lootableItems.push({ 
+                                type: 'weapon',
+                                weapon: availableWeapons[weaponIdx]
+                            });
+                            break;
+                        }
+                        case "gold": {
+                            lootableItems.push({ 
+                                type: 'gold',
+                                gold: Math.floor(Math.random() * 100)
+                            });
+                            break;
+                        }
+                        case "mana": {
+                            lootableItems.push({ 
+                                type: 'gold',
+                                gold: Math.floor(Math.random() * 100)
+                            });
+                            break;
+                        }
+                    }
+                }
+                chests.push(new Chest(
+                    IdGenerator.generateId('chest'),
+                    chest.gridX,
+                    chest.gridY,
+                    lootableItems
+                ));
+            }
+            
+            return {
+                obstacles: room.obstacles.map(ob => new Obstacle(
+                    IdGenerator.generateId('obstacle'),
+                    ob.startX,
+                    ob.startY,
+                    ob.endX,
+                    ob.endY,
+                    ob.isDestroyable
+                )),
+                chests: chests
+            }
+        } else 
+            return { 
+                obstacles: [],
+                 chests: [] 
+            }
+    }
+
 
     public static populate(
         roomWidth: number,
@@ -30,7 +111,7 @@ export class RoomGridGenerator {
             Math.random() * (this.MAX_OBSTACLE_COUNT - this.MIN_OBSTACLE_COUNT + 1)
         ) + this.MIN_OBSTACLE_COUNT;
 
-        const chestCount = Math.floor(Math.random() * 1);
+        const chestCount = Math.floor(Math.random() * 2);
 
         let counter = 0;
         while (counter < obstaclesCount) {
@@ -57,18 +138,18 @@ export class RoomGridGenerator {
         counter = 0;
         while (counter < chestCount) {
             const chest = this.generateRandomChest(gridRows, gridCols, chestCount);
-            if (this.isAreaFree(
+             if (this.isAreaFree(
                 chest.gridX,
                 chest.gridY,
-                chest.gridX + this.CELL_SIZE,
-                chest.gridY + this.CELL_SIZE,
+                chest.gridX, 
+                chest.gridY, 
                 occupied
             )) {
                 this.pushOccupied(
                     chest.gridX,
                     chest.gridY,
-                    chest.gridX + this.CELL_SIZE,
-                    chest.gridY + this.CELL_SIZE,
+                    chest.gridX,
+                    chest.gridY,
                     occupied
                 );
                 chests.push(chest);
@@ -85,8 +166,14 @@ export class RoomGridGenerator {
         gridCols: number,
         count: number
     ): Chest {
-        const row = Math.floor(Math.random() * gridRows);
-        const col = Math.floor(Math.random() * gridCols);
+        let row = Math.floor(Math.random() * gridRows) + 1;
+        let col = Math.floor(Math.random() * gridCols) + 1;
+
+        if (row < 4) row += row;
+        if (row > gridRows - 4) row -= 4;
+
+        if (col < 4) col += col;
+        if (col > gridCols - 4) col -= 4;
 
         return new Chest(
             IdGenerator.generateId('chest'),
@@ -103,11 +190,17 @@ export class RoomGridGenerator {
         const width = Math.floor(Math.random() * maxObstacleWidth) + 1;
         const height = Math.floor(Math.random() * maxObstacleHeight) + 1;
 
-        const startX = Math.floor(Math.random() * (gridCols - width));
-        const startY = Math.floor(Math.random() * (gridRows - height));
+        let startX = Math.floor(Math.random() * (gridCols - width));
+        let startY = Math.floor(Math.random() * (gridRows - height));
 
-        const endX = startX + width + 1;
-        const endY = startY + height + 1;
+        if (startX < 4) startX = 4;
+        if (startY < 4) startY = 4;
+        
+        let endX = startX + width + 1;
+        let endY = startY + height + 1;
+        
+        if (endX > gridCols - 4) endX = gridRows - 4;
+        if (endY > gridRows - 4) endY = gridRows - 4;
 
         return new Obstacle(
             IdGenerator.generateUUID('obstacle'),

@@ -8,8 +8,8 @@ export class Chest {
     public gridY: number;
     public loot: LootableItem[];
     public isOpened: boolean;
-
-     constructor(
+    
+    constructor(
         id: string,
         x: number,
         y: number,
@@ -20,6 +20,6 @@ export class Chest {
         this.gridX = x;
         this.gridY = y;
         this.loot = loot,
-        this.isOpened = false
+            this.isOpened = false
     }
 }

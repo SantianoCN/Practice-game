@@ -11,7 +11,7 @@ import { CollisionEngine } from './CollisionEngine';
 import { PLAYER_CLASSES } from '../../config/playerPresets';
 import { Chest } from '../entities/Chest';
 import { Obstacle } from '../entities/Obstacle';
-import { RoomGridGenerator } from '../utils/roomGridGenerator';
+import { RoomGridGenerator } from '../utils/RoomGridGenerator';
 import GridMapper from '../utils/GridMapper';
 
 export interface ServerRoomState extends Omit<SharedRoomState, 'enemies'> {
@@ -353,13 +353,17 @@ export class GameEngine {
                 const room = this.floorMap[y][x];
 
                 if (room !== null) {
-                    const roomGrid = RoomGridGenerator.populate(
-                        this.roomWidth,
-                        this.roomHeight,
-                        1 // кол-во сундуков?
-                    );
+                    // const roomGrid = RoomGridGenerator.populate(
+                    //     this.roomWidth,
+                    //     this.roomHeight,
+                    //     1 // кол-во сундуков?
+                    // );
 
-                    room.obstacles = roomGrid.obstacles.map(ob =>
+                    const { obstacles, chests } = RoomGridGenerator.generatePersistence(room);
+
+                    console.log('asdasdsa');
+
+                    room.obstacles = obstacles.map(ob =>
                         GridMapper.mapObstacleToBaseNetworkEntity(
                             ob.id,
                             ob.startGridX,
@@ -371,7 +375,7 @@ export class GameEngine {
                         )
                     );
 
-                    room.chests = roomGrid.chests.map(c =>
+                    room.chests = chests.map(c =>
                         GridMapper.mapChestToBaseNetworkEntity(
                             c.id,
                             c.gridX,
