@@ -92,6 +92,7 @@ export interface LoginData {
 export interface LoginResponse {
     success: boolean;
     refreshToken?: string;
+    login?: string;
     message: string;
 }
 
@@ -104,14 +105,49 @@ export interface LogoutResponse {
     message: string;
 }
 
+export interface PlayerSnapshot {
+    id: string;
+    x: number;
+    y: number;
+    hp: number;
+    maxHp: number;
+    mana: number;
+    maxMana: number;
+    sprite: string;
+}
+
+export interface EnemySnapshot {
+    id: string;
+    x: number;
+    y: number;
+    hp: number;
+    maxHp: number;
+    sprite: string;
+}
+
+export interface BulletSnapshot {
+    id: string;
+    x: number;
+    y: number;
+}
+
+export interface RoomSnapshot {
+    gridX: number;
+    gridY: number;
+    isClear: boolean;
+    hasDoors: { Top: boolean; Bottom: boolean; Left: boolean; Right: boolean };
+    type: RoomType;
+    enemies: EnemySnapshot[];
+}
+
 export interface GameSnapshot {
-    players: Player[];
-    room: RoomState;
-    bullets: Bullet[];
+    players: PlayerSnapshot[];
+    room: RoomSnapshot;
+    bullets: BulletSnapshot[];
 }
 
 export interface SessionCreateRequest {
-    name: string;
+    token: string;
     archetype: string;
     weaponId: string;
 }
@@ -130,7 +166,7 @@ export interface SessionJoinResponse {
 
 export interface SessionJoinRequest {
     sessionId: string;
-    name: string;
+    token: string;
     archetype: string;
     weaponId: string;
 }

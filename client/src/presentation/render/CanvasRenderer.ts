@@ -28,12 +28,14 @@ export class CanvasRenderer {
     playersMap: Map<string, PlayerEntity>, 
     enemiesMap: Map<string, EnemyEntity>, 
     bulletsMap: Map<string, BulletEntity>,
-    room: RoomState | null
+    room: RoomState | null,
+    myId: string
   ): void {
     this.clear();
     this.drawScreen(playersMap, enemiesMap, bulletsMap, room);
     if (!room) return;
     this.updateVisitedRooms(room);
+    this.drawGUI(playersMap, myId);
   }
 
   public reset(): void {
@@ -82,6 +84,92 @@ export class CanvasRenderer {
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height)
   }
 
+  private drawGUI(playersMap: Map<string, PlayerEntity>, myId: string) {
+    const me = playersMap.get(myId);
+    if (!me) return;
+
+    const px = me.renderX;
+    const py = me.renderY;
+    const r = me.width ?? 15;
+
+    this.context.save();
+
+    const arrowY = py - r - 16;
+    this.context.fillStyle = '#d4af37';
+    
+    this.context.fillRect(px - 5, arrowY, 10, 3);
+    this.context.fillRect(px - 3, arrowY + 3, 6, 3);
+    this.context.fillRect(px - 1, arrowY + 6, 2, 3);
+
+    this.context.restore();
+
+    const guiX = 20;
+    const guiY = 20;
+    const guiWidth = 210;
+    const guiHeight = 64;
+
+    const hp = me.hp ?? 100;
+    const maxHp = me.maxHp ?? 100;
+    const mana = me.mana ?? 100;
+    const maxMana = me.maxMana ?? 100;
+
+    const hpRatio = Math.max(0, Math.min(1, hp / maxHp));
+    const manaRatio = Math.max(0, Math.min(1, mana / maxMana));
+
+    this.context.save();
+
+    this.context.fillStyle = '#1c0e07';
+    this.context.fillRect(guiX, guiY, guiWidth, guiHeight);
+
+    this.context.strokeStyle = '#b8860b';
+    this.context.lineWidth = 3;
+    this.context.strokeRect(guiX, guiY, guiWidth, guiHeight);
+
+    this.context.strokeStyle = '#3c2415'; 
+    this.context.lineWidth = 1;
+    this.context.strokeRect(guiX + 2, guiY + 2, guiWidth - 4, guiHeight - 4);
+
+    const barX = guiX + 10;
+    const barY = guiY + 8;
+    const barWidth = guiWidth - 20;
+    const barHeight = 16;
+
+    this.context.fillStyle = '#380805';
+    this.context.fillRect(barX, barY, barWidth, barHeight);
+
+    const hpFillWidth = Math.floor(barWidth * hpRatio);
+    this.context.fillStyle = '#8a1c14';
+    this.context.fillRect(barX, barY, hpFillWidth, barHeight);
+
+    this.context.strokeStyle = '#120904';
+    this.context.lineWidth = 2;
+    this.context.strokeRect(barX, barY, barWidth, barHeight);
+
+    this.context.fillStyle = '#f3e5ab';
+    this.context.font = '8px "Press Start 2P", monospace';
+    this.context.fillText(`ЖИЗНЬ: ${Math.floor(hp)}/${maxHp}`, barX + 6, barY + 11);
+
+    const manaY = barY + 22;
+    const manaHeight = 12;
+
+    this.context.fillStyle = '#0a232d';
+    this.context.fillRect(barX, manaY, barWidth, manaHeight);
+
+    const manaFillWidth = Math.floor(barWidth * manaRatio);
+    this.context.fillStyle = '#1a5f7a';
+    this.context.fillRect(barX, manaY, manaFillWidth, manaHeight);
+
+    this.context.strokeStyle = '#120904';
+    this.context.lineWidth = 2;
+    this.context.strokeRect(barX, manaY, barWidth, manaHeight);
+
+    this.context.fillStyle = '#8ad5f0';
+    this.context.font = '7px "Press Start 2P", monospace';
+    this.context.fillText(`БАЙКАЛ: ${Math.floor(mana)}/${maxMana}`, barX + 6, manaY + 9);
+
+    this.context.restore();
+  }
+
   private drawScreen(
     playersMap: Map<string, PlayerEntity>, 
     enemiesMap: Map<string, EnemyEntity>, 
@@ -104,16 +192,16 @@ export class CanvasRenderer {
         return;
     }
 
-    let floorColor = '#ecf0f1'; 
-    if (room.type === 'Start') floorColor = '#eaeded'; 
-    if (room.type === 'Boss') floorColor = '#fadbd8';
-    if (room.type === 'Treasure') floorColor = '#fef9e7'; 
-    if (room.type === 'Shop') floorColor = '#d6eaf8';
+    let floorColor = '#3c2415';
+    if (room.type === 'Start') floorColor = '#4a2f1b';
+    if (room.type === 'Boss') floorColor = '#3a0d0a';
+    if (room.type === 'Treasure') floorColor = '#5c4314';
+    if (room.type === 'Shop') floorColor = '#1e2b30';
 
     this.context.fillStyle = floorColor;
     this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-    const doorColor = room.isClear ? '#8e44ad' : '#c0392b'; 
+    const doorColor = room.isClear ? '#b8860b' : '#5c120c'; 
     this.context.fillStyle = doorColor;
 
     const doorWidth = 100;
@@ -140,11 +228,11 @@ export class CanvasRenderer {
     const mapX = this.canvas.width - mapSize - padding;
     const mapY = padding;
 
-    this.context.fillStyle = 'rgba(44, 62, 80, 0.85)';
+    this.context.fillStyle = 'rgba(26, 15, 10, 0.95)';
     this.context.fillRect(mapX, mapY, mapSize, mapSize);
     
-    this.context.strokeStyle = 'rgba(230, 126, 34, 0.4)';
-    this.context.lineWidth = 2;
+    this.context.strokeStyle = 'rgba(184, 134, 11, 0.7)';
+    this.context.lineWidth = 3;
     this.context.strokeRect(mapX, mapY, mapSize, mapSize);
 
     const cellWidth = mapSize / this.matrixSize;
@@ -163,11 +251,11 @@ export class CanvasRenderer {
         const roomH = cellHeight - cellPadding * 2;
 
         if (cell.state === 'visited') {
-          let cellColor = '#95a5a6'; // Обычная комната (серебряная)
-          if (cell.type === 'Start') cellColor = '#2ecc71';    // Зеленая стартовая
-          if (cell.type === 'Boss') cellColor = '#e74c3c';     // Красная босс-комната
-          if (cell.type === 'Treasure') cellColor = '#f1c40f'; // Золотая сокровищница
-          if (cell.type === 'Shop') cellColor = '#3498db';     // Синий магазин
+          let cellColor = '#5c3d24';
+          if (cell.type === 'Start') cellColor = '#2d5a27';
+          if (cell.type === 'Boss') cellColor = '#8a1c14';
+          if (cell.type === 'Treasure') cellColor = '#d4af37';
+          if (cell.type === 'Shop') cellColor = '#1c4966';
 
           this.context.fillStyle = cellColor;
           this.context.fillRect(roomX, roomY, roomW, roomH);

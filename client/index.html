@@ -8,7 +8,7 @@
 </head>
 <body>
     <div id="auth-screen" class="card">
-        <h2>Вход в Хаб</h2>
+        <h2>Вход в избу</h2>
         <form id="loginForm" onsubmit="return false;">
             <div class="input-group">
                 <label for="username">Имя Руса (Логин)</label>
@@ -23,32 +23,63 @@
             <div id="errorText" class="error-message">Неверный логин или пароль</div>
         </form>
     </div>
-    <div id="lobby-screen" class="card hidden">
-        <h2>Игровое Лобби</h2>
-        <div id="welcomeText" class="user-welcome">Приветствуем тебя, боец!</div>
-        <button id="logoutBtn" class="button-logout">Выйти из аккаунта</button>
-        <div class="section">
-            <label for="classSelect">Выберите класс Руса</label>
-            <select id="classSelect" class="list"></select>
-            <div id="classDescription" class="description" style="margin-bottom: 15px;"></div>
-            <label for="weaponSelect">Выберите оружие</label>
-            <select id="weaponSelect" class="list"></select>
-            <div id="weaponDescription" class="description"></div>
-        </div>
-        <div class="section">
-            <label>Создать новое подземелье</label>
-            <button id="createRoomBtn" class="button button-alt">Создать комнату</button>
-        </div>
-        <div class="section">
-            <label for="sessionIdInput">Подключиться к другу</label>
-            <input type="text" id="sessionIdInput" class="text-center" placeholder="Вставьте ID сессии">
-            <button id="joinRoomBtn" class="button button-success">В бой!</button>
-            <div id="lobbyError" class="error-message">Комната не найдена</div>
+    <div id="lobby-screen" class="lobby-container hidden">
+        <header class="lobby-header">
+            <h1 class="logo"><img src="" alt="Скрещенные мечи" class="pixel-logo-icon" /> РУСЫ ПРОТИВ ЯЩЕРОВ: Roguelike</h1>
+            <div class="header-stats">
+                <button id="logoutBtn" class="button-logout" style="margin-bottom: 0;">ВЫЙТИ ИЗ ИЗБЫ</button>
+                <span>ЗОЛОТО: <span class="highlight">250G</span></span>
+                <span>ПОПЫТКА: <span class="highlight">#43</span></span>
+            </div>
+        </header>
+        <div class="lobby-grid">
+            <aside class="panel left-panel">
+                <h3 class="panel-title">ВЫБОР ГЕРОЯ</h3>
+                <div id="heroCardList" class="hero-card-list">
+                    <!-- Генерируется через TS -->
+                </div>
+                <h3 class="panel-title" style="margin-top: 25px;">СТАТИСТИКА</h3>
+                <div class="stats-panel">
+                    <p id="welcomeText" class="user-welcome">Загрузка имени...</p>
+                    <p>ЗАБЕГОВ: <span class="highlight">42</span></p>
+                    <p>УБИЙСТВ: <span class="highlight">318</span></p>
+                    <p>ГЛУБИНА: <span class="highlight">B9</span></p>
+                </div>
+            </aside>
+            <main class="center-area">
+                <section class="armory-panel">
+                    <h3 class="panel-title">АРСЕНАЛ (СТАРТОВОЕ ОРУЖИЕ)</h3>
+                    <div id="weaponCardList" class="weapon-grid">
+                        <!-- Генерируется через TS -->
+                    </div>
+                </section>
+                <div class="stage-scene">
+                    <div class="stage-item hero-preview">
+                        <div id="heroPreviewSprite" class="hero-sprite">
+                            <img src="" alt="Силуэт героя" class="hero-sprite-img" />
+                        </div>
+                        <span id="heroPreviewName" class="hero-name">ГЕРОЙ</span>
+                    </div>
+                </div>
+            </main>
+            <aside class="panel right-panel">
+                <h3 class="panel-title">НАСТРОЙКИ ЗАБЕГА</h3>
+                <div class="section connection-section">
+                    <label>НОВАЯ СЕССИЯ</label>
+                    <button id="createRoomBtn" class="button button-alt" style="margin-top: 5px;">РУБИТЬ ЯЩЕРОВ</button>
+                    <div class="divider">ИЛИ</div>
+                    <label for="sessionIdInput">ВСТУПИТЬ В ОТРЯД</label>
+                    <input type="text" id="sessionIdInput" class="text-center" placeholder="ВСТАВЬТЕ ID СЕССИИ">
+                    <button id="joinRoomBtn" class="button button-success">В БОЙ!</button>
+                    <div id="lobbyError" class="error-message"></div>
+                </div>
+            </aside>
         </div>
     </div>
     <div id="game-screen" class="hidden">
         <div id="topBar">
             <div>Комната ID: <span id="sessionDisplay">Загрузка...</span></div>
+            <button id="copySessionBtn" class="button button-primary copy-btn">СКОПИРОВАТЬ</button>
             <button id="disconnectBtn" class="button button-danger" style="width: auto;">Покинуть бой</button>
         </div>
         <canvas id="gameCanvas" width="800" height="600"></canvas>

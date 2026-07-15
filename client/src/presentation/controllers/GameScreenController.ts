@@ -10,15 +10,18 @@ export class GameScreenController {
   private container: HTMLDivElement;
   private sessionDisplay: HTMLSpanElement;
   private disconnectBtn: HTMLButtonElement;
+  private copyBtn: HTMLButtonElement;
 
   private network: NetworkService;
   private input: KeyboardListener;
   private renderService: CanvasRenderer;
   private lastPlayerAction: PlayerAction;
   private currentRoomState: any = null;
+  private myId: string = '';
 
   private isRunning: boolean = false;
   private lastFrameTime: number = performance.now();
+  private animationFrameId: number | null = null;
 
   private playersMap: Map<string, PlayerEntity> = new Map();
   private enemiesMap: Map<string, EnemyEntity> = new Map();
@@ -30,6 +33,7 @@ export class GameScreenController {
     this.container = document.getElementById('game-screen') as HTMLDivElement;
     this.sessionDisplay = document.getElementById('sessionDisplay') as HTMLSpanElement;
     this.disconnectBtn = document.getElementById('disconnectBtn') as HTMLButtonElement;
+    this.copyBtn = document.getElementById('copySessionBtn') as HTMLButtonElement;
 
     this.network = network;
     this.onDisconnect = onDisconnect;
@@ -42,7 +46,7 @@ export class GameScreenController {
     this.init();
   }
 
-  public show(sessionId: string): void {
+  public show(sessionId: string, myId: string): void {
     this.container.classList.remove('hidden');
     this.sessionDisplay.innerText = sessionId;
     this.isRunning = true;
@@ -51,7 +55,9 @@ export class GameScreenController {
     this.playersMap.clear();
     this.enemiesMap.clear();
     this.bulletsMap.clear();
+    this.myId = myId;
 
+    this.input.startListening();
     this.input.saveListener((action: PlayerAction) => {
       this.lastPlayerAction = action;
       this.network.sendPlayerAction(action);
@@ -61,19 +67,57 @@ export class GameScreenController {
       this.reconcileEntities(snapshot);
     });
 
+    if (this.animationFrameId !== null) {
+        cancelAnimationFrame(this.animationFrameId);
+    }
+
     this.lastFrameTime = performance.now();
     this.gameLoop();
   }
 
   public hide(): void {
+    this.input.stopListening();
     this.isRunning = false;
+    if (this.animationFrameId !== null) {
+        cancelAnimationFrame(this.animationFrameId);
+        this.animationFrameId = null;
+    }
     this.container.classList.add('hidden');
   }
 
   private init(): void {
+    this.copyBtn.addEventListener('click', () => {
+      this.copyId();
+    });
     this.disconnectBtn.addEventListener('click', () => {
       this.onDisconnect();
     });
+  }
+
+  private copyId(): void {
+    const rawText = this.sessionDisplay.innerText || '';
+        
+    const sessionId = rawText.includes(':') 
+        ? rawText.split(':')[1].trim() 
+        : rawText.trim();
+
+    if (sessionId) {
+        navigator.clipboard.writeText(sessionId).then(() => {
+            const originalText = this.copyBtn.innerText;
+            this.copyBtn.innerText = 'СКОПИРОВАНО!';
+            
+            this.copyBtn.classList.remove('button-primary');
+            this.copyBtn.classList.add('button-success');
+            
+            setTimeout(() => {
+                this.copyBtn.innerText = originalText;
+                this.copyBtn.classList.remove('button-success');
+                this.copyBtn.classList.add('button-primary');
+            }, 1200);
+        }).catch(err => {
+            console.error('Не удалось скопировать свиток с ID:', err);
+        });
+    }
   }
 
   private reconcileEntities(snapshot: GameSnapshot) {
@@ -89,8 +133,8 @@ export class GameScreenController {
           serverPlayer.id,
           serverPlayer.x,
           serverPlayer.y,
-          serverPlayer.width,
-          serverPlayer.height,
+          32,
+          32,
           serverPlayer.hp,
           serverPlayer.maxHp,
           serverPlayer.mana,
@@ -118,8 +162,8 @@ export class GameScreenController {
           serverEnemy.id,
           serverEnemy.x,
           serverEnemy.y,
-          serverEnemy.width,
-          serverEnemy.height,
+          32,
+          32,
           serverEnemy.hp,
           serverEnemy.maxHp,
           serverEnemy.sprite
@@ -143,8 +187,8 @@ export class GameScreenController {
           serverBullet.id,
           serverBullet.x,
           serverBullet.y,
-          serverBullet.width,
-          serverBullet.height,
+          8,
+          8,
         );
         this.bulletsMap.set(serverBullet.id, newBullet);
       } else {
@@ -194,9 +238,10 @@ export class GameScreenController {
         this.playersMap, 
         this.enemiesMap, 
         this.bulletsMap, 
-        this.currentRoomState
+        this.currentRoomState,
+        this.myId
     );
 
-    requestAnimationFrame(() => this.gameLoop());
+    this.animationFrameId = requestAnimationFrame(() => this.gameLoop());
   }
 }

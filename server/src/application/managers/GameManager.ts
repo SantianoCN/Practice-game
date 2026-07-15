@@ -38,8 +38,7 @@ export default class GameManager {
         userId: string,
         name: string,
         archetype: string,
-        weaponId: string,
-        emitCallback: (snapshot: GameSnapshot) => void
+        weaponId: string
     ): { success: boolean, message?: string } {
         const isPlayerInSession = Array.from(this.playerSessions.values())
             .some(userIds => userIds.includes(userId));
@@ -50,18 +49,18 @@ export default class GameManager {
             };
         }
         const engine = this.getSession(sessionId);
-        console.log('[GameManager] список игроков в сессиях', this.playerSessions.values());
         if (!engine) return {
             success: false,
             message: 'сессия не найдена'
         }
-        engine.addPlayer(userId, name, weaponId, archetype, emitCallback);
+        engine.addPlayer(userId, name, weaponId, archetype);
         const session = this.playerSessions.get(sessionId);
         if (!session) {
             this.playerSessions.set(sessionId, [userId]);
         } else {
             session?.push(userId);
         }
+        console.log('[GameManager] список игроков в сессиях', this.playerSessions.values());
         return { success: true }
     }
 

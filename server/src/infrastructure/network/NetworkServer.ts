@@ -4,11 +4,13 @@ import GameManager from '../../application/managers/GameManager';
 import { AccountManager } from '../../application/managers/AccountManager';
 import { ClientEvent, ServerEvent } from '../../../../shared/networkEvents';
 import { PLAYER_CLASSES } from '../../config/playerPresets';
+import { gameEventBus, GAME_EVENTS, SnapshotEventPayload } from '../../domain/events/gameEventBus';
 
 export class NetworkServer {
     private io: Server;
     private game: GameManager;
     private accountManager: AccountManager;
+    private userSockets: Map<string, Socket> = new Map();
 
     constructor(
         io: Server,
@@ -26,6 +28,12 @@ export class NetworkServer {
             (socket: Socket) => 
                 this.connectUserHandler(socket)
         );
+        gameEventBus.on(GAME_EVENTS.SNAPSHOT_READY, (payload: SnapshotEventPayload) => {
+            const socket = this.userSockets.get(payload.userId);
+            if (socket) {
+                socket.emit(ServerEvent.SNAPSHOT, payload.snapshot);
+            }
+        });
         console.log('[NetworkManager] initialized');
     }
 
@@ -54,7 +62,29 @@ export class NetworkServer {
     public connectUserHandler(socket: Socket) {
         console.log('[NetworkManager] соединение установлено:', socket.id);
 
+        socket.on('request-profile', (callback: (res: { success: boolean; login?: string }) => void) => {
+            const login = socket.data.login;
+            if (login) {
+                callback({ success: true, login: login });
+            } else {
+                callback({ success: false });
+            }
+        });
+
         socket.emit('class-presets', PLAYER_CLASSES);
+        socket.data.userId = socket.data.login;
+        socket.emit('player-id', socket.data.userId);
+        
+        if (socket.data.userId) {
+            const existingSocket = this.userSockets.get(socket.data.userId);
+            if (existingSocket && existingSocket.id !== socket.id) {
+                console.log(`[NetworkManager] Игрок ${socket.data.userId} зашел с другого устройства. Отключаем старый сокет.`);
+                existingSocket.emit(ServerEvent.ERROR, { message: 'Выполнен вход с другого устройства' });
+                existingSocket.disconnect(true);
+            }
+
+            this.userSockets.set(socket.data.userId, socket);
+        }
         
         socket.on(ClientEvent.CREATE_SESSION,
             (request: SessionCreateRequest) =>
@@ -75,7 +105,7 @@ export class NetworkServer {
             this.disconnectHandler(socket)
         );
 
-        socket.data.userId = socket.data.login;
+        
     }
 
     public createSessionHandler(request: SessionCreateRequest, socket: Socket) {
@@ -90,12 +120,9 @@ export class NetworkServer {
         const state = this.game.addPlayer(
             sessionId, 
             socket.data.userId, 
-            request.name,
+            socket.data.login,
             request.archetype,
-            request.weaponId,
-            (snapshot: GameSnapshot) => {
-                socket.emit(ServerEvent.SNAPSHOT, snapshot);
-            }
+            request.weaponId
         );
         if (!state.success) {
             this.game.removeSession(sessionId);
@@ -125,12 +152,9 @@ export class NetworkServer {
         const state = this.game.addPlayer(
             request.sessionId, 
             socket.data.userId,
-            request.name,
+            socket.data.login,
             request.archetype,
-            request.weaponId,
-            (snapshot: GameSnapshot) => {
-                socket.emit(ServerEvent.SNAPSHOT, snapshot); 
-            }
+            request.weaponId
         );
         if (!state.success) {
             socket.emit(ServerEvent.SESSION_JOIN_RESPONSE,
@@ -166,6 +190,13 @@ export class NetworkServer {
         const { userId, sessionId } = socket.data;
         if (userId && sessionId) {
             this.game.removePlayer(sessionId, userId);
+        }
+        
+        if (userId) {
+            const currentStoredSocket = this.userSockets.get(userId);
+            if (currentStoredSocket && currentStoredSocket.id === socket.id) {
+                this.userSockets.delete(userId);
+            }
         }
         console.log('[NetworkManager] соединение разорвано:', socket.id);
     }

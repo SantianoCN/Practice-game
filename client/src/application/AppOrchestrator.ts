@@ -11,11 +11,21 @@ export class AppOrchestrator {
 
   private token: string | null = null;
   private sessionId: string | null = null;
+  private userLogin: string | null = null;
+  private userId: string | null = null;
 
   constructor() {
     this.network = new NetworkService();
+    this.network.onError((msg) => {
+      if (msg === 'Выполнен вход с другого устройства') {
+        alert('ВНИМАНИЕ: Выполнен вход с другого устройства! Вы были отключены.');
+        this.handleLogout(true);
+      } else {
+        console.error('Критическая ошибка:', msg);
+      }
+    });
 
-    this.authController = new AuthScreenController((token) => this.handleLoginSuccess(token));
+    this.authController = new AuthScreenController((token, login) => this.handleLoginSuccess(token, login));
     
     this.lobbyController = new LobbyScreenController(
       this.network,
@@ -43,10 +53,17 @@ export class AppOrchestrator {
           this.lobbyController.updateClassPresets(presets);
         });
 
+        this.network.onPlayerId((playerId) => {
+          this.userId = playerId;
+        });
+
+        const accountLogin = await this.network.requestProfile();
+        this.userLogin = accountLogin;
+
         if (this.sessionId) {
-          this.showGameScreen(this.sessionId);
+          this.showGameScreen(this.sessionId, this.userId || '');
         } else {
-          this.showLobbyScreen(this.token);
+          this.showLobbyScreen(this.userLogin || 'Рус');
         }
       } catch (err) {
         this.handleLogout();
@@ -60,26 +77,32 @@ export class AppOrchestrator {
     this.authController.show();
   }
 
-  private showLobbyScreen(token: string) {
+  private showLobbyScreen(login: string) {
     this.authController.hide();
     this.gameController.hide();
-    this.lobbyController.show(token);
+    this.lobbyController.show(login);
   }
 
-  private showGameScreen(sessionId: string) {
+  private showGameScreen(sessionId: string, myId: string) {
     this.authController.hide();
     this.lobbyController.hide();
-    this.gameController.show(sessionId);
+    this.gameController.show(sessionId, myId);
   }
 
-  private async handleLoginSuccess(token: string) {
+  private async handleLoginSuccess(token: string, login: string) {
     this.token = token;
+    this.userLogin = login;
     localStorage.setItem('session_token', token);
 
     try {
       await this.network.connect(token);
-      this.showLobbyScreen(token);
-      
+
+      this.network.onPlayerId((playerId) => {
+        this.userId = playerId;
+      });
+
+      this.showLobbyScreen(login);
+
       this.network.onClassPresets((presets) => {
         this.lobbyController.updateClassPresets(presets);
       });
@@ -91,24 +114,22 @@ export class AppOrchestrator {
   private handleJoinSession(sessionId: string) {
     this.sessionId = sessionId;
     localStorage.setItem('game_session_id', sessionId);
-    this.showGameScreen(sessionId);
+    this.showGameScreen(sessionId, this.userId || '');
   }
 
   private handleLeaveSession() {
     this.gameController.hide();
-    
-    this.network.leaveSession(); 
-    
+    this.network.leaveSession();
     localStorage.removeItem('game_session_id');
     this.sessionId = null;
 
-    if (this.token) {
-      this.showLobbyScreen(this.token);
+    if (this.token && this.userLogin) {
+      this.showLobbyScreen(this.userLogin);
     }
   }
 
-  private async handleLogout() {
-    if (this.token) {
+  private async handleLogout(skipServerRequest: boolean = false) {
+    if (this.token && !skipServerRequest) {
       try {
         await fetch('http://localhost:3000/logout', {
           method: 'POST',
@@ -125,6 +146,8 @@ export class AppOrchestrator {
     localStorage.removeItem('game_session_id');
     this.token = null;
     this.sessionId = null;
+    this.userLogin = null;
+    this.userId = null;
     this.showAuthScreen();
   }
 }

@@ -1,7 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Pixelify+Sans:wght@400;700&display=swap');
+
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    font-smooth: never;
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 .hidden { 
@@ -9,24 +14,33 @@
 }
 
 body {
-    background-color: #2c3e50;
+    background-color: #21130b;
+    background-image: 
+        linear-gradient(90deg, #1b0e07 2px, transparent 2px),
+        linear-gradient(#1b0e07 2px, transparent 2px),
+        linear-gradient(90deg, #120904 2px, transparent 2px),
+        linear-gradient(#120904 2px, transparent 2px);
+    background-size: 16px 24px;
+    background-position: 0 0, 0 0, 8px 12px, 8px 12px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     height: 100vh;
     overflow: hidden;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: #ecf0f1;
+    font-family: 'Pixelify Sans', monospace;
+    color: #f3e5ab;
+    image-rendering: pixelated;
 }
 
 .list {
     width: 100%; 
     padding: 12px; 
-    background-color: #2c3e50; 
-    color: white; 
-    border: 1px solid #7f8c8d; 
-    border-radius: 6px; 
+    background-color: #1a0f0a; 
+    color: #f3e5ab; 
+    border: 4px solid #1c0e07; 
+    border-radius: 0px !important; 
+    font-family: 'Pixelify Sans', monospace;
     font-size: 15px; 
     margin-bottom: 10px;
 }
@@ -39,25 +53,32 @@ body {
 }
 
 .card {
-    background-color: #34495e;
+    background-color: #2b1910;
     padding: 40px;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-    width: 360px;
+    border: 6px solid #1c0e07;
+    border-radius: 0px !important;
+    box-shadow: 
+        inset 4px 4px 0px #4d301c,    
+        inset -4px -4px 0px #150a04,  
+        0px 10px 0px rgba(0,0,0,0.5); 
+    width: 380px;
     text-align: center;
 }
 
 h2 {
     margin-bottom: 25px;
-    color: #e67e22; 
-    font-size: 24px;
+    color: #d4af37;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: -1px;
+    text-shadow: 3px 3px 0px #1c0e07;
 }
 
 .user-welcome {
-    font-size: 14px;
-    color: #bdc3c7;
+    font-size: 12px;
+    font-family: 'Press Start 2P', monospace;
+    color: #b8860b;
     margin-bottom: 10px;
 }
 
@@ -69,7 +90,8 @@ h2 {
 label {
     display: block;
     margin-bottom: 8px;
-    font-size: 14px;
+    font-size: 12px;
+    font-family: 'Press Start 2P', monospace;
     color: #bdc3c7;
     font-weight: bold;
 }
@@ -77,16 +99,17 @@ label {
 input {
     width: 100%;
     padding: 12px;
-    border: 1px solid #7f8c8d;
-    border-radius: 6px;
-    background-color: #2c3e50;
+    border: 4px solid #1c0e07;
+    border-radius: 0px !important;
+    background-color: #120904;
     color: #fff;
-    font-size: 15px;
-    transition: border-color 0.2s;
+    font-family: 'Pixelify Sans', monospace;
+    font-size: 16px;
+    box-shadow: inset 3px 3px 0px #000;
 }
 
 input:focus {
-    border-color: #e67e22;
+    border-color: #d4af37;
     outline: none;
 }
 
@@ -97,74 +120,117 @@ input.text-center {
 
 .button {
     width: 100%;
-    padding: 12px;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 16px;
+    padding: 14px;
+    color: #f3e5ab;
+    border: 4px solid #1c0e07;
+    border-radius: 0px !important;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
     cursor: pointer;
     font-weight: bold;
-    transition: background-color 0.2s, transform 0.1s;
+    text-transform: uppercase;
+    transition: none;
+    image-rendering: pixelated;
 }
 
 .button:active {
-    transform: scale(0.98);
+    transform: translate(2px, 2px);
 }
 
 .button-primary {
-    background-color: #e67e22;
+    background-color: #a04822;
+    box-shadow: 
+        inset 4px 4px 0px #cf6e3e, 
+        inset -4px -4px 0px #60250d;
 }
-
 .button-primary:hover {
-    background-color: #d35400;
+    background-color: #cf6e3e;
+}
+.button-primary:active {
+    box-shadow: 
+        inset -4px -4px 0px #cf6e3e, 
+        inset 4px 4px 0px #60250d;
 }
 
 .button-success {
-    background-color: #27ae60;
+    background-color: #2e4c1f;
+    box-shadow: 
+        inset 4px 4px 0px #4d7a39, 
+        inset -4px -4px 0px #182810;
 }
-
 .button-success:hover {
-    background-color: #219653;
+    background-color: #4d7a39;
+}
+.button-success:active {
+    box-shadow: 
+        inset -4px -4px 0px #4d7a39, 
+        inset 4px 4px 0px #182810;
 }
 
 .button-alt {
-    margin-top: 10px;
-    background-color: #2980b9;
+    background-color: #1a3c54;
+    box-shadow: 
+        inset 4px 4px 0px #2a6187, 
+        inset -4px -4px 0px #0b1d2b;
 }
-
 .button-alt:hover {
-    background-color: #2471a3;
+    background-color: #2a6187;
+}
+.button-alt:active {
+    box-shadow: 
+        inset -4px -4px 0px #2a6187, 
+        inset 4px 4px 0px #0b1d2b;
 }
 
 .button-danger {
-    width: auto;
-    background-color: #c0392b;
+    background-color: #701610;
+    box-shadow: 
+        inset 4px 4px 0px #a32c24, 
+        inset -4px -4px 0px #380805;
 }
-
 .button-danger:hover {
-    background-color: #e74c3c;
+    background-color: #a32c24;
+}
+.button-alt:active {
+    box-shadow: 
+        inset -4px -4px 0px #a32c24, 
+        inset 4px 4px 0px #380805;
 }
 
 .button-logout {
     background: none;
     border: none;
-    color: #e74c3c;
+    color: #a32c24;
     text-decoration: underline;
     cursor: pointer;
-    font-size: 13px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
     margin-bottom: 25px;
     font-weight: bold;
-    transition: color 0.2s;
+    transition: color 0.1s;
 }
 
 .button-logout:hover {
-    color: #c0392b;
+    color: #cf6e3e;
+}
+
+.copy-btn {
+    width: auto !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 6px 10px !important;
+    font-size: 8px !important;
+    font-family: 'Press Start 2P', monospace;
+    vertical-align: middle;
+    line-height: 1;
 }
 
 .section {
     margin-bottom: 25px;
     padding-bottom: 20px;
-    border-bottom: 1px solid #2c3e50;
+    border-bottom: 4px solid #1c0e07;
 }
 
 .section:last-of-type {
@@ -174,11 +240,13 @@ input.text-center {
 }
 
 .error-message {
-    color: #e74c3c;
+    color: #a32c24;
     margin-top: 15px;
-    font-size: 14px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
     display: none;
     font-weight: bold;
+    text-shadow: 1px 1px 0px #000;
 }
 
 #topBar {
@@ -187,15 +255,303 @@ input.text-center {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
-    color: #ecf0f1;
+    color: #f3e5ab;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
 }
 
 #sessionDisplay {
     font-weight: bold;
-    color: #e67e22;
+    color: #d4af37;
 }
 
 #gameCanvas {
-    background-color: #ecf0f1;
-    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    background-color: #3c2415;
+    border: 8px solid #1c0e07;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.7);
+    image-rendering: pixelated;
+}
+
+.lobby-container {
+    width: 95vw;
+    height: 90vh;
+    max-width: 1200px;
+    display: flex;
+    flex-direction: column;
+    background-color: #170d07;
+    border: 6px solid #b8860b;
+    box-shadow: 
+        0 0 0 4px #1c0e07,
+        inset 0 0 20px rgba(0,0,0,0.8);
+    padding: 20px;
+    border-radius: 0px !important;
+}
+
+.lobby-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 4px solid #b8860b;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.logo {
+    font-family: 'Press Start 2P', monospace;
+    color: #d4af37;
+    font-size: 18px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-shadow: 
+        3px 3px 0px #1c0e07,
+        -1px -1px 0px #1c0e07,
+        1px -1px 0px #1c0e07,
+        -1px 1px 0px #1c0e07,
+        1px 1px 0px #1c0e07;
+}
+
+.header-stats {
+    display: flex;
+    gap: 30px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    font-weight: bold;
+    align-items: center;
+}
+
+.highlight {
+    color: #d4af37;
+}
+
+.lobby-grid {
+    display: grid;
+    grid-template-columns: 290px 1fr 280px;
+    gap: 20px;
+    flex: 1;
+    min-height: 0;
+}
+
+.panel {
+    background-color: #21130a;
+    border: 4px solid #1c0e07;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    border-radius: 0px !important;
+}
+
+.panel-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    color: #d4af37;
+    border-bottom: 4px solid #1c0e07;
+    padding-bottom: 8px;
+    margin-bottom: 15px;
+    text-align: left;
+    letter-spacing: -1px;
+    text-shadow: 2px 2px 0px #000;
+}
+
+.hero-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.hero-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background-color: #170d07;
+    border: 4px solid #3c2415;
+    padding: 10px;
+    cursor: pointer;
+    transition: none;
+    text-align: left;
+    border-radius: 0px !important;
+}
+
+.hero-card:hover {
+    border-color: #b8860b;
+    background-color: #21130a;
+}
+
+.hero-card.active {
+    border-color: #d4af37;
+    background-color: #311c0f;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.6);
+}
+
+.hero-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hero-card-name {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    font-weight: bold;
+    color: #f3e5ab;
+}
+
+.hero-card-desc {
+    font-size: 12px;
+    color: #bdc3c7;
+    margin-top: 5px;
+    line-height: 1.3;
+}
+
+.stats-panel {
+    background-color: #170d07;
+    padding: 12px;
+    font-size: 13px;
+    border: 3px dashed #3c2415;
+    text-align: left;
+    line-height: 1.8;
+}
+
+.center-area {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-height: 0;
+}
+
+.armory-panel {
+    background-color: #21130a;
+    border: 4px solid #1c0e07;
+    padding: 15px;
+    border-radius: 0px !important;
+}
+
+.weapon-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.weapon-card {
+    background-color: #170d07;
+    border: 4px solid #3c2415;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: none;
+    text-align: center;
+    border-radius: 0px !important;
+}
+
+.weapon-card:hover {
+    border-color: #b8860b;
+    background-color: #21130a;
+}
+
+.weapon-card.active {
+    border-color: #d4af37;
+    background-color: #311c0f;
+    box-shadow: inset 0 0 12px rgba(0,0,0,0.6);
+}
+
+.weapon-name {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    font-weight: bold;
+    color: #f3e5ab;
+    margin-top: 8px;
+    margin-bottom: 4px;
+}
+
+.weapon-desc {
+    font-size: 11px;
+    color: #bdc3c7;
+    line-height: 1.3;
+}
+
+.stage-scene {
+    background-color: #0b0604;
+    border: 4px dashed #3c2415;
+    flex: 1;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 20px;
+    position: relative;
+    image-rendering: pixelated;
+}
+
+.stage-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    color: #7f8c8d;
+}
+
+.stage-item span {
+    letter-spacing: -1px;
+}
+
+.hero-card-img, 
+.weapon-card-img, 
+.hero-sprite-img, 
+.pixel-logo-icon {
+    width: 64px;
+    height: 64px;
+    display: inline-block;
+    background-color: #120904;
+    border: 3px dashed #b8860b;
+    image-rendering: pixelated;
+    object-fit: contain;
+    box-sizing: border-box;
+    background-image: 
+        radial-gradient(circle, #3a2214 30%, transparent 30%),
+        linear-gradient(45deg, transparent 45%, #2d180d 45%, #2d180d 55%, transparent 55%);
+    background-size: 12px 12px;
+    position: relative;
+}
+
+.pixel-logo-icon {
+    width: 24px;
+    height: 24px;
+    border-width: 2px;
+    vertical-align: middle;
+}
+
+.hero-sprite {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: float 1.6s infinite steps(4);
+}
+
+.hero-sprite-img {
+    width: 64px;
+    height: 64px;
+    border-style: solid;
+}
+
+.hero-name {
+    color: #d4af37 !important;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+.divider {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    color: #7f8c8d;
+    margin: 15px 0;
+    text-align: center;
+    letter-spacing: -1px;
 }

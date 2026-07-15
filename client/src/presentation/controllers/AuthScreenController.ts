@@ -8,9 +8,9 @@ export class AuthScreenController {
   private registerBtn: HTMLButtonElement;
   private errorText: HTMLDivElement;
   
-  private onLoginSuccess: (token: string) => void;
+  private onLoginSuccess: (token: string, login: string) => void;
 
-  constructor(onLoginSuccess: (token: string) => void) {
+  constructor(onLoginSuccess: (token: string, login: string) => void) {
     this.container = document.getElementById('auth-screen') as HTMLDivElement;
     this.usernameInput = document.getElementById('username') as HTMLInputElement;
     this.passwordInput = document.getElementById('password') as HTMLInputElement;
@@ -64,7 +64,7 @@ export class AuthScreenController {
       const data = await response.json();
 
       if (data.success && data.refreshToken) {
-        this.onLoginSuccess(data.refreshToken);
+        this.onLoginSuccess(data.refreshToken, data.login);
       } else {
         this.showError(data.message || 'Ошибка авторизации');
       }

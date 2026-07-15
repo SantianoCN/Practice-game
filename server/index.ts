@@ -40,6 +40,7 @@ app.post('/register', async (req: Request<{}, {}, LoginData>, res: Response<Logi
     res.send({
         success: true,
         refreshToken: token!,
+        login: req.body.login,
         message: 'пользователь зарегистрирован'
     });
 });
@@ -56,6 +57,7 @@ app.post('/login', async (req: Request<{}, {}, LoginData>, res: Response<LoginRe
     res.send({
         success: true,
         refreshToken: token!,
+        login: req.body.login,
         message: 'пользователь успешно авторизовался'
     });
 });

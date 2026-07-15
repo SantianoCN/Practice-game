@@ -8,9 +8,15 @@ export class NetworkService {
   private readonly serverUrl: string;
   private UpdateCallback: ((data: GameSnapshot) => void) | null = null;
   private PresetsCallback: ((presets: PlayerClassPreset ) => void) | null = null;
+  private PlayerIdCallback: ((playerId: string) => void) | null = null;
+  private ErrorCallback: ((msg: string) => void) | null = null; 
 
   constructor(serverUrl: string = 'http://localhost:3000') {
     this.serverUrl = serverUrl;
+  }
+
+  public onError(callback: (msg: string) => void): void {
+    this.ErrorCallback = callback;
   }
 
   public connect(token?: string): Promise<void> {
@@ -31,9 +37,14 @@ export class NetworkService {
         resolve();
       });
 
-      this.socket.on(ServerEvent.ERROR, (err: Error) => {
-        console.error('Ошибка подключения:', err.message);
-        reject(err);
+      this.socket.on(ServerEvent.ERROR, (err: any) => {
+        const msg = err.message || err;
+        console.error('Ошибка от сервера:', msg);
+        
+        if (this.ErrorCallback) {
+            this.ErrorCallback(msg);
+        }
+        reject(new Error(msg)); // Оставляем reject для первоначального подключения
       });
 
       this.socket.on(ServerEvent.SNAPSHOT, (data: GameSnapshot) => {
@@ -42,13 +53,52 @@ export class NetworkService {
         }
       });
 
-      this.socket.on('disconnect', () => {
-        console.warn('Отключено от сервера');
+      this.socket.on('disconnect', (reason) => {
+        // <-- ИЗМЕНИЛИ: Проверяем причину отключения
+        if (reason === 'io client disconnect') {
+            console.log('[NetworkClient] Отключено от сервера');
+        } else if (reason === 'io server disconnect') {
+            console.warn('[NetworkClient] Отключено сервером (возможно, кик или вход с другого устройства)');
+        } else {
+            console.warn('[NetworkClient] Потеряно соединение с сервером. Причина:', reason);
+        }
       });
 
       this.socket.on('class-presets', (presets: PlayerClassPreset) => {
         if (this.PresetsCallback) {
           this.PresetsCallback(presets);
+        }
+      });
+
+      this.socket.on('player-id', (playerId: string) => {
+        console.log('[NetworkClient] Мой персональный ID в игре:', playerId);
+        if (this.PlayerIdCallback) {
+          this.PlayerIdCallback(playerId);
+        }
+      });
+    });
+  }
+
+  public requestProfile(): Promise<string> {
+    return new Promise((resolve, reject) => {
+      if (!this.socket?.connected) {
+        reject(new Error('нет соединения с сервером'));
+        return;
+      }
+
+      // Предохранитель на случай, если сервер завис
+      const timeout = setTimeout(() => {
+        reject(new Error('Сервер не ответил вовремя на запрос профиля'));
+      }, 5000);
+
+      // Используем встроенное подтверждение (коллбэк) Socket.io
+      this.socket.emit('request-profile', (response: { success: boolean; login?: string }) => {
+        clearTimeout(timeout);
+        
+        if (response.success && response.login) {
+          resolve(response.login);
+        } else {
+          reject(new Error('Не удалось загрузить профиль с сервера'));
         }
       });
     });
@@ -114,6 +164,10 @@ export class NetworkService {
 
   public onSnapshotUpdate(callback: (data: GameSnapshot) => void): void {
     this.UpdateCallback = callback;
+  }
+
+  public onPlayerId(callback: (playerId: string) => void): void {
+    this.PlayerIdCallback = callback;
   }
 
   public disconnect(): void {
