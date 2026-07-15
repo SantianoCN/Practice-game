@@ -4,6 +4,7 @@ export class EnemyEntity extends InterpolatedEntity {
   public hp: number;
   public maxHp: number;
   public sprite: string;
+  public lastFacing: 'left' | 'right' = 'right';
 
   constructor(
     id: string, 

@@ -6,6 +6,7 @@ export class PlayerEntity extends InterpolatedEntity {
   public mana: number;
   public maxMana: number;
   public sprite: string;
+  public lastFacing: 'left' | 'right' = 'right';
 
   constructor(
     id: string, 

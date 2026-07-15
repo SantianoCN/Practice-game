@@ -97,8 +97,16 @@ export class GameScreenController {
           serverPlayer.maxMana,
           serverPlayer.sprite
         );
+        newPlayer.lastFacing = 'right'; // Дефолтное направление взгляда при спавне
         this.playersMap.set(serverPlayer.id, newPlayer);
       } else {
+        // РАСЧЕТ НАПРАВЛЕНИЯ ИГРОКА ПО ИЗМЕНЕНИЮ КООРДИНАТ СЕРВЕРА
+        if (serverPlayer.x < localPlayer.targetX) {
+          localPlayer.lastFacing = 'left';
+        } else if (serverPlayer.x > localPlayer.targetX) {
+          localPlayer.lastFacing = 'right';
+        }
+
         localPlayer.targetX = serverPlayer.x;
         localPlayer.targetY = serverPlayer.y;
         localPlayer.hp = serverPlayer.hp;
@@ -124,8 +132,16 @@ export class GameScreenController {
           serverEnemy.maxHp,
           serverEnemy.sprite
         );
+        newEnemy.lastFacing = 'right'; // Дефолтное направление взгляда при спавне
         this.enemiesMap.set(serverEnemy.id, newEnemy);
       } else {
+        // РАСЧЕТ НАПРАВЛЕНИЯ ВРАГА ПО ИЗМЕНЕНИЮ КООРДИНАТ СЕРВЕРА
+        if (serverEnemy.x < localEnemy.targetX) {
+          localEnemy.lastFacing = 'left';
+        } else if (serverEnemy.x > localEnemy.targetX) {
+          localEnemy.lastFacing = 'right';
+        }
+
         localEnemy.targetX = serverEnemy.x;
         localEnemy.targetY = serverEnemy.y;
         localEnemy.hp = serverEnemy.hp;
@@ -169,6 +185,7 @@ export class GameScreenController {
       if (!activeIds.has(id)) bullet.isDying = true;
     }
   }
+
 
   private gameLoop() {
     if (!this.isRunning) return;
