@@ -95,7 +95,6 @@ export class CanvasRenderer {
     this.drawObstacles(room?.obstacles ?? []);
     if (room?.chests)
       this.drawChests(room.chests);
-    console.log(room);
     if (room?.droppedItems)
       this.drawDroppedItems(room.droppedItems);
     this.drawBullets(bulletsMap);

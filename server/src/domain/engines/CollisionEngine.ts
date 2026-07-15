@@ -2,8 +2,8 @@ import { BaseNetworkEntity } from "../../../../shared/gameTypes";
 import Bullet from "../entities/Bullet";
 import { Chest } from "../entities/Chest";
 import LivingEntity from "../entities/LivingEntity";
-import { LootableItem } from "../entities/LootableItem";
 import MoveableEntity from "../entities/MoveableEntity";
+import Player from "../entities/Player";
 import { IdGenerator } from "../utils/IDGenerator";
 import { RoomGridGenerator } from "../utils/RoomGridGenerator";
 
@@ -11,41 +11,42 @@ export type DroppedItems = Map<string, { x: number, y: number, width: number, he
 
 export class CollisionEngine {
     public static processCollisions(
-        bullets: Bullet[], 
-        players: LivingEntity[], 
+        bullets: Bullet[],
+        players: LivingEntity[],
         enemies: LivingEntity[],
-        widthRoom: number, 
+        widthRoom: number,
         heightRoom: number,
         hasDoors: { Top: boolean, Bottom: boolean, Left: boolean, Right: boolean },
-        obstacles: { x: number, y: number, width: number, height: number }[],
+        obstacles: BaseNetworkEntity[],
         chests: Chest[],
         droppedItems: BaseNetworkEntity[],
         areDoorsOpen: boolean
     ): void {
         const entities = players.concat(enemies);
-    
+
         for (const entity of entities) {
             this.collisionEntity(
-                entity, 
-                heightRoom, 
-                widthRoom, 
-                hasDoors, 
-                obstacles, 
-                chests, 
+                entity,
+                heightRoom,
+                widthRoom,
+                hasDoors,
+                obstacles,
+                chests,
                 areDoorsOpen
             );
-            this.collisionChests (
-                entity, 
+            this.collisionChests(
+                entity,
                 chests,
-                droppedItems, 
+                droppedItems,
                 RoomGridGenerator.CELL_SIZE
             );
+            this.takeItem(entity, droppedItems);
         }
-    
+
         for (const bullet of bullets) {
             if (bullet.isDestroyed) continue;
-            if (this.collisionBullet(bullet, heightRoom, widthRoom)) continue;
-    
+            if (this.collisionBullet(bullet, obstacles, heightRoom, widthRoom)) continue;
+
             for (const entity of entities) {
                 if (entity.hp <= 0) continue;
                 if (bullet.ownerType === entity.type) continue;
@@ -53,7 +54,7 @@ export class CollisionEngine {
             }
         }
     }
-    
+
     private static checkBulletHit(bullet: Bullet, target: LivingEntity): boolean {
         const bulletBounds = bullet.getBounds();
         const targetBounds = target.getBounds();
@@ -67,10 +68,24 @@ export class CollisionEngine {
         return false;
     }
 
+    private static takeItem(entity: LivingEntity, droppedItems: BaseNetworkEntity[]) {
+        if (entity.type === 'player') {
+            for (let j = 0; j < droppedItems.length; j++) {
+                const item = droppedItems[j];
+                if (entity.x + entity.width / 2 > item.x && entity.x - 10 < item.x + item.width + 10
+                    && entity.y + entity.height / 2 > item.y && entity.y - 10 < item.y + item.height + 10
+                ) {
+                    droppedItems = droppedItems.splice(j, 1);
+                    console.log('[CollisionManager] удален лут');
+                }
+            }
+        }
+    }
+
     private static collisionChests(
-        entity: MoveableEntity, 
-        chests: Chest[], 
-        droppedItems: BaseNetworkEntity[], 
+        entity: MoveableEntity,
+        chests: Chest[],
+        droppedItems: BaseNetworkEntity[],
         cellSize: number
     ) {
         const entityBound = entity.getBounds();
@@ -81,21 +96,20 @@ export class CollisionEngine {
             const chRight = chest.gridX * cellSize + cellSize;
             const chTop = chest.gridY * cellSize;
             const chBottom = chest.gridY * cellSize + cellSize;
-            
+
             if (entityBound.right > chLeft && entityBound.left < chRight) {
-                if ((entityBound.top > chTop && entityBound.top < chBottom) 
-                    || (entityBound.bottom < chBottom) && (entityBound.bottom > chTop)){
+                if ((entityBound.top > chTop && entityBound.top < chBottom)
+                    || (entityBound.bottom < chBottom) && (entityBound.bottom > chTop)) {
                     for (const item of chest.loot) {
                         const id = IdGenerator.generateId('item');
                         const x = (chest.gridX - 1) * cellSize;
                         const y = chTop + 20;
-                        const height = cellSize / 2; 
+                        const height = cellSize / 2;
                         const width = height;
-                        
-                        droppedItems.push({ id, x, y, width, height, sprite: 'blue'});
+
+                        droppedItems.push({ id, x, y, width, height, sprite: 'blue' });
                         chest.isOpened = true;
                         console.log('[CollisionEngine] Открыт сундук, дроп: ' + item.type);
-                        console.log(droppedItems);
                     }
                 }
             }
@@ -107,9 +121,9 @@ export class CollisionEngine {
                         const id = IdGenerator.generateId('item');
                         const x = (chest.gridX - 1) * cellSize;
                         const y = chTop + 20;
-                        const height = cellSize / 2; 
+                        const height = cellSize / 2;
                         const width = height;
-                        droppedItems.push({ id, x, y, width, height, sprite: 'blue'});
+                        droppedItems.push({ id, x, y, width, height, sprite: 'blue' });
                         chest.isOpened = true;
                         console.log('[CollisionEngine] Открыт сундук, дроп: ' + item.type);
                     }
@@ -117,18 +131,30 @@ export class CollisionEngine {
             }
         }
     }
-    
-    private static collisionBullet(bullet: Bullet, height: number, width: number): boolean {
+
+    private static collisionBullet(bullet: Bullet, obstacles: BaseNetworkEntity[], height: number, width: number): boolean {
         if (bullet.x < 0 || bullet.x > width || bullet.y < 0 || bullet.y > height) {
             bullet.destroy();
             return true;
         }
+
+        
+
+        for (let i = 0; i < obstacles.length; i++) {
+            const obstacle = obstacles[i];
+            if (bullet.x + bullet.width / 2 > obstacle.x && bullet.x < obstacle.x + obstacle.width
+                && bullet.y + bullet.height / 2 > obstacle.y && bullet.y < obstacle.y + obstacle.height
+            ) {
+                bullet.destroy();
+                return true;
+            }
+        }
         return false;
     }
-    
+
     private static collisionEntity(
-        entity: MoveableEntity, 
-        height: number, 
+        entity: MoveableEntity,
+        height: number,
         width: number,
         hasDoors: { Top: boolean, Bottom: boolean, Left: boolean, Right: boolean },
         obstacles: { x: number, y: number, width: number, height: number }[],
@@ -147,11 +173,11 @@ export class CollisionEngine {
             const obBottom = obstacle.y + obstacle.height / 2;
 
             if (entityBound.right > obLeft && entityBound.left < obRight) {
-                if ((entityBound.top > obTop && entityBound.top < obBottom) 
-                    || (entityBound.bottom < obBottom) && (entityBound.bottom > obTop)){
+                if ((entityBound.top > obTop && entityBound.top < obBottom)
+                    || (entityBound.bottom < obBottom) && (entityBound.bottom > obTop)) {
                     if (entityBound.left < obLeft) {
                         entity.x = entity.x - 1;
-                    } else 
+                    } else
                         entity.x = entity.x + 1;
                     entity.vx = 0;
                 }
@@ -160,11 +186,11 @@ export class CollisionEngine {
             if (entityBound.bottom > obTop && entityBound.top < obBottom) {
                 if ((entityBound.left > obLeft && entityBound.left < obRight)
                     || (entityBound.right < obRight) && (entityBound.right > obLeft)) {
-                    if (entityBound.top < obTop) { 
+                    if (entityBound.top < obTop) {
                         entity.y = entity.y - 1;
                     } else
                         entity.y = entity.y + 1;
-                    entity.vy = 0;   
+                    entity.vy = 0;
                 }
             }
         }
