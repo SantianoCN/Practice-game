@@ -5,15 +5,11 @@
     "module": "ESNext",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "skipLibCheck": true,
-
-    /* Режим сборки для Bundler */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-
-    /* Строгие проверки (спасают жизнь в геймдеве) */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
