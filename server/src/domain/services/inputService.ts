@@ -1,7 +1,7 @@
 import Player from '../entities/Player';
 import Bullet from '../entities/Bullet';
 import { PlayerAction } from '../../../../shared/gameTypes';
-import { ServerRoomState } from '../engines/GameEngine';
+import { ServerRoomState } from '../utils/mapGenerator';
 import { applyPlayerMovementInput } from './movementService';
 import { getDirectionToClosestEnemy, createProjectile } from './combatService';
 

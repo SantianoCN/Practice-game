@@ -3,7 +3,7 @@
 import Player from '../entities/Player';
 import Bullet from '../entities/Bullet';
 import { GameSnapshot } from '../../../../shared/gameTypes';
-import { ServerRoomState } from '../engines/GameEngine';
+import { ServerRoomState } from '../utils/mapGenerator';
 
 export const buildPlayerSnapshot = (
     userId: string,
@@ -22,38 +22,29 @@ export const buildPlayerSnapshot = (
 
     return {
         players: Array.from(players.values())
-            .filter(p => p.currentRoomX === rx && p.currentRoomY === ry)
-            .map(p => ({ 
-                id: p.id, 
-                x: Math.round(p.x),
-                y: Math.round(p.y), 
-                hp: Math.round(p.hp), 
-                maxHp: p.maxHp,
-                mana: Math.round(p.mana),
-                maxMana: p.maxMana,
-                sprite: p.sprite 
-            })),
-        room: {
-            gridX: room.gridX,
-            gridY: room.gridY,
-            isClear: room.isClear,
-            hasDoors: room.hasDoors,
-            type: room.type,
-            enemies: room.enemies.map(e => ({
-                id: e.id,
-                x: Math.round(e.x),
-                y: Math.round(e.y),
-                hp: Math.round(e.hp),
-                maxHp: e.maxHp,
-                sprite: e.sprite
-            }))
-        }, 
-        bullets: bullets
-            .filter(b => b.currentRoomX === rx && b.currentRoomY === ry)
-            .map(b => ({ 
-                id: b.id, 
-                x: Math.round(b.x), 
-                y: Math.round(b.y)
-            }))
+                    .filter(p => p.currentRoomX === rx && p.currentRoomY === ry)
+                    .map(p => ({
+                        id: p.id,
+                        x: p.x,
+                        y: p.y,
+                        hp: p.hp,
+                        maxHp: p.maxHp,
+                        mana: p.mana,
+                        maxMana: p.maxMana,
+                        width: p.width,
+                        height: p.height,
+                        sprite: p.sprite
+                    })),
+                room: room,
+                bullets: bullets
+                    .filter(b => b.currentRoomX === rx && b.currentRoomY === ry)
+                    .map(b => ({
+                        id: b.id,
+                        x: b.x,
+                        y: b.y,
+                        width: b.width,
+                        height: b.height,
+                        sprite: b.sprite
+                    }))
+            };
     };
-};

@@ -1,7 +1,7 @@
 import Player from '../entities/Player';
 import Enemy from '../entities/Enemy';
 import Bullet from '../entities/Bullet';
-import { generateMap } from '../utils/mapGenerator';
+import { generateMap, ServerRoomState } from '../utils/mapGenerator';
 import { PlayerAction, RoomState as SharedRoomState } from '../../../../shared/gameTypes';
 import { GAME_CONFIG } from '../../config/gameConfig';
 import { checkAndApplyRoomTransition } from '../services/movementService';
@@ -10,14 +10,13 @@ import { buildPlayerSnapshot } from '../services/snapshotService';
 import { updateActiveRooms } from '../services/roomService';
 import { createPlayerEntity } from '../factories/playerFactory'
 import { processAllPlayersInputs } from '../services/inputService'
-
-export interface ServerRoomState extends Omit<SharedRoomState, 'enemies'> {
-    enemies: Enemy[];
-}
+import { Chest } from '../entities/Chest';
+import { RoomGridGenerator } from '../utils/RoomGridGenerator';
+import GridMapper from '../utils/GridMapper';
 
 export class GameEngine {
     public sessionId: string;
-    
+
     private players: Map<string, Player>;
     private bullets: Bullet[];
     private lastFrameTime: number = performance.now();
@@ -36,15 +35,18 @@ export class GameEngine {
         this.players = new Map();
         this.bullets = [];
         this.playerInputs = new Map();
+
         this.roomHeight = GAME_CONFIG.ROOM_HEIGHT;
         this.roomWidth = GAME_CONFIG.ROOM_WIDTH;
         this.floorMap = generateMap(GAME_CONFIG.MIN_ROOMS, GAME_CONFIG.MAX_ROOMS);
+
+        this.populateAllRoomsWithGrid();
 
         this.startGameLoop();
     }
 
     public addPlayer(
-        userId: string, 
+        userId: string,
         name: string,
         weaponId: string, 
         archetype: string
@@ -112,14 +114,25 @@ export class GameEngine {
         updateActiveRooms(
             this.players, 
             this.bullets, 
-            this.floorMap, 
+            this.floorMap,
+            
             this.roomWidth, 
             this.roomHeight, 
             deltaTime
         );
 
+        // 2. Двигаем игроков
+        for (const player of this.players.values()) {
+            player.updateEntity(deltaTime);
+        }
+
+        // 3. Двигаем пули (снаряды)
+        for (const bullet of this.bullets) {
+            bullet.updatePosition(deltaTime);
+        }
+
         this.bullets = this.bullets.filter(b => !b.isDestroyed);
-        
+
         for (const row of this.floorMap) {
             for (const room of row) {
                 if (room) {
@@ -143,6 +156,39 @@ export class GameEngine {
                     userId: userId,
                     snapshot: snapshot
                 });
+            }
+        }
+    }
+
+
+    private populateAllRoomsWithGrid() {
+        for (let y = 0; y < this.floorMap.length; y++) {
+            for (let x = 0; x < this.floorMap[y].length; x++) {
+                const room = this.floorMap[y][x];
+
+                if (room !== null) {
+                    // const roomGrid = RoomGridGenerator.populate(
+                    //     this.roomWidth,
+                    //     this.roomHeight,
+                    //     1 // кол-во сундуков?
+                    // );
+                    const { obstacles, chests } = RoomGridGenerator.generatePersistence(room);
+                    room.chests = chests;
+
+                    room.obstacles = obstacles.map(ob =>
+                        GridMapper.mapObstacleToBaseNetworkEntity(
+                            ob.id,
+                            ob.startGridX,
+                            ob.startGridY,
+                            ob.endGridX,
+                            ob.endGridY,
+                            RoomGridGenerator.CELL_SIZE,
+                            'black'
+                        )
+                    );
+
+                    room.chests = chests;
+                }
             }
         }
     }

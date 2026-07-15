@@ -1,4 +1,5 @@
-import { RoomState as SharedRoomState, RoomType, VectorXY } from '../../../../shared/gameTypes';
+import { RoomState as SharedRoomState, RoomType, VectorXY, BaseNetworkEntity } from '../../../../shared/gameTypes';
+import { Chest } from '../entities/Chest';
 import Enemy from '../entities/Enemy';
 import { GAME_CONFIG } from '../../config/gameConfig';
 import { WARRIOR_PRESET_LIZARD } from '../../config/enemyPresets';
@@ -8,8 +9,10 @@ import Weapon from '../items/Weapon';
 
 export const MATRIX_SIZE = 10;
 
-export interface ServerRoomState extends Omit<SharedRoomState, 'enemies'> {
+export interface ServerRoomState extends Omit<SharedRoomState, 'enemies' | 'chests' | 'droppedItems'> {
     enemies: Enemy[];
+    chests: Chest[];
+    droppedItems: BaseNetworkEntity[];
 }
 
 interface MapState {
@@ -36,24 +39,6 @@ const canCreateRoom = (grid: (ServerRoomState | null)[][], x: number, y: number)
     if (grid[y][x] !== null) return false;
     if (countNeighbors(grid, x, y) > 1) return false;
     return true;
-};
-
-const addRoom = (state: MapState, x: number, y: number, type: RoomType): void => {
-    const center = Math.floor(MATRIX_SIZE / 2);
-    const distance = Math.abs(x - center) + Math.abs(y - center);
-    const room: ServerRoomState = {
-        gridX: x,
-        gridY: y,
-        isClear: false,
-        type: type,
-        hasDoors: { Top: false, Bottom: false, Left: false, Right: false },
-        respawnedEntities: [],
-        distanceToSpawn: distance,
-        enemies: []
-    };
-
-    state.grid[y][x] = room;
-    state.roomList.push(room);
 };
 
 const buildLayout = (state: MapState, minRooms: number, maxRooms: number): boolean => {
@@ -89,6 +74,32 @@ const buildLayout = (state: MapState, minRooms: number, maxRooms: number): boole
         }
     }
     return state.roomList.length >= minRooms;
+};
+
+const addRoom = (state: MapState, x: number, y: number, type: RoomType): void => {
+    const center = Math.floor(MATRIX_SIZE / 2);
+    const distance = Math.abs(x - center) + Math.abs(y - center);
+    const room: ServerRoomState = {
+      gridX: x,
+      gridY: y,
+      isClear: false,
+      type: type,
+      hasDoors: {
+        'Top': false,
+        'Bottom': false,
+        'Left': false,
+        'Right': false
+      },
+      obstacles: [],  
+      chests: [],
+      droppedItems: [],
+      respawnedEntities: [],
+      distanceToSpawn: distance,
+      enemies: []
+    };
+
+    state.grid[y][x] = room;
+    state.roomList.push(room);
 };
 
 const assignSpecialRooms = (roomList: ServerRoomState[], grid: (ServerRoomState | null)[][]) => {

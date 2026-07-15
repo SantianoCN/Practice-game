@@ -1,7 +1,9 @@
 import Player from '../entities/Player';
 import Bullet from '../entities/Bullet';
-import { ServerRoomState } from '../engines/GameEngine';
+import { ServerRoomState } from '../utils/mapGenerator';
 import { processCollisions } from './collisionService';
+import { Chest } from '../entities/Chest';
+import { BaseNetworkEntity } from '../../../../shared/gameTypes';
 
 // Функция берет на себя всю грязную работу по обновлению активных комнат
 export const updateActiveRooms = (
@@ -49,6 +51,9 @@ export const updateActiveRooms = (
             roomWidth, 
             roomHeight,
             room.hasDoors,
+            room.obstacles,
+            room.chests,
+            room.droppedItems,
             areDoorsOpen 
         );
 

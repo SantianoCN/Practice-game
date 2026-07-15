@@ -1,3 +1,5 @@
+import { ServerRoomState } from "../server/src/domain/utils/mapGenerator";
+
 export interface PlayerAction {
     keys: {
         up: boolean;
@@ -53,6 +55,16 @@ export interface BaseNetworkEntity {
     sprite: string;
 }
 
+export interface Particle {
+    id: string;
+    type: string;
+    sprite: string;
+}
+
+export interface Chest extends BaseNetworkEntity {
+    items: Particle[];
+} 
+
 export interface Bullet extends BaseNetworkEntity {}
 
 export interface Entity extends BaseNetworkEntity {
@@ -73,6 +85,8 @@ export interface RoomState {
     gridY: number;
     isClear: boolean;
     hasDoors: {[key in Direction]: boolean};
+    obstacles: BaseNetworkEntity[];
+    chests: BaseNetworkEntity[];
     respawnedEntities: Entity[];
     enemies: Entity[];
     distanceToSpawn: number;
@@ -141,9 +155,9 @@ export interface RoomSnapshot {
 }
 
 export interface GameSnapshot {
-    players: PlayerSnapshot[];
-    room: RoomSnapshot;
-    bullets: BulletSnapshot[];
+    players: Player[];
+    room: ServerRoomState;
+    bullets: Bullet[];
 }
 
 export interface SessionCreateRequest {

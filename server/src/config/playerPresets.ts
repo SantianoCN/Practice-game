@@ -12,7 +12,7 @@ export const WARRIOR_PRESET: EntityStats = {
 export const MAGE_PRESET: EntityStats = {
     maxHp: 80,
     maxMana: 150,
-    speed: 110,
+    speed: 120,
     sprite: 'blue_box',
     archetype: 'mage'
 };

@@ -1,6 +1,6 @@
 import Player from '../entities/Player';
 import { PlayerAction } from '../../../../shared/gameTypes';
-import { ServerRoomState } from '../engines/GameEngine';
+import { ServerRoomState } from '../utils/mapGenerator';
 import { MATRIX_SIZE } from '../utils/mapGenerator';
 
 // Обработка инпута ходьбы
