@@ -1,9 +1,9 @@
 import { BoundingBox, LivingEntity, MoveableEntity } from '../entities/BaseEntities';
 import { Obstacle } from '../entities/Obstacle';
 import { Bullet } from '../entities/Bullet';
-import { Room } from '../world/Room';
+import { Room } from '../entities/Room';
 import { Chest, DroppedItem } from '../entities/Chest';
-import { IIdGenerator } from '../../application/interfaces/IIdGenerator';
+import { IDGenerator } from '../config/gameConfig';
 
 export class CollisionEngine {
     
@@ -146,7 +146,7 @@ export class CollisionEngine {
         chests: Chest[], 
         droppedItems: DroppedItem[],
         cellSize: number,
-        idGen: IIdGenerator
+        idGen: IDGenerator
     ): void {
         const pBounds = player.getBounds();
 
@@ -162,7 +162,7 @@ export class CollisionEngine {
                 pBounds.bottom > chTop && pBounds.top < chBottom) {
                 
                 for (const item of chest.loot) {
-                    const id = idGen.generateId('item');
+                    const id = idGen('item');
                     const x = (chest.gridX - 1) * cellSize;
                     const y = chTop + 20;
                     droppedItems.push(new DroppedItem(id, x, y, 10, 10, 'blue', item));

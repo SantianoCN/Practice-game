@@ -1,5 +1,5 @@
 import { Player } from '../../domain/entities/Player';
-import { Room } from '../../domain/world/Room';
+import { Room } from '../../domain/entities/Room';
 
 export class GameSession {
     public players: Map<string, Player> = new Map();

@@ -6,8 +6,7 @@ import {
 import { Player } from '../entities/Player';
 import { Weapon } from '../entities/Weapon';
 import { Enemy } from '../entities/Enemy';
-
-export type IDGenerator = (prefix: string) => string;
+import { IDGenerator } from '../config/gameConfig';
 
 export class EntityFactory {
     

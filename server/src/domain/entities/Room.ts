@@ -1,8 +1,8 @@
 import { RoomType, Direction } from '@game/shared';
-import { Enemy } from '../entities/Enemy';
-import { Chest, DroppedItem } from '../entities/Chest';
-import { Obstacle } from '../entities/Obstacle';
-import { Bullet } from '../entities/Bullet';
+import { Enemy } from './Enemy';
+import { Chest, DroppedItem } from './Chest';
+import { Obstacle } from './Obstacle';
+import { Bullet } from './Bullet';
 
 export class Room {
     public isClear: boolean = false;

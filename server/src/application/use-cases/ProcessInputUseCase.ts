@@ -8,7 +8,7 @@ export class ProcessInputUseCase {
         private idGen: IIdGenerator
     ) {}
 
-    public execute(sessionId: string, userId: string, action: PlayerActionDTO): void {
+    public execute(sessionId: string, userId: string, action: PlayerActionDTO, currentTime: number): void {
         const session = this.repo.get(sessionId);
         if (!session) return;
 
@@ -22,9 +22,9 @@ export class ProcessInputUseCase {
             if (!room) return;
 
             const weapon = player.getActiveWeapon();
-            const now = performance.now();
 
-            let dirX = 1; let dirY = 0;
+            let dirX = 1;
+            let dirY = 0;
             const aliveEnemies = room.enemies.filter(e => !e.isDead());
             
             if (aliveEnemies.length > 0) {
@@ -40,7 +40,7 @@ export class ProcessInputUseCase {
             }
 
             const bulletId = this.idGen.generateId('bullet');
-            const bullet = weapon.fire(bulletId, player.id, 'player', player.x, player.y, dirX, dirY, now);
+            const bullet = weapon.fire(bulletId, player.id, 'player', player.x, player.y, dirX, dirY, currentTime);
             
             if (bullet) {
                 room.bullets.push(bullet); 

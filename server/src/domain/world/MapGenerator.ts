@@ -3,14 +3,13 @@ import {
     WARRIOR_PRESET_LIZARD, MAGE_PRESET_LIZARD, 
     SWORD, STAFF, FIREBALL, ICE_STAFF, AXE
 } from '@game/shared';
-import { Room } from './Room';
+import { Room } from '../entities/Room';
 import { Enemy } from '../entities/Enemy';
 import { Obstacle } from '../entities/Obstacle';
 import { Chest, LootItem } from '../entities/Chest';
 import { Weapon } from '../entities/Weapon';
 import { ROOM_TEMPLATES, RoomTemplate } from './roomTemplates';
-
-export type IdGeneratorFn = (prefix: string) => string;
+import { GAME_CONFIG, IDGenerator } from '../config/gameConfig';
 
 interface Coords {
     x: number;
@@ -20,14 +19,14 @@ interface Coords {
 export class MapGenerator {
     private grid: (Room | null)[][] = [];
     private roomsCreated: Room[] = [];
-    private readonly CELL_SIZE = 20;
+    private readonly CELL_SIZE = GAME_CONFIG.CELL_SIZE;
 
     constructor(
         private gridSize: number,
         private targetRoomCount: number,
         private roomWidth: number,
         private roomHeight: number,
-        private generateId: IdGeneratorFn
+        private generateId: IDGenerator
     ) {}
 
     public generate(): (Room | null)[][] {
@@ -37,7 +36,7 @@ export class MapGenerator {
         const startX = Math.floor(this.gridSize / 2);
         const startY = Math.floor(this.gridSize / 2);
 
-        this.buildLayout(startX, startY, 5, 10);
+        this.buildLayout(startX, startY, Math.floor(this.targetRoomCount / 2), this.targetRoomCount);
 
         this.assignRoomTypes();
 
@@ -58,8 +57,11 @@ export class MapGenerator {
             const targetCount = Math.floor(Math.random() * (maxRooms - minRooms + 1)) + minRooms;
 
             while ((this.roomsCreated.length < targetCount) && (queue.length > 0)) {
-                const element = Math.floor(Math.random() * queue.length);
-                const [cordXY] = queue.splice(element, 1); 
+                const elementIndex = Math.floor(Math.random() * queue.length);
+                const lastIndex = queue.length - 1;
+                [queue[elementIndex], queue[lastIndex]] = [queue[lastIndex], queue[elementIndex]];
+                const currentCoord = queue.pop()!;
+
                 let roomCreated = false;
 
                 const directions = [
@@ -68,8 +70,8 @@ export class MapGenerator {
                 ].sort(() => Math.random() - 0.5);
 
                 for (const move of directions) {
-                    const nextX = cordXY.x + move.dx;
-                    const nextY = cordXY.y + move.dy;
+                    const nextX = currentCoord.x + move.dx;
+                    const nextY = currentCoord.y + move.dy;
 
                     if (this.canCreateRoom(nextX, nextY)) {
                         this.addRoom(nextX, nextY, 'Normal');
@@ -79,8 +81,8 @@ export class MapGenerator {
                     }
                 }
 
-                if (roomCreated && this.countNeighbors(cordXY.x, cordXY.y) < 3) {
-                    queue.push(cordXY);
+                if (roomCreated && this.countNeighbors(currentCoord.x, currentCoord.y) < 3) {
+                    queue.push(currentCoord);
                 }
             }
         }

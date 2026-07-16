@@ -1,14 +1,15 @@
 import { EntityStatsDTO } from '@game/shared';
 import { LivingEntity } from './BaseEntities';
 import { Weapon } from './Weapon';
+import { GAME_CONFIG } from '../config/gameConfig';
 
 export class Player extends LivingEntity {
     public inventory: Weapon[];
     public currentWeaponIndex: number = 0;
     public readonly entityType = 'player';
     
-    public roomX: number = 5;
-    public roomY: number = 5;
+    public roomX: number = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
+    public roomY: number = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
 
     constructor(
         id: string,

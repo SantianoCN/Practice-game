@@ -71,7 +71,7 @@ export class SocketController {
             const parsed = PlayerActionSchema.safeParse(rawData);
             if (!parsed.success) return;
 
-            this.inputUseCase.execute(sessionId, userId, parsed.data);
+            this.inputUseCase.execute(sessionId, userId, parsed.data, performance.now());
         });
 
         const handleLeave = () => {

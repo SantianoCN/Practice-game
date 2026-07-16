@@ -14,6 +14,7 @@ import { SessionManagementUseCase } from './application/use-cases/SessionManagem
 import { ProcessInputUseCase } from './application/use-cases/ProcessInputUseCase';
 import { GameTickUseCase } from './application/use-cases/GameTickUseCase';
 import { AuthUseCase } from './application/use-cases/AuthUseCase';
+import { GAME_CONFIG } from './domain/config/gameConfig';
 
 async function bootstrap() {
     const app = express();
@@ -30,7 +31,7 @@ async function bootstrap() {
     const broadcaster = new SocketBroadcaster(io);
 
     const authUseCase = new AuthUseCase(accountRepo, idGen);
-    const sessionUseCase = new SessionManagementUseCase(gameRepo, idGen, { roomWidth: 800, roomHeight: 600 });
+    const sessionUseCase = new SessionManagementUseCase(gameRepo, idGen, GAME_CONFIG.ROOM_WIDTH, GAME_CONFIG.ROOM_HEIGHT);
     const inputUseCase = new ProcessInputUseCase(gameRepo, idGen);
     const gameTickUseCase = new GameTickUseCase(gameRepo, broadcaster, idGen);
 
@@ -68,15 +69,14 @@ async function bootstrap() {
         new SocketController(socket, sessionUseCase, inputUseCase, socket.data.login);
     });
 
-    const TICK_RATE = 20;
     let lastTime = performance.now();
 
     setInterval(() => {
         const now = performance.now();
         const deltaTime = (now - lastTime) / 1000;
         lastTime = now;
-        gameTickUseCase.execute(deltaTime);
-    }, 1000 / TICK_RATE);
+        gameTickUseCase.execute(deltaTime, now);
+    }, 1000 / GAME_CONFIG.TICK_RATE);
 
     const PORT = process.env.PORT || 3000;
     httpServer.listen(PORT, () => {
