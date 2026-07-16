@@ -1,25 +1,32 @@
-import Weapon from "../items/Weapon";
-import { LootableItem } from "./LootableItem";
+import { WeaponConfigDTO } from '@game/shared';
 
+export type LootItem = 
+    | { type: 'weapon', weapon: WeaponConfigDTO }
+    | { type: 'gold', amount: number };
+
+export class DroppedItem {
+    constructor(
+        public id: string,
+        public x: number,
+        public y: number,
+        public width: number = 10,
+        public height: number = 10,
+        public sprite: string,
+        public content: LootItem
+    ) {}
+}
 
 export class Chest {
-    public id: string;
-    public gridX: number;
-    public gridY: number;
-    public loot: LootableItem[];
-    public isOpened: boolean;
-    
+    public isOpened: boolean = false;
+
     constructor(
-        id: string,
-        x: number,
-        y: number,
-        loot: LootableItem[],
-        isOpened: boolean = false
-    ) {
-        this.id = id;
-        this.gridX = x;
-        this.gridY = y;
-        this.loot = loot,
-            this.isOpened = false
-    }
+        public id: string,
+        public x: number,
+        public y: number,
+        public width: number,
+        public height: number,
+        public gridX: number,
+        public gridY: number,
+        public loot: LootItem[]
+    ) {}
 }

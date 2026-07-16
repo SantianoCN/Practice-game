@@ -2,11 +2,12 @@
   "name": "server",
   "version": "1.0.0",
   "scripts": {
-    "dev": "tsx watch ./index.ts",
+    "dev": "tsx watch ./src/main.ts",
     "build": "tsc",
-    "start": "node dist/server/index.js"
+    "start": "node dist/server/src/main.js"
   },
   "dependencies": {
+    "@game/shared": "*",
     "@prisma/client": "^5.22.0",
     "express": "^4.22.2",
     "socket.io": "^4.8.3"
@@ -18,7 +19,7 @@
     "tsx": "^4.19.2",
     "typescript": "^5.4.5"
   },
-  "main": "dist/server/index.js",
+  "main": "dist/server/src/main.js",
   "keywords": [],
   "author": "",
   "license": "ISC",

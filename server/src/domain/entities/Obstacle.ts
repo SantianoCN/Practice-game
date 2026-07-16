@@ -1,37 +1,21 @@
-
+import { BoundingBox } from './BaseEntities';
 
 export class Obstacle {
-    public id: string;
-    public startGridX: number;
-    public startGridY: number;
-    public endGridX: number;
-    public endGridY: number;
-    public isDestructible: boolean;
-    private isDestructed: boolean = false;
-
     constructor(
-        id: string, 
-        startX: number, 
-        startY: number,
-        endX: number, 
-        endY: number, 
-        isDestructible: boolean = false
-    ) {
-        this.id = id;
-        this.startGridX = startX;
-        this.startGridY = startY;
-        this.endGridX = endX;
-        this.endGridY = endY;
-        this.isDestructible = isDestructible;
-    }
-    
-    public destroy() {
-        if (this.isDestructible) {
-            this.isDestructed = true;
-        }
-    }
+        public id: string,
+        public x: number,
+        public y: number,
+        public width: number,
+        public height: number,
+        public sprite: string = 'black'
+    ) {}
 
-    public isDestroyed(): boolean {
-        return this.isDestructed;
+    public getBounds(): BoundingBox {
+        return {
+            left: this.x - this.width / 2,
+            right: this.x + this.width / 2,
+            top: this.y - this.height / 2,
+            bottom: this.y + this.height / 2
+        };
     }
 }

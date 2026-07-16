@@ -1,51 +1,37 @@
-import MoveableEntity from './MoveableEntity';
-import { ProjectileConfig } from '../../../../shared/gameTypes';
+import { ProjectileConfigDTO } from '@game/shared';
+import { MoveableEntity } from './BaseEntities';
 
-export default class Bullet extends MoveableEntity {
-    public ownerId: string;
-    public ownerType: 'player' | 'enemy';
+export class Bullet extends MoveableEntity {
+    public distanceTraveled: number = 0;
+    public isDestroyed: boolean = false;
     public damage: number;
     public range: number;
-    public distanceTraveled: number;
-    public isDestroyed: boolean;
 
-    constructor(id: string, ownerType: 'player' | 'enemy', ownerId: string, startX: number, startY: number, targetVx: number, targetVy: number, config: ProjectileConfig) {
-        super(id, 'projectile', startX, startY, 8, 8);
-        this.vx = targetVx;
-        this.vy = targetVy;
-        this.ownerType = ownerType;
-        this.ownerId = ownerId;
-        
+    constructor(
+        id: string, 
+        public ownerId: string, 
+        public ownerType: 'player' | 'enemy',
+        x: number, y: number, 
+        dirX: number, dirY: number, 
+        config: ProjectileConfigDTO
+    ) {
+        super(id, x, y, 8, 8, config.speed, config.sprite);
+        this.vx = dirX;
+        this.vy = dirY;
         this.damage = config.damage;
         this.range = config.range;
-        this.speed = config.speed;
-        
-        this.distanceTraveled = 0;
-        this.isDestroyed = false;
-        this.sprite = config.sprite;
     }
 
-    override updatePosition(deltaTime: number): void {
+    public override updatePosition(deltaTime: number): void {
         if (this.isDestroyed) return;
 
-        const movementLength = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+        const prevX = this.x;
+        const prevY = this.y;
+        super.updatePosition(deltaTime);
         
-        if (movementLength > 0) {
-            const stepX = (this.vx / movementLength) * this.speed * deltaTime;
-            const stepY = (this.vy / movementLength) * this.speed * deltaTime;
-            
-            this.x += stepX;
-            this.y += stepY;
-
-            this.distanceTraveled += Math.sqrt(stepX * stepX + stepY * stepY);
-        }
-
+        this.distanceTraveled += Math.hypot(this.x - prevX, this.y - prevY);
         if (this.distanceTraveled >= this.range) {
-            this.destroy();
+            this.isDestroyed = true;
         }
-    }
-
-    public destroy(): void {
-        this.isDestroyed = true;
     }
 }

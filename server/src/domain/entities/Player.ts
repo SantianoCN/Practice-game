@@ -1,53 +1,38 @@
-import LivingEntity from './LivingEntity';
-import { EntityStats } from '../../../../shared/gameTypes';
-import Weapon from '../items/Weapon';
+import { EntityStatsDTO } from '@game/shared';
+import { LivingEntity } from './BaseEntities';
+import { Weapon } from './Weapon';
 
-export default class Player extends LivingEntity {
-    public name: string;
+export class Player extends LivingEntity {
     public inventory: Weapon[];
-    public currentWeaponIndex: number;
+    public currentWeaponIndex: number = 0;
+    public readonly entityType = 'player';
+    
+    public roomX: number = 5;
+    public roomY: number = 5;
 
-    constructor(id: string, name: string, x: number, y: number, presetStats: EntityStats, startWeapon: Weapon) {
-        super(id, 'player', x, y, 32, 32, presetStats.archetype);
-        this.name = name;
+    constructor(
+        id: string,
+        public name: string,
+        x: number, y: number,
+        stats: EntityStatsDTO,
+        startWeapon: Weapon,
+        public mana: number,
+        public maxMana: number
+    ) {
+        super(id, x, y, 32, 32, stats.speed, stats.sprite, stats.maxHp, stats.maxHp, stats.archetype);
         this.inventory = [startWeapon];
-        this.currentWeaponIndex = 0;
-
-        this.maxHp = presetStats.maxHp;
-        this.hp = presetStats.maxHp;
-        this.maxMana = presetStats.maxMana;
-        this.mana = presetStats.maxMana;
-        this.speed = presetStats.speed;
-        this.sprite = presetStats.sprite;
-        this.currentRoomX = 5;
-        this.currentRoomY = 5;
     }
 
-    public setDirection(inputX: number, inputY: number): void {
-        this.vx = inputX;
-        this.vy = inputY;
-    }
-
-    public addWeaponToInventory(newWeapon: Weapon): void {
-        if (this.inventory.length < 3) {
-            this.inventory.push(newWeapon);
-        } else {
-            this.inventory[this.currentWeaponIndex] = newWeapon;
-        }
-    }
-
-    public equipWeapon(index: number): void {
-        if (index >= 0 && index < this.inventory.length) {
-            this.currentWeaponIndex = index;
-        }
+    public applyInput(up: boolean, down: boolean, left: boolean, right: boolean): void {
+        this.vx = 0;
+        this.vy = 0;
+        if (up) this.vy -= 1;
+        if (down) this.vy += 1;
+        if (left) this.vx -= 1;
+        if (right) this.vx += 1;
     }
 
     public getActiveWeapon(): Weapon {
         return this.inventory[this.currentWeaponIndex];
-    }
-
-    override die(): void {
-        this.vx = 0;
-        this.vy = 0;
     }
 }

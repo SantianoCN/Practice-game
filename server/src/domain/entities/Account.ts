@@ -1,11 +1,13 @@
 export class Account {
+    public id: string;
     public login: string;
     public passwordHash: string;
     public refreshToken: string;
 
-    public constructor(login: string, password: string, token: string = '') {
+    constructor(id: string, login: string, passwordHash: string, refreshToken: string = '') {
+        this.id = id;
         this.login = login;
-        this.passwordHash = password; // hash(password)
-        this.refreshToken = token;
+        this.passwordHash = passwordHash;
+        this.refreshToken = refreshToken;
     }
 }

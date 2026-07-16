@@ -1,57 +1,48 @@
-import LivingEntity from './LivingEntity';
-import Player from './Player';
-import { EntityStats } from '../../../../shared/gameTypes';
-import Weapon from '../items/Weapon';
+import { EntityStatsDTO } from '@game/shared';
+import { LivingEntity } from './BaseEntities';
+import { Weapon } from './Weapon';
+import { Player } from './Player';
 
-export default class Enemy extends LivingEntity {
-    public aiState: 'idle' | 'chase' | 'attack';
-    public targetId: string | null;
+export type AIState = 'idle' | 'chase' | 'attack';
+
+export class Enemy extends LivingEntity {
     public currentWeapon: Weapon;
+    public targetId: string | null = null;
+    public aiState: AIState = 'idle';
+    public readonly entityType = 'enemy';
 
-    constructor(id: string, x: number, y: number, presetStats: EntityStats, startWeapon: Weapon) {
-        super(id, 'enemy', x, y, 32, 32, presetStats.archetype);
-        this.aiState = 'chase';
-        this.targetId = null;
-        this.currentWeapon = startWeapon;
-
-        this.maxHp = presetStats.maxHp;
-        this.hp = presetStats.maxHp;
-        this.speed = presetStats.speed;
-        this.sprite = presetStats.sprite;
+    constructor(id: string, x: number, y: number, stats: EntityStatsDTO, weapon: Weapon) {
+        super(id, x, y, 32, 32, stats.speed, stats.sprite, stats.maxHp, stats.maxHp, stats.archetype);
+        this.currentWeapon = weapon;
     }
 
-    public updateTarget(allPlayers: Player[]): void {
-        if (allPlayers.length === 0) {
+    public updateAI(playersInRoom: Player[]): void {
+        if (playersInRoom.length === 0) {
             this.targetId = null;
             this.vx = 0;
             this.vy = 0;
             return;
         }
 
-        let closestPlayer: Player | null = null;
+        let closest: Player | null = null;
         let minDistance = Infinity;
 
-        for (const player of allPlayers) {
-            const dx = player.x - this.x;
-            const dy = player.y - this.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-
-            if (distance < minDistance) {
-                minDistance = distance;
-                closestPlayer = player;
+        for (const p of playersInRoom) {
+            if (p.isDead()) continue;
+            const dist = Math.hypot(p.x - this.x, p.y - this.y);
+            if (dist < minDistance) {
+                minDistance = dist;
+                closest = p;
             }
         }
 
-        if (closestPlayer) {
-            this.targetId = closestPlayer.id;
-            
-            this.vx = closestPlayer.x - this.x;
-            this.vy = closestPlayer.y - this.y;
+        if (closest) {
+            this.targetId = closest.id;
+            this.vx = closest.x - this.x;
+            this.vy = closest.y - this.y;
+        } else {
+            this.vx = 0;
+            this.vy = 0;
         }
-    }
-
-    override die(): void {
-        this.vx = 0;
-        this.vy = 0;
     }
 }
