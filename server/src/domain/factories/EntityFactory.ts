@@ -1,11 +1,8 @@
-import { 
-    PLAYER_CLASSES, 
-    EntityStatsDTO, 
-    WeaponConfigDTO
-} from '@game/shared';
 import { Player } from '../entities/Player';
 import { Weapon } from '../entities/Weapon';
 import { Enemy } from '../entities/Enemy';
+import { PLAYER_CLASSES, WeaponConfig } from '../config/WeaponConfigs';
+import { EntityStats } from '../config/EntityConfigs';
 
 export type IDGenerator = (prefix: string) => string;
 
@@ -21,7 +18,7 @@ export class EntityFactory {
         generateId: IDGenerator
     ): Player {
         const classPreset = PLAYER_CLASSES[archetype] || PLAYER_CLASSES['warrior'];
-        const stats: EntityStatsDTO = classPreset.stats;
+        const stats: EntityStats = classPreset.stats;
 
         let weaponPreset = classPreset.startingWeapons.find(w => w.key === weaponId);
         if (!weaponPreset) {
@@ -51,8 +48,8 @@ export class EntityFactory {
     public static createEnemy(
         x: number,
         y: number,
-        stats: EntityStatsDTO,
-        weaponConfig: WeaponConfigDTO,
+        stats: EntityStats,
+        weaponConfig: WeaponConfig,
         generateId: IDGenerator
     ): Enemy {
         const weapon = new Weapon(

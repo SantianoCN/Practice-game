@@ -4,6 +4,8 @@ import { Bullet } from '../entities/Bullet';
 import { Room } from '../world/Room';
 import { Chest, DroppedItem } from '../entities/Chest';
 import { IIdGenerator } from '../../application/interfaces/IIdGenerator';
+import { Player } from '../entities/Player';
+
 
 export class CollisionEngine {
     
@@ -147,6 +149,7 @@ export class CollisionEngine {
         droppedItems: DroppedItem[],
         cellSize: number,
         idGen: IIdGenerator
+
     ): void {
         const pBounds = player.getBounds();
 
@@ -174,7 +177,7 @@ export class CollisionEngine {
     }
 
     public static resolveLootPickup(
-        player: MoveableEntity, 
+        player: Player, 
         droppedItems: DroppedItem[]
     ): void {
         const pBounds = player.getBounds();
@@ -184,9 +187,29 @@ export class CollisionEngine {
             
             if (player.x + player.width / 2 > item.x && player.x - 10 < item.x + item.width + 10 &&
                 player.y + player.height / 2 > item.y && player.y - 10 < item.y + item.height + 10) {
-                
-                // TODO: Добавить лут в инвентарь игрока (в зависимости от типа)
-
+                switch(item.content.type) {
+                    case 'gold':
+                        player.addGold(item.content.amount);
+                        break;
+                    case 'weapon': {
+                        const dropped = player.addWeaponToInventory(item.content.weapon);
+                        if (dropped) {
+                            droppedItems.push({
+                                id: dropped.id,
+                                x: item.x + player.width,
+                                y: item.y,
+                                width: item.width,
+                                height: item.height,
+                                sprite: dropped.config.sprite,
+                                content: {
+                                    type: 'weapon',
+                                    weapon:  dropped 
+                                }
+                            });
+                        }
+                        break;  
+                    }
+                }
                 droppedItems.splice(i, 1);
             }
         }

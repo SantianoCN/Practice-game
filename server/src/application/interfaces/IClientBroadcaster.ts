@@ -1,4 +1,5 @@
-import { GameSnapshotDTO } from '@game/shared';
+import { GameSnapshotDTO } from "@game/shared";
+import { GameSnapshot } from "../../domain/config/SnapshotConfigs";
 
 export interface IClientBroadcaster {
     broadcastSnapshot(userId: string, snapshot: GameSnapshotDTO): void;
