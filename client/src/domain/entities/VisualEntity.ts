@@ -12,6 +12,8 @@ export class VisualEntity {
     public maxHp: number = 100;
     public mana: number = 100;
     public maxMana: number = 100;
+    public gold: number = 0;
+    public activeWeaponSprite: string = '';
 
     public isDying: boolean = false;
     public lastFacing: 'left' | 'right' = 'right';

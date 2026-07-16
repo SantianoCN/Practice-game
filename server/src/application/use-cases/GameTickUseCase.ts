@@ -113,7 +113,9 @@ export class GameTickUseCase {
             room: roomSnapshot,
             players: players.map(p => ({
                 id: p.id, x: p.x, y: p.y, width: p.width, height: p.height, sprite: p.sprite,
-                hp: p.hp, maxHp: p.maxHp, mana: p.mana, maxMana: p.maxMana
+                hp: p.hp, maxHp: p.maxHp, mana: p.mana, maxMana: p.maxMana,
+                gold: p.gold,
+                activeWeaponSprite: p.getActiveWeapon().config.sprite
             })),
             enemies: room.enemies.map(e => ({
                 id: e.id, x: e.x, y: e.y, width: e.width, height: e.height, sprite: e.sprite,

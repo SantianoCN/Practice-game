@@ -17,11 +17,11 @@ export interface RoomSnapshot {
     gridY: number,
     isClear: boolean,
     hasDoors: {
-        Top: boolean,
-        Bottom: boolean,
-        Left: boolean,
-        Right: boolean
-    },
+    Top: boolean,
+    Bottom: boolean,
+    Left: boolean,
+    Right: boolean
+},
     type: RoomType,
     obstacles: (BaseEntity),
     chests: (ChestSnapshot),
@@ -34,11 +34,13 @@ export interface ChestSnapshot extends BaseEntity{
     gridY: number
 };
 
-export interface PlayerSnapshot extends BaseEntity { 
+export interface PlayerSnapshot extends BaseEntity {
     hp: number,
     maxHp: number,
     mana: number,
-    maxMana: number
+    maxMana: number,
+    gold: number,
+    activeWeaponSprite: string
 };
 
 export interface EnemySnapshot extends BaseEntity {
