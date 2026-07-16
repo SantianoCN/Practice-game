@@ -2,8 +2,10 @@ import { VisualEntity } from '../../domain/entities/VisualEntity';
 import { RoomSnapshotDTO, ChestSnapshotDTO, BaseNetworkEntityDTO } from '@game/shared';
 import { TextureRenderer, EntityRenderer, BoxRenderer } from './SupportRenderer';
 
-import warriorImgUrl from '../../../assets/Warrior.png';
-import mageImgUrl from '../../../assets/Mage.png';
+import warriorImgUrl from './../../../assets/hero/warrior-sword.png'; 
+import volhvImgUrl from './../../../assets/hero/volhv.png'; 
+import lizardAxeImgUrl from './../../../assets/enemy/lizard-axe.png';
+import lizardMageImgUrl from './../../../assets/enemy/lizard-mage.png';
 
 interface MapCell {
     state: 'unseen' | 'visible' | 'visited';
@@ -27,13 +29,12 @@ export class CanvasRendererAdapter {
 
         this.playerRenderers = {
             'Warrior': new TextureRenderer(warriorImgUrl),
-            'green_box': new TextureRenderer(warriorImgUrl),
-            'Mage': new TextureRenderer(mageImgUrl)
+            'Mage': new TextureRenderer(volhvImgUrl)
         };
 
         this.enemyRenderers = {
-            'red_box': new BoxRenderer('red'),
-            'orange_box': new BoxRenderer('orange')
+            'red_box': new TextureRenderer(lizardAxeImgUrl),
+            'orange_box': new TextureRenderer(lizardMageImgUrl)
         };
     }
 
