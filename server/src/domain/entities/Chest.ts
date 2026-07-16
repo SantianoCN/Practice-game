@@ -1,7 +1,7 @@
-import { WeaponConfigDTO } from '@game/shared';
+import { Weapon } from "./Weapon";
 
 export type LootItem = 
-    | { type: 'weapon', weapon: WeaponConfigDTO }
+    | { type: 'weapon', weapon: Weapon }
     | { type: 'gold', amount: number };
 
 export class DroppedItem {

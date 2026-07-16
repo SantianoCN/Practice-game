@@ -59,7 +59,10 @@ export class KeyboardAdapter implements IInputProvider {
             down: this.keys['ArrowDown'] || this.keys['KeyS'] || false,
             left: this.keys['ArrowLeft'] || this.keys['KeyA'] || false,
             right: this.keys['ArrowRight'] || this.keys['KeyD'] || false,
-            attack: this.keys['Space'] || false
+            attack: this.keys['Space'] || false,
+            weapon1: this.keys['Digit1'] || false,
+            weapon2: this.keys['Digit2'] || false,
+            weapon3: this.keys['Digit3'] || false,
         }
         };
     }

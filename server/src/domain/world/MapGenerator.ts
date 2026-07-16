@@ -1,8 +1,3 @@
-import { 
-    RoomType,
-    WARRIOR_PRESET_LIZARD, MAGE_PRESET_LIZARD, 
-    SWORD, STAFF, FIREBALL, ICE_STAFF, AXE
-} from '@game/shared';
 import { Room } from '../entities/Room';
 import { Enemy } from '../entities/Enemy';
 import { Obstacle } from '../entities/Obstacle';
@@ -10,6 +5,9 @@ import { Chest, LootItem } from '../entities/Chest';
 import { Weapon } from '../entities/Weapon';
 import { ROOM_TEMPLATES, RoomTemplate } from './roomTemplates';
 import { GAME_CONFIG, IDGenerator } from '../config/gameConfig';
+import { RoomType } from '../config/RoomTypes'
+import { AXE, FIREBALL, ICE_STAFF, MAGE_PRESET_LIZARD, STAFF, SWORD, WARRIOR_PRESET_LIZARD } from '../config/gameClasesPresets';
+
 
 interface Coords {
     x: number;
@@ -182,7 +180,12 @@ export class MapGenerator {
                 if (itemType === 'weapon') {
                     const weapons = [SWORD, STAFF, ICE_STAFF, AXE];
                     const randomWpn = weapons[Math.floor(Math.random() * weapons.length)];
-                    return { type: 'weapon', weapon: randomWpn };
+                    const weapon = new Weapon(
+                        this.generateId('weapon'),
+                        'weapon',
+                        randomWpn
+                    );
+                    return { type: 'weapon', weapon: weapon };
                 }
                 return { type: 'gold', amount: Math.floor(Math.random() * 50) + 10 };
             });

@@ -1,7 +1,7 @@
-import { EntityStatsDTO } from '@game/shared';
 import { LivingEntity } from './BaseEntities';
 import { Weapon } from './Weapon';
 import { Player } from './Player';
+import { EntityStats } from '../config/EntityConfig';
 
 export type AIState = 'idle' | 'chase' | 'attack';
 
@@ -11,7 +11,7 @@ export class Enemy extends LivingEntity {
     public aiState: AIState = 'idle';
     public readonly entityType = 'enemy';
 
-    constructor(id: string, x: number, y: number, stats: EntityStatsDTO, weapon: Weapon) {
+    constructor(id: string, x: number, y: number, stats: EntityStats, weapon: Weapon) {
         super(id, x, y, 32, 32, stats.speed, stats.sprite, stats.maxHp, stats.maxHp, stats.archetype);
         this.currentWeapon = weapon;
     }

@@ -1,4 +1,4 @@
-import { WeaponConfigDTO, ProjectileConfigDTO } from '@game/shared';
+import { WeaponConfig } from '../config/WeaponConfigs';
 import { Bullet } from './Bullet';
 
 export class Weapon {
@@ -7,7 +7,7 @@ export class Weapon {
     constructor(
         public id: string,
         public name: string,
-        public config: WeaponConfigDTO
+        public config: WeaponConfig
     ) {}
 
     public canFire(currentTime: number): boolean {

@@ -17,6 +17,10 @@ export class ProcessInputUseCase {
 
         player.applyInput(action.keys.up, action.keys.down, action.keys.left, action.keys.right);
 
+        if (action.keys.weapon1) player.changeWeapon(0);
+        if (action.keys.weapon2) player.changeWeapon(1);
+        if (action.keys.weapon3) player.changeWeapon(2);
+
         if (action.keys.attack) {
             const room = session.getRoom(player.roomX, player.roomY);
             if (!room) return;

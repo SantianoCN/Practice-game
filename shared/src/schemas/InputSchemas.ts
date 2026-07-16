@@ -28,6 +28,9 @@ export const PlayerActionSchema = z.object({
         down: z.boolean(),
         left: z.boolean(),
         right: z.boolean(),
-        attack: z.boolean()
+        attack: z.boolean(),
+        weapon1: z.boolean(),
+        weapon2: z.boolean(),
+        weapon3: z.boolean()
     })
 });

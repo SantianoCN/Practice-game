@@ -1,11 +1,11 @@
 import { Socket } from 'socket.io';
-import { 
-    ClientEvent, ServerEvent, 
+import {
+    ClientEvent, ServerEvent,
     PlayerActionSchema, SessionCreateRequestSchema, SessionJoinRequestSchema,
-    PLAYER_CLASSES
 } from '@game/shared';
 import { SessionManagementUseCase } from '../../application/use-cases/SessionManagementUseCase';
 import { ProcessInputUseCase } from '../../application/use-cases/ProcessInputUseCase';
+import { PLAYER_CLASSES } from '../../domain/config/gameClasesPresets';
 
 export class SocketController {
     constructor(
@@ -19,7 +19,7 @@ export class SocketController {
 
     private init(): void {
         const userId = this.socket.id;
-        
+
         this.socket.emit(ServerEvent.PLAYER_ID, userId);
         this.socket.emit(ServerEvent.CLASS_PRESETS, PLAYER_CLASSES);
 
