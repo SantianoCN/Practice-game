@@ -11,13 +11,14 @@ export class DroppedItem {
         public y: number,
         public width: number = 10,
         public height: number = 10,
-        public sprite: string,
+        public visualId: string,
         public content: LootItem
     ) {}
 }
 
 export class Chest {
     public isOpened: boolean = false;
+    public readonly visualId: string = 'chest';
 
     constructor(
         public id: string,

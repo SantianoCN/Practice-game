@@ -1,11 +1,10 @@
-import { BoundingBox, LivingEntity, MoveableEntity } from '../entities/BaseEntities';
+import { LivingEntity, MoveableEntity } from '../entities/BaseEntities';
 import { Obstacle } from '../entities/Obstacle';
 import { Bullet } from '../entities/Bullet';
 import { Room } from '../entities/Room';
 import { Chest, DroppedItem } from '../entities/Chest';
-import { IDGenerator } from '../config/gameConfig';
 import { Player } from '../entities/Player';
-
+import { BoundingBox, IDGenerator } from '@game/shared';
 
 export class CollisionEngine {
     
@@ -199,7 +198,7 @@ export class CollisionEngine {
                                 y: item.y,
                                 width: item.width,
                                 height: item.height,
-                                sprite: dropped.config.sprite,
+                                visualId: dropped.config.visualId,
                                 content: {
                                     type: 'weapon',
                                     weapon:  dropped 

@@ -1,9 +1,4 @@
-export interface BoundingBox {
-    left: number;
-    right: number;
-    top: number;
-    bottom: number;
-}
+import { BoundingBox, Archetype, EntityType } from '@game/shared';
 
 export abstract class MoveableEntity {
     constructor(
@@ -13,7 +8,7 @@ export abstract class MoveableEntity {
         public width: number,
         public height: number,
         public speed: number,
-        public sprite: string
+        public visualId: string
     ) {}
 
     public vx: number = 0;
@@ -41,15 +36,15 @@ export abstract class LivingEntity extends MoveableEntity {
     public isInvulnerable: boolean = false;
     protected invulnTimer: number = 0;
     private static readonly INVULN_DURATION = 0.5;
-    public abstract readonly entityType: 'player' | 'enemy'; 
+    public abstract readonly entityType: EntityType; 
 
     constructor(
-        id: string, x: number, y: number, width: number, height: number, speed: number, sprite: string,
+        id: string, x: number, y: number, width: number, height: number, speed: number, visualId: string,
         public maxHp: number,
         public hp: number = maxHp,
-        public archetype: string
+        public archetype: Archetype
     ) {
-        super(id, x, y, width, height, speed, sprite);
+        super(id, x, y, width, height, speed, visualId);
     }
 
     public updateEntity(deltaTime: number): void {

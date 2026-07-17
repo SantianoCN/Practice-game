@@ -1,4 +1,4 @@
-import { BoundingBox } from './BaseEntities';
+import { BoundingBox } from '@game/shared';
 
 export class Obstacle {
     constructor(
@@ -7,7 +7,7 @@ export class Obstacle {
         public y: number,
         public width: number,
         public height: number,
-        public sprite: string = 'black'
+        public visualId: string = 'black'
     ) {}
 
     public getBounds(): BoundingBox {

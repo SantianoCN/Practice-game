@@ -1,11 +1,10 @@
 import { Socket } from 'socket.io';
 import {
-    ClientEvent, ServerEvent,
+    ClientEvent, ServerEvent, PLAYER_CLASSES,
     PlayerActionSchema, SessionCreateRequestSchema, SessionJoinRequestSchema,
 } from '@game/shared';
 import { SessionManagementUseCase } from '../../application/use-cases/SessionManagementUseCase';
 import { ProcessInputUseCase } from '../../application/use-cases/ProcessInputUseCase';
-import { PLAYER_CLASSES } from '../../domain/config/gameClasesPresets';
 
 export class SocketController {
     constructor(

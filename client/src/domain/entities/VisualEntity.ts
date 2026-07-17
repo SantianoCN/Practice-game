@@ -1,3 +1,5 @@
+import { EntityType } from '@game/shared';
+
 export class VisualEntity {
     public id: string;
     public targetX: number;
@@ -6,20 +8,28 @@ export class VisualEntity {
     public renderY: number;
     public width: number;
     public height: number;
-    public sprite: string;
+    public visualId: string;
     
     public hp: number = 100;
     public maxHp: number = 100;
     public mana: number = 100;
     public maxMana: number = 100;
     public gold: number = 0;
-    public activeWeaponSprite: string = '';
+    public activeWeaponVisualId: string = '';
 
     public isDying: boolean = false;
     public lastFacing: 'left' | 'right' = 'right';
-    public type: 'player' | 'enemy' | 'bullet' = 'player';
+    public type: EntityType | 'bullet' = 'player';
 
-    constructor(id: string, x: number, y: number, w: number, h: number, sprite: string, type: 'player' | 'enemy' | 'bullet') {
+    constructor(
+        id: string, 
+        x: number, 
+        y: number, 
+        w: number, 
+        h: number, 
+        visualId: string, 
+        type: EntityType | 'bullet'
+    ) {
         this.id = id;
         this.targetX = x;
         this.targetY = y;
@@ -27,7 +37,7 @@ export class VisualEntity {
         this.renderY = y;
         this.width = w;
         this.height = h;
-        this.sprite = sprite;
+        this.visualId = visualId;
         this.type = type;
     }
 

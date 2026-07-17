@@ -1,11 +1,13 @@
+import { Archetype } from '@game/shared';
+
 export class DOMManager {
     public onAuthReq?: (url: string, l: string, p: string) => void;
-    public onCreateRoom?: (arch: string, weapon: string) => void;
-    public onJoinRoom?: (sid: string, arch: string, weapon: string) => void;
+    public onCreateRoom?: (arch: Archetype, weapon: string) => void;
+    public onJoinRoom?: (sid: string, arch: Archetype, weapon: string) => void;
     public onLeaveRoom?: () => void;
     public onLogout?: () => void;
 
-    private selectedArch = '';
+    private selectedArch: Archetype = 'warrior'; 
     private selectedWeapon = '';
 
     constructor() {
@@ -82,8 +84,8 @@ export class DOMManager {
     public updatePresets(presets: any) {
         const heroList = document.getElementById('heroCardList')!;
         heroList.innerHTML = '';
+        const presetKeys = Object.keys(presets) as Archetype[]; 
         
-        const presetKeys = Object.keys(presets);
         if (presetKeys.length === 0) return;
 
         if (!this.selectedArch || !presets[this.selectedArch]) {

@@ -2,7 +2,7 @@ import { Enemy } from './Enemy';
 import { Chest, DroppedItem } from './Chest';
 import { Obstacle } from './Obstacle';
 import { Bullet } from './Bullet';
-import { Direction, RoomType } from '../config/RoomTypes';
+import { Direction, RoomType } from '@game/shared';
 
 export class Room {
     public isClear: boolean = false;

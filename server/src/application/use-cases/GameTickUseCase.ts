@@ -1,13 +1,12 @@
 import { IGameRepository } from '../interfaces/IGameRepository';
 import { IClientBroadcaster } from '../interfaces/IClientBroadcaster';
 import { CollisionEngine } from '../../domain/physics/CollisionEngine';
-import { GameSnapshotDTO, RoomSnapshotDTO } from '@game/shared';
+import { GameSnapshotDTO, GameSnapshotSchema, GAME_CONFIG } from '@game/shared';
 import { EnemyAIService } from '../../domain/services/EnemyAIService';
 import { IIdGenerator } from '../interfaces/IIdGenerator';
 import { RoomTransitionService } from '../../domain/services/RoomTransitionService';
 import { Player } from '../../domain/entities/Player';
 import { Room } from '../../domain/entities/Room';
-import { GAME_CONFIG } from '../../domain/config/gameConfig';
 
 export class GameTickUseCase {
     constructor(
@@ -92,38 +91,11 @@ export class GameTickUseCase {
     }
 
     private buildSnapshot(room: Room, players: Player[]): GameSnapshotDTO {
-        const roomSnapshot: RoomSnapshotDTO = {
-            gridX: room.gridX,
-            gridY: room.gridY,
-            isClear: room.isClear,
-            type: room.type,
-            hasDoors: room.hasDoors,
-            obstacles: room.obstacles.map(o => ({ 
-                id: o.id, x: o.x, y: o.y, width: o.width, height: o.height, sprite: o.sprite 
-            })),
-            chests: room.chests.map(c => ({ 
-                id: c.id, x: c.x, y: c.y, width: c.width, height: c.height, sprite: 'chest', isOpened: c.isOpened, gridX: c.gridX, gridY: c.gridY 
-            })),
-            droppedItems: room.droppedItems.map(d => ({ 
-                id: d.id, x: d.x, y: d.y, width: d.width, height: d.height, sprite: d.sprite 
-            }))
-        };
-
-        return {
-            room: roomSnapshot,
-            players: players.map(p => ({
-                id: p.id, x: p.x, y: p.y, width: p.width, height: p.height, sprite: p.sprite,
-                hp: p.hp, maxHp: p.maxHp, mana: p.mana, maxMana: p.maxMana,
-                gold: p.gold,
-                activeWeaponSprite: p.getActiveWeapon().config.sprite
-            })),
-            enemies: room.enemies.map(e => ({
-                id: e.id, x: e.x, y: e.y, width: e.width, height: e.height, sprite: e.sprite,
-                hp: e.hp, maxHp: e.maxHp
-            })),
-            bullets: room.bullets.map(b => ({
-                id: b.id, x: b.x, y: b.y, width: b.width, height: b.height, sprite: b.sprite
-            }))
-        };
+        return GameSnapshotSchema.parse({
+            room: room,
+            players: players,
+            enemies: room.enemies,
+            bullets: room.bullets
+        });
     }
 }

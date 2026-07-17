@@ -1,15 +1,11 @@
-// События
-export * from './events/networkEvents';
-
-// Схемы валидации (для использования на сервере)
-export * from './schemas/ConfigSchemas';
-export * from './schemas/InputSchemas';
-export * from './schemas/SnapshotSchemas';
-
-// DTO (для типизации)
-export * from './dtos/ConfigDtos';
-export * from './dtos/InputDtos';
-export * from './dtos/SnapshotDtos';
-
-// Константы (пресеты)
-export * from './config/gamePresets';
+export * from './domain/config/classes.config';
+export * from './domain/config/game.config';
+export * from './domain/schemas/entity.schema';
+export * from './domain/schemas/weapon.schema';
+export * from './domain/schemas/preset.schema';
+export * from './domain/schemas/stats.schema';
+export * from './domain/schemas/room.schema';
+export * from './domain/schemas/geometry.schema';
+export * from './infrastructure/events/network.events';
+export * from './infrastructure/schemas/input.schema';
+export * from './infrastructure/schemas/snapshot.schema';

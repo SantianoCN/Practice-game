@@ -1,6 +1,6 @@
 import { Player } from "../entities/Player";
 import { Room } from "../entities/Room";
-import { GAME_CONFIG } from "../config/gameConfig";
+import { GAME_CONFIG } from "@game/shared";
 
 export class RoomTransitionService {
     public static handleTransition(

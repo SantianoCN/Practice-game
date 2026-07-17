@@ -1,10 +1,7 @@
 import { Player } from '../entities/Player';
 import { Weapon } from '../entities/Weapon';
 import { Enemy } from '../entities/Enemy';
-import { IDGenerator } from '../config/gameConfig';
-import { WeaponConfig } from '../config/WeaponConfigs';
-import { EntityStats } from '../config/EntityConfig';
-import { PLAYER_CLASSES } from '../config/gameClasesPresets';
+import { IDGenerator, WeaponStats, EntityStats, PLAYER_CLASSES } from '@game/shared';
 
 export class EntityFactory {
     
@@ -49,7 +46,7 @@ export class EntityFactory {
         x: number,
         y: number,
         stats: EntityStats,
-        weaponConfig: WeaponConfig,
+        weaponConfig: WeaponStats,
         generateId: IDGenerator
     ): Enemy {
         const weapon = new Weapon(

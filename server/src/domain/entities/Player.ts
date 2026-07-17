@@ -1,12 +1,11 @@
 import { LivingEntity } from './BaseEntities';
 import { Weapon } from './Weapon';
-import { GAME_CONFIG } from '../config/gameConfig';
-import { EntityStats } from '../config/EntityConfig';
+import { GAME_CONFIG, EntityStats, EntityType } from '@game/shared';
 
 export class Player extends LivingEntity {
     public inventory: Weapon[];
     public currentWeaponIndex: number = 0;
-    public readonly entityType = 'player';
+    public readonly entityType: EntityType = 'player';
     public gold: number = 0;
     
     public roomX: number = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
@@ -21,13 +20,17 @@ export class Player extends LivingEntity {
         public mana: number,
         public maxMana: number
     ) {
-        super(id, x, y, 32, 32, stats.speed, stats.sprite, stats.maxHp, stats.maxHp, stats.archetype);
+        super(id, x, y, 32, 32, stats.speed, stats.visualId, stats.maxHp, stats.maxHp, stats.archetype);
         this.inventory = [startWeapon];
     }
 
-    public changeWeapon(weaponIdx: number) {
-        if (weaponIdx < this.inventory.length) {
-            this.currentWeaponIndex = weaponIdx;
+    get activeWeaponVisualId(): string {
+        return this.getActiveWeapon().config.visualId;
+    }
+
+    public changeWeapon(weaponIndex: number) {
+        if (weaponIndex < this.inventory.length) {
+            this.currentWeaponIndex = weaponIndex;
         }
     }
 

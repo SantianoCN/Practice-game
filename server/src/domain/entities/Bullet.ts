@@ -1,4 +1,4 @@
-import { ProjectileConfig } from '../config/WeaponConfigs';
+import { ProjectileStats, EntityType } from '@game/shared';
 import { MoveableEntity } from './BaseEntities';
 
 export class Bullet extends MoveableEntity {
@@ -10,12 +10,12 @@ export class Bullet extends MoveableEntity {
     constructor(
         id: string, 
         public ownerId: string, 
-        public ownerType: 'player' | 'enemy',
+        public ownerType: EntityType,
         x: number, y: number, 
         dirX: number, dirY: number, 
-        config: ProjectileConfig
+        config: ProjectileStats
     ) {
-        super(id, x, y, 8, 8, config.speed, config.sprite);
+        super(id, x, y, 8, 8, config.speed, config.visualId);
         this.vx = dirX;
         this.vy = dirY;
         this.damage = config.damage;

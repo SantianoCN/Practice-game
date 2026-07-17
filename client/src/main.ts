@@ -122,11 +122,11 @@ class App {
     }
 
     private tick = () => {
-        const now = performance.now();
-        const dt = (now - this.lastTime) / 1000;
-        this.lastTime = now;
+        const startTime = performance.now();
+        const deltaTime = (startTime - this.lastTime) / 1000;
+        this.lastTime = startTime;
 
-        this.stateSync.tickInterpolation(dt);
+        this.stateSync.tickInterpolation(deltaTime);
         
         this.renderer.render(
             this.stateSync.entities, 

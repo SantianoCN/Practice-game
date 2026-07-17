@@ -3,7 +3,7 @@ import { IIdGenerator } from '../interfaces/IIdGenerator';
 import { GameSession } from '../state/GameSession';
 import { EntityFactory } from '../../domain/factories/EntityFactory';
 import { MapGenerator } from '../../domain/world/MapGenerator';
-import { GAME_CONFIG } from '../../domain/config/gameConfig';
+import { GAME_CONFIG } from '@game/shared';
 
 export class SessionManagementUseCase {
     constructor(
@@ -17,8 +17,8 @@ export class SessionManagementUseCase {
         const sessionId = this.idGen.generateUUID('session');
         const session = new GameSession(sessionId, this.roomWidth, this.roomHeight);
         const mapGenerator = new MapGenerator(
-            GAME_CONFIG.MAP_SIZE,   // Размер сетки (10x10)
-            15,                     // Целевое количество комнат
+            GAME_CONFIG.MAP_SIZE,
+            15,
             this.roomWidth,
             this.roomHeight,
             (prefix) => this.idGen.generateId(prefix)

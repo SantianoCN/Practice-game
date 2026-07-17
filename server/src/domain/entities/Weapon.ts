@@ -1,4 +1,4 @@
-import { WeaponConfig } from '../config/WeaponConfigs';
+import { WeaponStats, EntityType } from '@game/shared';
 import { Bullet } from './Bullet';
 
 export class Weapon {
@@ -7,7 +7,7 @@ export class Weapon {
     constructor(
         public id: string,
         public name: string,
-        public config: WeaponConfig
+        public config: WeaponStats
     ) {}
 
     public canFire(currentTime: number): boolean {
@@ -16,7 +16,7 @@ export class Weapon {
 
     public fire(
         bulletId: string, ownerId: string, 
-        ownerType: 'player' | 'enemy',
+        ownerType: EntityType,
         startX: number, startY: number, 
         dirX: number, dirY: number, 
         currentTime: number

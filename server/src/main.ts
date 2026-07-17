@@ -14,7 +14,7 @@ import { SessionManagementUseCase } from './application/use-cases/SessionManagem
 import { ProcessInputUseCase } from './application/use-cases/ProcessInputUseCase';
 import { GameTickUseCase } from './application/use-cases/GameTickUseCase';
 import { AuthUseCase } from './application/use-cases/AuthUseCase';
-import { GAME_CONFIG } from './domain/config/gameConfig';
+import { GAME_CONFIG } from '@game/shared';
 
 async function bootstrap() {
     const app = express();
@@ -69,18 +69,26 @@ async function bootstrap() {
         new SocketController(socket, sessionUseCase, inputUseCase, socket.data.login);
     });
 
+    const TICK_INTERVAL = 1000 / GAME_CONFIG.TICK_RATE;
     let lastTime = performance.now();
 
-    setInterval(() => {
-        const now = performance.now();
-        const deltaTime = (now - lastTime) / 1000;
-        lastTime = now;
-        gameTickUseCase.execute(deltaTime, now);
-    }, 1000 / GAME_CONFIG.TICK_RATE);
+    const tick = () => {
+        const startTime = performance.now();
+        const deltaTime = (startTime - lastTime) / 1000;
+        lastTime = startTime;
+        gameTickUseCase.execute(deltaTime, startTime);
+        const endTime = performance.now();
+        const executionTime = endTime - startTime;
+        const nextDelay = Math.max(0, TICK_INTERVAL - executionTime);
+        setTimeout(tick, nextDelay);
+    }
+
+    tick();
 
     const PORT = process.env.PORT || 3000;
+    const HOST = '0.0.0.0'; // Слушаем всю локальную сеть
     httpServer.listen(PORT, () => {
-        console.log(`[Server] Clean Architecture Engine running on http://localhost:${PORT}`);
+        console.log(`[Server] Clean Architecture Engine running on http://${HOST}:${PORT}`);
     });
 }
 

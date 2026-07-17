@@ -4,10 +4,9 @@ import { Obstacle } from '../entities/Obstacle';
 import { Chest, LootItem } from '../entities/Chest';
 import { Weapon } from '../entities/Weapon';
 import { ROOM_TEMPLATES, RoomTemplate } from './roomTemplates';
-import { GAME_CONFIG, IDGenerator } from '../config/gameConfig';
-import { RoomType } from '../config/RoomTypes'
-import { AXE, FIREBALL, ICE_STAFF, MAGE_PRESET_LIZARD, STAFF, SWORD, WARRIOR_PRESET_LIZARD } from '../config/gameClasesPresets';
-
+import { AXE, FIREBALL, ICE_STAFF, MAGE_PRESET_LIZARD, STAFF, SWORD, WARRIOR_PRESET_LIZARD,
+    GAME_CONFIG, IDGenerator, RoomType
+ } from '@game/shared';
 
 interface Coords {
     x: number;
@@ -217,7 +216,7 @@ export class MapGenerator {
         const bossStats = { ...WARRIOR_PRESET_LIZARD };
         bossStats.maxHp = 300; 
         bossStats.speed = 120;
-        bossStats.sprite = 'red_box'; 
+        bossStats.visualId = 'red_box'; 
 
         const bossWeaponConfig = { ...STAFF, cooldownMs: 500, projectile: FIREBALL };
         const weapon = new Weapon(this.generateId('wpn'), 'Посох Ящера-Императора', bossWeaponConfig);

@@ -2,7 +2,7 @@ import { Enemy } from '../entities/Enemy';
 import { Player } from '../entities/Player';
 import { Room } from '../entities/Room';
 import { CollisionEngine } from '../physics/CollisionEngine';
-import { IDGenerator } from '../config/gameConfig';
+import { IDGenerator } from '@game/shared';
 
 export class EnemyAIService {
     public static updateEnemies(
