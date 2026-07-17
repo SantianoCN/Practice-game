@@ -2,21 +2,27 @@ import { VisualEntity } from '../../domain/entities/VisualEntity';
 import { RoomSnapshotDTO, ChestSnapshotDTO, BaseNetworkEntityDTO } from '@game/shared';
 import { TextureRenderer, EntityRenderer, BoxRenderer } from './SupportRenderer';
 
-import warriorImgUrl from './../../../assets/hero/warrior-sword.png'; 
+import warriorImgUrl from './../../../assets/hero/warrior-sword-anim.png'; 
 import volhvImgUrl from './../../../assets/hero/volhv.png'; 
 import lizardAxeImgUrl from './../../../assets/enemy/lizard-axe.png';
 import lizardMageImgUrl from './../../../assets/enemy/lizard-mage.png';
+import coinImgUrl from './../../../assets/loot/coin.png'
+import battleAxeImgUrl from './../../../assets/weapon/axe.png';
+import ironSwordImgUrl from './../../../assets/weapon/sword.png';
+import fireStaffImgUrl from './../../../assets/weapon/fire_staff.png';
+import iceStaffImgUrl from './../../../assets/weapon/ice_staff.png';
 
 interface MapCell {
     state: 'unseen' | 'visible' | 'visited';
     type?: string;
 }
+
 export class CanvasRendererAdapter {
-    // ... оригинальный код конструктора и переменных ...
     private context: CanvasRenderingContext2D;
     private canvas: HTMLCanvasElement;
     private visitedMatrix: MapCell[][] = [];
     private readonly matrixSize = 10;
+
     private playerRenderers: Record<string, EntityRenderer>;
     private enemyRenderers: Record<string, EntityRenderer>;
 
@@ -39,7 +45,6 @@ export class CanvasRendererAdapter {
     }
 
     public render(entitiesMap: Map<string, VisualEntity>, room: RoomSnapshotDTO | null, myId: string): void {
-        // ... оригинальный код ...
         this.clear();
         
         const players = new Map<string, VisualEntity>();
@@ -70,7 +75,6 @@ export class CanvasRendererAdapter {
     }
 
     private updateVisitedRooms(room: RoomSnapshotDTO): void {
-        // ... оригинальный код ...
         const x = room.gridX;
         const y = room.gridY;
         if (x < 0 || x >= this.matrixSize || y < 0 || y >= this.matrixSize) return;
@@ -103,16 +107,14 @@ export class CanvasRendererAdapter {
         const py = me.renderY;
         const r = me.width ?? 15;
 
-        // Стрелка над игроком
         this.context.save();
-        const arrowY = py - r - 16;
+        const arrowY = py - r - 5;
         this.context.fillStyle = '#d4af37';
         this.context.fillRect(px - 5, arrowY, 10, 3);
         this.context.fillRect(px - 3, arrowY + 3, 6, 3);
         this.context.fillRect(px - 1, arrowY + 6, 2, 3);
         this.context.restore();
 
-        // Полосы HP и Маны (Верхний левый угол)
         const guiX = 20, guiY = 20, guiWidth = 210, guiHeight = 64;
         const hp = me.hp ?? 100, maxHp = me.maxHp ?? 100;
         const mana = me.mana ?? 100, maxMana = me.maxMana ?? 100;
@@ -153,35 +155,6 @@ export class CanvasRendererAdapter {
         this.context.fillStyle = '#8ad5f0';
         this.context.font = '7px "Press Start 2P", monospace';
         this.context.fillText(`БАЙКАЛ: ${Math.floor(mana)}/${maxMana}`, barX + 6, manaY + 9);
-        
-        // Золото и Оружие (Нижний левый угол)
-        const bottomY = this.canvas.height - 60;
-        
-        this.context.fillStyle = '#1c0e07';
-        this.context.fillRect(20, bottomY, 140, 40);
-        this.context.strokeStyle = '#b8860b';
-        this.context.strokeRect(20, bottomY, 140, 40);
-        
-        this.context.fillStyle = '#f1c40f';
-        this.context.font = '10px "Press Start 2P", monospace';
-        this.context.fillText(`ЗОЛОТО: ${me.gold}`, 30, bottomY + 25);
-
-        this.context.fillStyle = '#1c0e07';
-        this.context.fillRect(170, bottomY, 260, 40);
-        this.context.strokeStyle = '#b8860b';
-        this.context.strokeRect(170, bottomY, 260, 40);
-
-        const weaponNames: Record<string, string> = {
-            'iron_sword': 'МЕЧ-КЛАДЕНЕЦ',
-            'battle_axe': 'СЕКИРА ПЕРУНА',
-            'staff': 'ПОСОХ ОГНЯ',
-            'ice_staff': 'ПОСОХ ХЛАДА'
-        };
-        const weaponName = weaponNames[me.activeWeaponSprite] || me.activeWeaponSprite.toUpperCase();
-
-        this.context.fillStyle = '#bdc3c7';
-        this.context.fillText(`ОРУЖИЕ: ${weaponName}`, 180, bottomY + 25);
-        
         this.context.restore();
     }
 
@@ -191,7 +164,6 @@ export class CanvasRendererAdapter {
         bulletsMap: Map<string, VisualEntity>,
         room: RoomSnapshotDTO | null
     ): void {
-        // ... оригинальный код ...
         this.drawMap(room);
         this.drawObstacles(room?.obstacles ?? []);
         if (room?.chests) this.drawChests(room.chests);
@@ -204,7 +176,6 @@ export class CanvasRendererAdapter {
     }
 
     private drawMap(room: RoomSnapshotDTO | null): void {
-        // ... оригинальный код ...
         if (!room) {
             this.context.fillStyle = 'white';
             this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -233,7 +204,6 @@ export class CanvasRendererAdapter {
     }
 
     private drawMiniMap(currentGridX: number, currentGridY: number): void {
-        // ... оригинальный код ...
         const mapSize = 130, padding = 20;
         const mapX = this.canvas.width - mapSize - padding;
         const mapY = padding;
@@ -283,7 +253,6 @@ export class CanvasRendererAdapter {
     }
 
     private drawBullets(bulletsMap: Map<string, VisualEntity>): void {
-        // ... оригинальный код ...
         bulletsMap.forEach(bullet => {
             let bulletColor = 'black';
             if (bullet.sprite === 'red_ball') bulletColor = 'red';
@@ -302,7 +271,6 @@ export class CanvasRendererAdapter {
     }
 
     private drawPlayers(playersMap: Map<string, VisualEntity>): void {
-        // ... оригинальный код ...
         playersMap.forEach(player => {
             const renderer = this.playerRenderers[player.sprite];
             if (renderer) renderer.draw(this.context, player);
@@ -311,7 +279,6 @@ export class CanvasRendererAdapter {
     }
 
     private drawEnemies(enemiesMap: Map<string, VisualEntity>): void {
-        // ... оригинальный код ...
         enemiesMap.forEach(enemy => {
             const renderer = this.enemyRenderers[enemy.sprite];
             if (renderer) renderer.draw(this.context, enemy);
@@ -320,7 +287,6 @@ export class CanvasRendererAdapter {
     }
 
     private drawObstacles(obstacles: BaseNetworkEntityDTO[]): void {
-        // ... оригинальный код ...
         for (const obstacle of obstacles) {
             this.context.fillStyle = 'black';
             this.context.fillRect(obstacle.x - obstacle.width / 2, obstacle.y - obstacle.height / 2, obstacle.width, obstacle.height);
@@ -328,7 +294,6 @@ export class CanvasRendererAdapter {
     }
 
     private drawChests(chests: ChestSnapshotDTO[]): void {
-        // ... оригинальный код ...
         if (!chests || chests.length === 0) return;
         const cellSize = 20;
 
@@ -419,47 +384,46 @@ export class CanvasRendererAdapter {
     }
 
     private drawDroppedItems(droppedItems: BaseNetworkEntityDTO[]): void {
-        // ... оригинальный код ...
         if (!droppedItems || droppedItems.length === 0) return;
 
         for (const item of droppedItems) {
             const x = item.x - item.width / 2, y = item.y - item.height / 2;
             const w = item.width, h = item.height;
 
+            let texture = new Image();
+            
             this.context.shadowColor = 'rgba(0, 0, 0, 0.2)';
             this.context.shadowBlur = 5;
             this.context.shadowOffsetX = 1;
             this.context.shadowOffsetY = 2;
 
-            let color = '#95A5A6', glowColor = 'rgba(0, 0, 0, 0)';
-            if (item.sprite === 'sword' || item.sprite === 'weapon') { color = '#E74C3C'; glowColor = 'rgba(231, 76, 60, 0.2)'; }
-            else if (item.sprite === 'gold') { color = '#F1C40F'; glowColor = 'rgba(241, 196, 15, 0.2)'; }
-
-            if (glowColor !== 'rgba(0, 0, 0, 0)') {
-                this.context.fillStyle = glowColor;
-                this.context.beginPath();
-                this.context.arc(item.x, item.y, Math.max(w, h) * 1.2, 0, Math.PI * 2);
-                this.context.fill();
+            switch (item.sprite) {
+                case 'battle_axe':
+                    texture.src = battleAxeImgUrl;
+                    break;
+                case 'iron_sword': 
+                    texture.src = ironSwordImgUrl;
+                    break;
+                case 'fire_staff':
+                    texture.src = fireStaffImgUrl;
+                    break;
+                case 'ice_staff':
+                    texture.src = iceStaffImgUrl;
+                    break;
+                case 'gold':
+                    texture.src = coinImgUrl;
+                    break;
+                default:
+                    this.context.fillStyle = '#0c8a93a4';
+                    this.context.fillRect(x, y, w, h);
+                    break;
             }
-
-            this.context.fillStyle = color;
-            this.context.fillRect(x, y, w, h);
-
-            this.context.shadowColor = 'transparent';
-            this.context.shadowBlur = 0;
-            this.context.shadowOffsetX = 0;
-            this.context.shadowOffsetY = 0;
-
-            this.context.strokeStyle = 'rgba(0, 0, 0, 0.3)';
-            this.context.lineWidth = 1;
-            this.context.strokeRect(x, y, w, h);
-            this.context.fillStyle = 'rgba(255, 255, 255, 0.15)';
-            this.context.fillRect(x + 2, y + 1, w / 3, 2);
+            this.context.drawImage(texture, x, y , w, h);
+            console.log(item.sprite)
         }
     }
 
     private drawFallback(entity: VisualEntity): void {
-        // ... оригинальный код ...
         this.context.fillStyle = '#ff00ff';
         this.context.fillRect(entity.renderX - entity.width / 2, entity.renderY - entity.height / 2, entity.width, entity.height);
     }

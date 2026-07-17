@@ -40,8 +40,18 @@ private updateOrCreate(
         entity = new VisualEntity(id, data.x, data.y, data.width, data.height, data.sprite, type);
         this.entities.set(id, entity);
     } else {
-        if (data.x < entity.targetX) entity.lastFacing = 'left';
-        else if (data.x > entity.targetX) entity.lastFacing = 'right';
+        if (data.x < entity.targetX) {
+            entity.lastFacing = 'left';
+        }
+        else if (data.x > entity.targetX) {
+            entity.lastFacing = 'right';
+        }
+        else if (data.x == entity.targetX && data.y == entity.targetY) {
+            entity.lastFacing = 'Top';
+        }
+        if (data.x !== entity.targetX || data.y !== entity.targetY) entity.currentAnimation = 'move';
+        else entity.currentAnimation = 'idle'
+
 
         entity.targetX = data.x;
         entity.targetY = data.y;

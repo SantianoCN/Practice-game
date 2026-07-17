@@ -16,8 +16,13 @@ export class VisualEntity {
     public activeWeaponSprite: string = '';
 
     public isDying: boolean = false;
-    public lastFacing: 'left' | 'right' = 'right';
+    public lastFacing: 'left' | 'Top' | 'right' = 'right';
+    public currentAnimation: 'move' | 'attack' | 'idle' = 'idle';
+    public currentFrame: number = 0;
     public type: 'player' | 'enemy' | 'bullet' = 'player';
+
+    private frameTimer: number = 0;
+    private readonly timePerFrame: number = 0.2; // время на один кадр
 
     constructor(id: string, x: number, y: number, w: number, h: number, sprite: string, type: 'player' | 'enemy' | 'bullet') {
         this.id = id;
@@ -54,11 +59,36 @@ export class VisualEntity {
                 }
             }
         }
+
+        this.updateAnimation(dt)
     }
 
     public hasReachedTarget(epsilon: number = 2): boolean {
         const dx = Math.abs(this.targetX - this.renderX);
         const dy = Math.abs(this.targetY - this.renderY);
         return dx < epsilon && dy < epsilon;
+    }
+
+    private updateAnimation(dt: number): void {
+        // Пули или умирающие сущности обычно не анимируют по стандартному циклу
+        if (this.isDying || this.type === 'bullet') return;
+
+        // Если сущность стоит на месте (в состоянии idle), принудительно сбрасываем на 1-й кадр
+        if (this.currentAnimation === 'idle') {
+            this.currentFrame = 0;
+            this.frameTimer = 0;
+            return;
+        }
+
+        // Накапливаем прошедшее время
+        this.frameTimer += dt;
+
+        // Если накопилось достаточно времени для смены кадра
+        if (this.frameTimer >= this.timePerFrame) {
+            this.frameTimer = 0; // Сбрасываем таймер
+            
+            // У вас в спрайт-листе ровно 3 кадра, поэтому гоняем по кругу: 0, 1, 2
+            this.currentFrame = (this.currentFrame + 1) % 3;
+        }
     }
 }

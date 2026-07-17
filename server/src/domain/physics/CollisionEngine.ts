@@ -167,7 +167,12 @@ export class CollisionEngine {
                     const id = idGen('item');
                     const x = (chest.gridX - 1) * cellSize;
                     const y = chTop + 20;
-                    droppedItems.push(new DroppedItem(id, x, y, 10, 10, 'blue', item));
+                    if (item.type == 'weapon') {
+                        droppedItems.push(new DroppedItem(id, x, y, 10, 30, item.weapon.config.sprite, item));
+                    }else if (item.type == 'gold'){
+                        droppedItems.push(new DroppedItem(id, x, y, 10, 10, 'gold', item));
+                    }
+                    
                 }
                 
                 chest.isOpened = true;
