@@ -11,6 +11,7 @@ interface MapCell {
     state: 'unseen' | 'visible' | 'visited';
     type?: string;
 }
+
 export class CanvasRendererAdapter {
     private context: CanvasRenderingContext2D;
     private canvas: HTMLCanvasElement;
@@ -96,8 +97,8 @@ export class CanvasRendererAdapter {
         const me = playersMap.get(myId);
         if (!me) return;
 
-        const px = me.renderX;
-        const py = me.renderY;
+        const px = Math.round(me.renderX);
+        const py = Math.round(me.renderY);
         const r = me.width ?? 15;
 
         this.context.save();
@@ -281,8 +282,8 @@ export class CanvasRendererAdapter {
 
             this.context.save();
             this.context.beginPath();
-            const radius = bullet.width / 2;
-            this.context.arc(bullet.renderX, bullet.renderY, radius, 0, Math.PI * 2);
+            const radius = Math.round(bullet.width / 2);
+            this.context.arc(Math.round(bullet.renderX), Math.round(bullet.renderY), radius, 0, Math.PI * 2);
             this.context.shadowBlur = 8;
             this.context.shadowColor = bulletColor;
             this.context.fillStyle = bulletColor;

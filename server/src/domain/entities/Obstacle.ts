@@ -1,21 +1,7 @@
-import { BoundingBox } from '@game/shared';
+import { StaticEntity } from './BaseEntities';
 
-export class Obstacle {
-    constructor(
-        public id: string,
-        public x: number,
-        public y: number,
-        public width: number,
-        public height: number,
-        public visualId: string = 'black'
-    ) {}
-
-    public getBounds(): BoundingBox {
-        return {
-            left: this.x - this.width / 2,
-            right: this.x + this.width / 2,
-            top: this.y - this.height / 2,
-            bottom: this.y + this.height / 2
-        };
+export class Obstacle extends StaticEntity {
+    constructor(id: string, x: number, y: number, width: number, height: number, visualId: string = 'black') {
+        super(id, x, y, width, height, visualId);
     }
 }

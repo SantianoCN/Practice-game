@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-// Базовые физические свойства любой сущности на карте
 export const BaseEntityStateSchema = z.object({
     id: z.string(),
     x: z.number(),
@@ -11,7 +10,6 @@ export const BaseEntityStateSchema = z.object({
 });
 export type BaseEntityState = z.infer<typeof BaseEntityStateSchema>;
 
-// Стейт Игрока
 export const PlayerStateSchema = BaseEntityStateSchema.extend({
     hp: z.number(),
     maxHp: z.number(),
@@ -22,22 +20,18 @@ export const PlayerStateSchema = BaseEntityStateSchema.extend({
 });
 export type PlayerState = z.infer<typeof PlayerStateSchema>;
 
-// Стейт Врага
 export const EnemyStateSchema = BaseEntityStateSchema.extend({
     hp: z.number(),
     maxHp: z.number()
 });
 export type EnemyState = z.infer<typeof EnemyStateSchema>;
 
-// Стейт Снаряда (Пули)
 export const BulletStateSchema = BaseEntityStateSchema;
 export type BulletState = z.infer<typeof BulletStateSchema>;
 
-// Стейт Выпавшего Предмета (Лута)
 export const DroppedItemStateSchema = BaseEntityStateSchema;
 export type DroppedItemState = z.infer<typeof DroppedItemStateSchema>;
 
-// Стейт Сундука
 export const ChestStateSchema = BaseEntityStateSchema.extend({
     isOpened: z.boolean(),
     gridX: z.number(),
@@ -45,6 +39,5 @@ export const ChestStateSchema = BaseEntityStateSchema.extend({
 });
 export type ChestState = z.infer<typeof ChestStateSchema>;
 
-// Стейт Препятствия (Стена, колонна)
 export const ObstacleStateSchema = BaseEntityStateSchema;
 export type ObstacleState = z.infer<typeof ObstacleStateSchema>;

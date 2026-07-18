@@ -1,8 +1,8 @@
 import { IGameRepository } from '../interfaces/IGameRepository';
 import { IIdGenerator } from '../interfaces/IIdGenerator';
-import { GameSession } from '../state/GameSession';
+import { GameSession } from '../../domain/entities/GameSession';
 import { EntityFactory } from '../../domain/factories/EntityFactory';
-import { MapGenerator } from '../../domain/world/MapGenerator';
+import { MapGenerator } from '../../domain/world/FloorGenerator';
 import { GAME_CONFIG } from '@game/shared';
 
 export class SessionManagementUseCase {

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ArchetypeSchema } from '../../domain/schemas/stats.schema';
+import { ArchetypeSchema } from '../types/stats.schema';
 
 export const LoginDataSchema = z.object({
     login: z.string().min(3).max(20),
@@ -36,7 +36,8 @@ export const PlayerActionSchema = z.object({
         attack: z.boolean(),
         weapon1: z.boolean(),
         weapon2: z.boolean(),
-        weapon3: z.boolean()
+        weapon3: z.boolean(),
+        interact: z.boolean()
     })
 });
 export type PlayerActionDTO = z.infer<typeof PlayerActionSchema>;

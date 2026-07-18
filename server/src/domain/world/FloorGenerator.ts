@@ -3,7 +3,7 @@ import { Enemy } from '../entities/Enemy';
 import { Obstacle } from '../entities/Obstacle';
 import { Chest, LootItem } from '../entities/Chest';
 import { Weapon } from '../entities/Weapon';
-import { ROOM_TEMPLATES, RoomTemplate } from './roomTemplates';
+import { ROOM_TEMPLATES, RoomTemplate } from './RoomTemplates';
 import { AXE, FIREBALL, ICE_STAFF, MAGE_PRESET_LIZARD, STAFF, SWORD, WARRIOR_PRESET_LIZARD,
     GAME_CONFIG, IDGenerator, RoomType
  } from '@game/shared';
@@ -170,8 +170,8 @@ export class MapGenerator {
         }
 
         for (const ch of template.chests) {
-            const width = this.CELL_SIZE * 2;
-            const height = this.CELL_SIZE * 2;
+            const width = this.CELL_SIZE;
+            const height = this.CELL_SIZE;
             const x = ch.gridX * this.CELL_SIZE + width / 2;
             const y = ch.gridY * this.CELL_SIZE + height / 2;
 
@@ -181,7 +181,7 @@ export class MapGenerator {
                     const randomWpn = weapons[Math.floor(Math.random() * weapons.length)];
                     const weapon = new Weapon(
                         this.generateId('weapon'),
-                        'weapon',
+                        randomWpn.visualId,
                         randomWpn
                     );
                     return { type: 'weapon', weapon: weapon };
@@ -226,32 +226,6 @@ export class MapGenerator {
         boss.height = 64;
 
         room.enemies.push(boss);
-    }
-
-    private spawnObstacles(room: Room, count: number): void {
-        for (let i = 0; i < count; i++) {
-            const width = 64;
-            const height = 64;
-            const x = Math.random() > 0.5 ? 100 : this.roomWidth - 100;
-            const y = Math.random() > 0.5 ? 100 : this.roomHeight - 100;
-
-            const obstacle = new Obstacle(this.generateId('obs'), x, y, width, height, 'stone_block');
-            room.obstacles.push(obstacle);
-        }
-    }
-
-    private spawnChest(room: Room): void {
-        const x = this.roomWidth / 2;
-        const y = this.roomHeight / 2;
-        
-        const chest = new Chest(
-            this.generateId('chest'), 
-            x, y, 40, 40, 
-            room.gridX, room.gridY, 
-            [ { type: 'gold', amount: 100 } ] 
-        );
-        
-        room.chests.push(chest);
     }
 
     private countNeighbors(x: number, y: number): number {

@@ -1,5 +1,5 @@
 import { IGameRepository } from '../../application/interfaces/IGameRepository';
-import { GameSession } from '../../application/state/GameSession';
+import { GameSession } from '../../domain/entities/GameSession';
 
 export class InMemoryGameRepo implements IGameRepository {
     private sessions: Map<string, GameSession> = new Map();

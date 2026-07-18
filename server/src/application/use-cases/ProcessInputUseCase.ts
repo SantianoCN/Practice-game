@@ -15,7 +15,13 @@ export class ProcessInputUseCase {
         const player = session.getPlayer(userId);
         if (!player || player.isDead()) return;
 
-        player.applyInput(action.keys.up, action.keys.down, action.keys.left, action.keys.right);
+        player.applyInput(
+            action.keys.up, 
+            action.keys.down, 
+            action.keys.left, 
+            action.keys.right, 
+            action.keys.interact
+        );
 
         if (action.keys.weapon1) player.changeWeapon(0);
         if (action.keys.weapon2) player.changeWeapon(1);

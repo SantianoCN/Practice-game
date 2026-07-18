@@ -7,6 +7,7 @@ export class Player extends LivingEntity {
     public currentWeaponIndex: number = 0;
     public readonly entityType: EntityType = 'player';
     public gold: number = 0;
+    public isInteracting: boolean = false;
     
     public roomX: number = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
     public roomY: number = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
@@ -34,13 +35,14 @@ export class Player extends LivingEntity {
         }
     }
 
-    public applyInput(up: boolean, down: boolean, left: boolean, right: boolean): void {
+    public applyInput(up: boolean, down: boolean, left: boolean, right: boolean, interact: boolean = false): void {
         this.vx = 0;
         this.vy = 0;
         if (up) this.vy -= 1;
         if (down) this.vy += 1;
         if (left) this.vx -= 1;
         if (right) this.vx += 1;
+        this.isInteracting = interact;
     }
 
     public addWeaponToInventory(weapon: Weapon): Weapon | void {

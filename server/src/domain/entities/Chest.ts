@@ -1,33 +1,37 @@
-import { Weapon } from "./Weapon";
+import { StaticEntity } from './BaseEntities';
+import { Weapon } from './Weapon';
 
 export type LootItem = 
     | { type: 'weapon', weapon: Weapon }
     | { type: 'gold', amount: number };
 
-export class DroppedItem {
-    constructor(
-        public id: string,
-        public x: number,
-        public y: number,
-        public width: number = 10,
-        public height: number = 10,
-        public visualId: string,
-        public content: LootItem
-    ) {}
-}
-
-export class Chest {
+export class Chest extends StaticEntity {
     public isOpened: boolean = false;
-    public readonly visualId: string = 'chest';
 
     constructor(
-        public id: string,
-        public x: number,
-        public y: number,
-        public width: number,
-        public height: number,
+        id: string,
+        x: number,
+        y: number,
+        width: number,
+        height: number,
         public gridX: number,
         public gridY: number,
         public loot: LootItem[]
-    ) {}
+    ) {
+        super(id, x, y, width, height, 'chest');
+    }
+}
+
+export class DroppedItem extends StaticEntity {
+    constructor(
+        id: string,
+        x: number,
+        y: number,
+        width: number = 10,
+        height: number = 10,
+        visualId: string,
+        public content: LootItem
+    ) {
+        super(id, x, y, width, height, visualId);
+    }
 }

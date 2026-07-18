@@ -19,7 +19,7 @@ export class VisualEntity {
 
     public isDying: boolean = false;
     public lastFacing: 'left' | 'right' = 'right';
-    public type: EntityType | 'bullet' = 'player';
+    public type: EntityType = 'player';
 
     constructor(
         id: string, 
@@ -28,7 +28,7 @@ export class VisualEntity {
         w: number, 
         h: number, 
         visualId: string, 
-        type: EntityType | 'bullet'
+        type: EntityType
     ) {
         this.id = id;
         this.targetX = x;
@@ -43,9 +43,9 @@ export class VisualEntity {
 
     public updateInterpolation(dt: number, lerpSpeed: number = 12): void {
         if (!this.isDying) {
-            const t = 1 - Math.exp(-lerpSpeed * dt);
-            this.renderX += (this.targetX - this.renderX) * t;
-            this.renderY += (this.targetY - this.renderY) * t;
+            const lerpFactor = 1 - Math.exp(-lerpSpeed * dt);
+            this.renderX += (this.targetX - this.renderX) * lerpFactor;
+            this.renderY += (this.targetY - this.renderY) * lerpFactor;
         } else if (this.type === 'bullet') {
             const dx = this.targetX - this.renderX;
             const dy = this.targetY - this.renderY;

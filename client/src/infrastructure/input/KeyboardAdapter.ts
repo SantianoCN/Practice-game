@@ -63,6 +63,7 @@ export class KeyboardAdapter implements IInputProvider {
                 weapon1: this.keys['Digit1'] || false,
                 weapon2: this.keys['Digit2'] || false,
                 weapon3: this.keys['Digit3'] || false,
+                interact: this.keys['KeyE'] || false
             }
         };
     }

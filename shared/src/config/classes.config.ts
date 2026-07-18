@@ -1,13 +1,13 @@
-import { EntityStats } from '../schemas/stats.schema';
-import { WeaponStats, ProjectileStats, StartingWeaponStats } from '../schemas/weapon.schema';
-import { PlayerClassPreset } from '../schemas/preset.schema';
+import { EntityStats } from '../types/stats.schema';
+import { WeaponStats, ProjectileStats, StartingWeaponStats } from '../types/weapon.schema';
+import { PlayerClassPreset } from '../types/preset.schema';
 
 export const FIREBALL: ProjectileStats = { damage: 10, range: 400, speed: 200, visualId: 'red_ball' };
 export const SLASH: ProjectileStats = { damage: 15, range: 60, speed: 400, visualId: 'slash_effect' };
 export const ICE_BALL: ProjectileStats = { damage: 6, range: 350, speed: 250, visualId: 'blue_ball' };
 export const AXE_SLASH: ProjectileStats = { damage: 30, range: 50, speed: 300, visualId: 'axe_slash' };
 
-export const STAFF: WeaponStats = { cooldownMs: 2000, projectile: FIREBALL, visualId: 'staff' };
+export const STAFF: WeaponStats = { cooldownMs: 0, projectile: FIREBALL, visualId: 'staff' };
 export const SWORD: WeaponStats = { cooldownMs: 800, projectile: SLASH, visualId: 'iron_sword' };
 export const ICE_STAFF: WeaponStats = { cooldownMs: 1000, projectile: ICE_BALL, visualId: 'ice_staff' };
 export const AXE: WeaponStats = { cooldownMs: 1500, projectile: AXE_SLASH, visualId: 'battle_axe' };
@@ -41,7 +41,7 @@ export const STARTING_ICE_STAFF: StartingWeaponStats = {
 };
 
 export const WARRIOR_PRESET: EntityStats = { maxHp: 150, maxMana: 20, speed: 100, visualId: 'Warrior', archetype: 'warrior' };
-export const MAGE_PRESET: EntityStats = { maxHp: 80, maxMana: 150, speed: 130, visualId: 'Mage', archetype: 'mage' };
+export const MAGE_PRESET: EntityStats = { maxHp: 80, maxMana: 150, speed: 200, visualId: 'Mage', archetype: 'mage' };
 
 export const WARRIOR_PRESET_LIZARD: EntityStats = { maxHp: 10, maxMana: 20, speed: 90, visualId: 'red_box', archetype: 'warrior' };
 export const MAGE_PRESET_LIZARD: EntityStats = { maxHp: 10, maxMana: 150, speed: 110, visualId: 'orange_box', archetype: 'mage' };

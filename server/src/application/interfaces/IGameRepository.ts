@@ -1,4 +1,4 @@
-import { GameSession } from '../state/GameSession';
+import { GameSession } from '../../domain/entities/GameSession';
 
 export interface IGameRepository {
     save(session: GameSession): void;

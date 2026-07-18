@@ -149,26 +149,22 @@ export class CollisionEngine {
         cellSize: number,
         idGen: IDGenerator
     ): void {
-        const pBounds = player.getBounds();
+        const playerBounds = player.getBounds();
 
         for (const chest of chests) {
             if (chest.isOpened) continue;
             
-            const chLeft = chest.gridX * cellSize;
-            const chRight = chest.gridX * cellSize + cellSize;
-            const chTop = chest.gridY * cellSize;
-            const chBottom = chest.gridY * cellSize + cellSize;
+            const chestBounds = chest.getBounds();
 
-            if (pBounds.right > chLeft && pBounds.left < chRight && 
-                pBounds.bottom > chTop && pBounds.top < chBottom) {
-                
+            if (this.isOverlapping(playerBounds, chestBounds)) {
+
                 for (const item of chest.loot) {
                     const id = idGen('item');
-                    const x = (chest.gridX - 1) * cellSize;
-                    const y = chTop + 20;
+                    const x = chest.x + (Math.floor(Math.random() * 3) - 1) * cellSize;
+                    const y = chest.y + (Math.floor(Math.random() * 3) - 1) * cellSize;
                     droppedItems.push(new DroppedItem(id, x, y, 10, 10, 'blue', item));
                 }
-                
+                chest.visualId = 'chest_open';
                 chest.isOpened = true;
             }
         }
@@ -178,32 +174,33 @@ export class CollisionEngine {
         player: Player, 
         droppedItems: DroppedItem[]
     ): void {
-        const pBounds = player.getBounds();
+        const playerBounds = player.getBounds();
         
         for (let i = droppedItems.length - 1; i >= 0; i--) {
             const item = droppedItems[i];
+            const itemBounds = item.getBounds();
             
-            if (player.x + player.width / 2 > item.x && player.x - 10 < item.x + item.width + 10 &&
-                player.y + player.height / 2 > item.y && player.y - 10 < item.y + item.height + 10) {
+            if (this.isOverlapping(playerBounds, itemBounds)) {
                 switch(item.content.type) {
                     case 'gold':
                         player.addGold(item.content.amount);
                         break;
                     case 'weapon': {
+                        if (!player.isInteracting) return;
+                        player.isInteracting = false; 
                         const dropped = player.addWeaponToInventory(item.content.weapon);
                         if (dropped) {
-                            droppedItems.push({
-                                id: dropped.id,
-                                x: item.x + player.width,
-                                y: item.y,
-                                width: item.width,
-                                height: item.height,
-                                visualId: dropped.config.visualId,
-                                content: {
+                            const droppedItem = new  DroppedItem(
+                                dropped.id, 
+                                item.x + player.width, 
+                                item.y, item.width, 
+                                item.height, 
+                                dropped.config.visualId, 
+                                {
                                     type: 'weapon',
                                     weapon:  dropped 
-                                }
-                            });
+                                });
+                            droppedItems.push(droppedItem);
                         }
                         break;  
                     }
