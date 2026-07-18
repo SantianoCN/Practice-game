@@ -2,10 +2,17 @@ import { VisualEntity } from '../../domain/entities/VisualEntity';
 import { RoomState, ChestState, BaseEntityState } from '@game/shared';
 import { TextureRenderer, EntityRenderer } from './SupportRenderer';
 
-import warriorImgUrl from './../../../assets/hero/warrior-sword.png'; 
+import warriorImgUrl from './../../../assets/hero/warrior-sword-anim.png'; 
 import volhvImgUrl from './../../../assets/hero/volhv.png'; 
 import lizardAxeImgUrl from './../../../assets/enemy/lizard-axe.png';
 import lizardMageImgUrl from './../../../assets/enemy/lizard-mage.png';
+import coinImgUrl from './../../../assets/loot/coin.png'
+import battleAxeImgUrl from './../../../assets/weapon/axe.png';
+import ironSwordImgUrl from './../../../assets/weapon/sword.png';
+import fireStaffImgUrl from './../../../assets/weapon/fire_staff.png';
+import iceStaffImgUrl from './../../../assets/weapon/ice_staff.png';
+import chestImgUrl from '../../../assets/chest.png';
+import chestOpenImgUrl from '../../../assets/chest-open.png';
 
 interface MapCell {
     state: 'unseen' | 'visible' | 'visited';
@@ -17,6 +24,7 @@ export class CanvasRendererAdapter {
     private canvas: HTMLCanvasElement;
     private visitedMatrix: MapCell[][] = [];
     private readonly matrixSize = 10;
+
     private playerRenderers: Record<string, EntityRenderer>;
     private enemyRenderers: Record<string, EntityRenderer>;
 
@@ -102,7 +110,7 @@ export class CanvasRendererAdapter {
         const r = me.width ?? 15;
 
         this.context.save();
-        const arrowY = py - r - 16;
+        const arrowY = py - r - 5;
         this.context.fillStyle = '#d4af37';
         this.context.fillRect(px - 5, arrowY, 10, 3);
         this.context.fillRect(px - 3, arrowY + 3, 6, 3);
@@ -323,85 +331,22 @@ export class CanvasRendererAdapter {
             const x = chest.gridX * cellSize;
             const y = chest.gridY * cellSize;
             const w = cellSize, h = cellSize;
-            const isOpened = chest.isOpened || false;
+            let texture = new Image();
 
-            this.context.shadowColor = 'rgba(0, 0, 0, 0.25)';
-            this.context.shadowBlur = 8;
-            this.context.shadowOffsetX = 2;
-            this.context.shadowOffsetY = 2;
-
-            this.context.fillStyle = isOpened ? '#8B7D3C' : '#E67E22';
-            this.context.fillRect(x, y, w, h);
-
-            this.context.shadowColor = 'transparent';
-            this.context.shadowBlur = 0;
-            this.context.shadowOffsetX = 0;
-            this.context.shadowOffsetY = 0;
-
-            this.context.strokeStyle = isOpened ? '#5C4A2A' : '#8B5A00';
-            this.context.lineWidth = 1;
-            this.context.strokeRect(x, y, w, h);
-
-            this.context.strokeStyle = isOpened ? '#7A6B3A' : '#CC7A00';
-            this.context.lineWidth = 0.5;
-
-            for (let i = 1; i < 3; i++) {
-                const lineY = y + (h * i) / 3;
-                this.context.beginPath();
-                this.context.moveTo(x + 2, lineY);
-                this.context.lineTo(x + w - 2, lineY);
-                this.context.stroke();
+            switch (chest.visualId) {
+                case 'chest':
+                    texture.src = chestImgUrl;
+                    break;
+                case 'chestOpen': 
+                    texture.src = chestOpenImgUrl;
+                    break;
+                default:
+                    this.context.fillStyle = '#0c8a93a4';
+                    this.context.fillRect(x, y, w, h);
+                    break;
             }
+            this.context.drawImage(texture, x, y , w, h);
 
-            this.context.beginPath();
-            this.context.moveTo(x + w / 2, y + 2);
-            this.context.lineTo(x + w / 2, y + h - 2);
-            this.context.stroke();
-
-            if (!isOpened) {
-                this.context.fillStyle = '#D35400';
-                this.context.beginPath();
-                this.context.moveTo(x + 2, y);
-                this.context.lineTo(x + w / 2, y - 3);
-                this.context.lineTo(x + w - 2, y);
-                this.context.closePath();
-                this.context.fill();
-                this.context.strokeStyle = '#8B5A00';
-                this.context.lineWidth = 0.8;
-                this.context.stroke();
-
-                this.context.fillStyle = '#DAA520';
-                this.context.fillRect(x + 3, y - 1, 2, 2);
-                this.context.fillRect(x + w - 5, y - 1, 2, 2);
-
-                this.context.fillStyle = '#F1C40F';
-                this.context.fillRect(x + w / 2 - 3, y + h / 2 - 3, 6, 5);
-                this.context.fillStyle = '#DAA520';
-                this.context.fillRect(x + w / 2 - 1, y + h / 2 - 5, 2, 3);
-                this.context.fillStyle = '#4A3520';
-                this.context.fillRect(x + w / 2 - 1, y + h / 2 - 1, 2, 1);
-            } else {
-                this.context.fillStyle = '#6B5D2C';
-                this.context.beginPath();
-                this.context.moveTo(x + 2, y - 1);
-                this.context.lineTo(x + w / 2, y - 5);
-                this.context.lineTo(x + w - 2, y - 1);
-                this.context.closePath();
-                this.context.fill();
-                this.context.strokeStyle = '#4A3520';
-                this.context.lineWidth = 0.8;
-                this.context.stroke();
-
-                this.context.fillStyle = '#3D2B1F';
-                this.context.fillRect(x + 2, y + 2, w - 4, h - 4);
-                this.context.fillStyle = 'rgba(255, 215, 0, 0.15)';
-                this.context.fillRect(x + 3, y + 3, w - 6, h - 6);
-
-                this.context.fillStyle = '#8B7D3C';
-                this.context.fillRect(x + w - 4, y + h / 2 - 2, 3, 3);
-                this.context.fillStyle = '#A0926B';
-                this.context.fillRect(x + w - 2, y + h / 2 - 1, 1, 5);
-            }
         }
     }
 
@@ -412,35 +357,36 @@ export class CanvasRendererAdapter {
             const x = item.x - item.width / 2, y = item.y - item.height / 2;
             const w = item.width, h = item.height;
 
+            let texture = new Image();
+            
             this.context.shadowColor = 'rgba(0, 0, 0, 0.2)';
             this.context.shadowBlur = 5;
             this.context.shadowOffsetX = 1;
             this.context.shadowOffsetY = 2;
 
-            let color = '#95A5A6', glowColor = 'rgba(0, 0, 0, 0)';
-            if (item.visualId === 'sword' || item.visualId === 'weapon') { color = '#E74C3C'; glowColor = 'rgba(231, 76, 60, 0.2)'; }
-            else if (item.visualId === 'gold') { color = '#F1C40F'; glowColor = 'rgba(241, 196, 15, 0.2)'; }
-
-            if (glowColor !== 'rgba(0, 0, 0, 0)') {
-                this.context.fillStyle = glowColor;
-                this.context.beginPath();
-                this.context.arc(item.x, item.y, Math.max(w, h) * 1.2, 0, Math.PI * 2);
-                this.context.fill();
+            switch (item.visualId) {
+                case 'battle_axe':
+                    texture.src = battleAxeImgUrl;
+                    break;
+                case 'iron_sword': 
+                    texture.src = ironSwordImgUrl;
+                    break;
+                case 'fire_staff':
+                    texture.src = fireStaffImgUrl;
+                    break;
+                case 'ice_staff':
+                    texture.src = iceStaffImgUrl;
+                    break;
+                case 'gold':
+                    texture.src = coinImgUrl;
+                    break;
+                default:
+                    this.context.fillStyle = '#0c8a93a4';
+                    this.context.fillRect(x, y, w, h);
+                    break;
             }
-
-            this.context.fillStyle = color;
-            this.context.fillRect(x, y, w, h);
-
-            this.context.shadowColor = 'transparent';
-            this.context.shadowBlur = 0;
-            this.context.shadowOffsetX = 0;
-            this.context.shadowOffsetY = 0;
-
-            this.context.strokeStyle = 'rgba(0, 0, 0, 0.3)';
-            this.context.lineWidth = 1;
-            this.context.strokeRect(x, y, w, h);
-            this.context.fillStyle = 'rgba(255, 255, 255, 0.15)';
-            this.context.fillRect(x + 2, y + 1, w / 3, 2);
+            this.context.drawImage(texture, x, y , w, h);
+            console.log(item.visualId)
         }
     }
 

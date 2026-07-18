@@ -162,9 +162,14 @@ export class CollisionEngine {
                     const id = idGen('item');
                     const x = chest.x + (Math.floor(Math.random() * 3) - 1) * cellSize;
                     const y = chest.y + (Math.floor(Math.random() * 3) - 1) * cellSize;
-                    droppedItems.push(new DroppedItem(id, x, y, 10, 10, 'blue', item));
+                    if (item.type == 'weapon') {
+                        droppedItems.push(new DroppedItem(id, x, y, 10, 30, item.weapon.config.visualId, item));
+                    }else if (item.type == 'gold'){
+                        droppedItems.push(new DroppedItem(id, x, y, 10, 10, 'gold', item));
+                    }
+                    
                 }
-                chest.visualId = 'chest_open';
+                chest.visualId = 'chestOpen';
                 chest.isOpened = true;
             }
         }

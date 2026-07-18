@@ -29,20 +29,30 @@ export class SyncStateUseCase {
         }
     }
 
-    private updateOrCreate(
-        id: string, data: any, 
-        hp: number, maxHp: number, 
-        mana: number, maxMana: number, 
-        gold: number, activeWeaponVisualId: string, 
-        type: 'player'|'enemy'|'bullet'
-    ) {
-        let entity = this.entities.get(id);
-        if (!entity) {
-            entity = new VisualEntity(id, data.x, data.y, data.width, data.height, data.visualId, type);
-            this.entities.set(id, entity);
-        } else {
-            if (data.x < entity.targetX) entity.lastFacing = 'left';
-            else if (data.x > entity.targetX) entity.lastFacing = 'right';
+private updateOrCreate(
+    id: string, data: any, 
+    hp: number, maxHp: number, 
+    mana: number, maxMana: number, 
+    gold: number, activeWeaponVisualId: string, 
+    type: 'player'|'enemy'|'bullet'
+) {
+    let entity = this.entities.get(id);
+    if (!entity) {
+        entity = new VisualEntity(id, data.x, data.y, data.width, data.height, data.sprite, type);
+        this.entities.set(id, entity);
+    } else {
+        if (data.x < entity.targetX) {
+            entity.lastFacing = 'left';
+        }
+        else if (data.x > entity.targetX) {
+            entity.lastFacing = 'right';
+        }
+        else if (data.x == entity.targetX && data.y == entity.targetY) {
+            entity.lastFacing = 'Top';
+        }
+        if (data.x !== entity.targetX || data.y !== entity.targetY) entity.currentAnimation = 'move';
+        else entity.currentAnimation = 'idle'
+
 
             entity.targetX = data.x;
             entity.targetY = data.y;

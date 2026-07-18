@@ -33,7 +33,6 @@ export const DroppedItemStateSchema = BaseEntityStateSchema;
 export type DroppedItemState = z.infer<typeof DroppedItemStateSchema>;
 
 export const ChestStateSchema = BaseEntityStateSchema.extend({
-    isOpened: z.boolean(),
     gridX: z.number(),
     gridY: z.number()
 });
