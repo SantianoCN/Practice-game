@@ -26,7 +26,9 @@ export const EnemyStateSchema = BaseEntityStateSchema.extend({
 });
 export type EnemyState = z.infer<typeof EnemyStateSchema>;
 
-export const BulletStateSchema = BaseEntityStateSchema;
+export const BulletStateSchema = BaseEntityStateSchema.extend({
+    speed: z.number()
+});
 export type BulletState = z.infer<typeof BulletStateSchema>;
 
 export const DroppedItemStateSchema = BaseEntityStateSchema;

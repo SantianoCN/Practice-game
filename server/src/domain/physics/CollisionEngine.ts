@@ -16,7 +16,7 @@ export class CollisionEngine {
             a.bottom > b.top
         );
     }
-
+    
     public static resolveWallBounds(
         entity: MoveableEntity, 
         roomWidth: number, 
@@ -71,19 +71,51 @@ export class CollisionEngine {
                 const overlapTop = eBounds.bottom - oBounds.top;
                 const overlapBottom = oBounds.bottom - eBounds.top;
 
-                const minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
+                const pushLeft = overlapLeft;
+                const pushRight = overlapRight;
+                const pushUp = overlapTop;
+                const pushDown = overlapBottom;
 
-                if (minOverlap === overlapLeft) {
-                    entity.x -= overlapLeft;
+                const minX = (pushLeft < pushRight) ? pushLeft : pushRight;
+                const minY = (pushUp < pushDown) ? pushUp : pushDown;
+
+                let resolveX = false;
+                let resolveY = false;
+
+                if (entity.vx === 0 && entity.vy === 0) {
+                    if (minX < minY) {
+                        resolveX = true;
+                    } else {
+                        resolveY = true;
+                    }
+                } else if (entity.vx === 0) {
+                    resolveY = true;
+                } else if (entity.vy === 0) {
+                    resolveX = true;
+                } else {
+                    const tx = minX / Math.abs(entity.vx);
+                    const ty = minY / Math.abs(entity.vy);
+
+                    if (tx < ty) {
+                        resolveX = true;
+                    } else {
+                        resolveY = true;
+                    }
+                }
+
+                if (resolveX) {
+                    if (pushLeft < pushRight) {
+                        entity.x -= pushLeft;
+                    } else {
+                        entity.x += pushRight;
+                    }
                     entity.vx = 0;
-                } else if (minOverlap === overlapRight) {
-                    entity.x += overlapRight;
-                    entity.vx = 0;
-                } else if (minOverlap === overlapTop) {
-                    entity.y -= overlapTop;
-                    entity.vy = 0;
-                } else if (minOverlap === overlapBottom) {
-                    entity.y += overlapBottom;
+                } else if (resolveY) {
+                    if (pushUp < pushDown) {
+                        entity.y -= pushUp;
+                    } else {
+                        entity.y += pushDown;
+                    }
                     entity.vy = 0;
                 }
 
@@ -94,6 +126,7 @@ export class CollisionEngine {
             }
         }
     }
+
     public static resolveBullets(bullets: Bullet[], targets: LivingEntity[]): void {
         for (const bullet of bullets) {
             if (bullet.isDestroyed) continue;
@@ -150,7 +183,7 @@ export class CollisionEngine {
         idGen: IDGenerator
     ): void {
         const playerBounds = player.getBounds();
-
+        
         for (const chest of chests) {
             if (chest.isOpened) continue;
             
@@ -165,9 +198,8 @@ export class CollisionEngine {
                     if (item.type == 'weapon') {
                         droppedItems.push(new DroppedItem(id, x, y, 10, 30, item.weapon.config.visualId, item));
                     }else if (item.type == 'gold'){
-                        droppedItems.push(new DroppedItem(id, x, y, 10, 10, 'gold', item));
+                        droppedItems.push(new DroppedItem(id, x, y, 15, 15, 'gold', item));
                     }
-                    
                 }
                 chest.visualId = 'chestOpen';
                 chest.isOpened = true;
@@ -197,8 +229,9 @@ export class CollisionEngine {
                         if (dropped) {
                             const droppedItem = new  DroppedItem(
                                 dropped.id, 
-                                item.x + player.width, 
-                                item.y, item.width, 
+                                player.x, 
+                                player.y, 
+                                item.width, 
                                 item.height, 
                                 dropped.config.visualId, 
                                 {

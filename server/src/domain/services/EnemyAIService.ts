@@ -82,6 +82,7 @@ export class EnemyAIService {
                         'enemy',
                         enemy.x,
                         enemy.y,
+                        Infinity,
                         dirX / dist, 
                         dirY / dist,
                         currentTime

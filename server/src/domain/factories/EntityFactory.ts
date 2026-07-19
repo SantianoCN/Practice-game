@@ -36,7 +36,8 @@ export class EntityFactory {
             stats,
             weapon,
             stats.maxMana,  
-            stats.maxMana   
+            stats.maxMana,
+            stats.manaRegen
         );
 
         return player;

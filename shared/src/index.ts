@@ -9,3 +9,4 @@ export * from './types/geometry.schema';
 export * from './events/network.events';
 export * from './dto/input.schema';
 export * from './dto/snapshot.schema';
+export * from './types/command.schema';

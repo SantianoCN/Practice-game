@@ -32,7 +32,7 @@ async function bootstrap() {
 
     const authUseCase = new AuthUseCase(accountRepo, idGen);
     const sessionUseCase = new SessionManagementUseCase(gameRepo, idGen, GAME_CONFIG.ROOM_WIDTH, GAME_CONFIG.ROOM_HEIGHT);
-    const inputUseCase = new ProcessInputUseCase(gameRepo, idGen);
+    const inputUseCase = new ProcessInputUseCase(gameRepo);
     const gameTickUseCase = new GameTickUseCase(gameRepo, broadcaster, idGen);
 
     app.post('/register', async (req, res) => {

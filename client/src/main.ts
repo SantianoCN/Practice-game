@@ -3,6 +3,7 @@ import { SocketClient } from './infrastructure/network/SocketClient';
 import { KeyboardAdapter } from './infrastructure/input/KeyboardAdapter';
 import { CanvasRendererAdapter } from './infrastructure/render/CanvasRendererAdapter';
 import { SyncStateUseCase } from './application/use-cases/SyncStateUseCase';
+import { BaseResponseDTO } from '@game/shared';
 
 class App {
     private ui = new DOMManager();
@@ -24,40 +25,52 @@ class App {
         this.init();
     }
 
-    private init() {
+    private init(): void {
         const token = localStorage.getItem('session_token');
         if (token) this.connectToServer(token);
         else this.ui.showAuth();
     }
 
-    private bindUiToNetwork() {
+    private bindUiToNetwork(): void {
         this.ui.onAuthReq = async (url, login, password) => {
             try {
                 const res = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ login, password })
-                }).then(r => r.json());
+                }).then(r => r.json() as Promise<BaseResponseDTO & { refreshToken?: string }>);
 
-                if (res.success) {
+                if (res.success && res.refreshToken) {
                     localStorage.setItem('session_token', res.refreshToken);
                     this.connectToServer(res.refreshToken);
-                } else this.ui.showAuth(res.message);
+                } else {
+                    this.ui.showAuth(res.message);
+                }
             } catch (e) {
                 this.ui.showAuth('Сервер недоступен (Connection Refused)');
             }
         };
 
         this.ui.onCreateRoom = async (arch, weapon) => {
-            const res = await this.network.createSession({ token: localStorage.getItem('session_token')!, archetype: arch, weaponId: weapon });
-            if (res.success) this.startGame(res.sessionId);
-            else this.ui.showErrorLobby(res.message);
+            const token = localStorage.getItem('session_token');
+            if (!token) return;
+            const res = await this.network.createSession({ token, archetype: arch, weaponId: weapon });
+            if (res.success && res.sessionId) {
+                this.startGame(res.sessionId);
+            } else {
+                this.ui.showErrorLobby(res.message || 'Ошибка создания комнаты');
+            }
         };
 
         this.ui.onJoinRoom = async (sid, arch, weapon) => {
-            const res = await this.network.joinSession({ sessionId: sid, token: localStorage.getItem('session_token')!, archetype: arch, weaponId: weapon });
-            if (res.success) this.startGame(sid);
-            else this.ui.showErrorLobby(res.message);
+            const token = localStorage.getItem('session_token');
+            if (!token) return;
+            const res = await this.network.joinSession({ sessionId: sid, token, archetype: arch, weaponId: weapon });
+            if (res.success) {
+                this.startGame(sid);
+            } else {
+                this.ui.showErrorLobby(res.message || 'Ошибка подключения к комнате');
+            }
         };
 
         this.ui.onLeaveRoom = () => {
@@ -72,7 +85,7 @@ class App {
         };
     }
 
-    private bindNetworkToApp() {
+    private bindNetworkToApp(): void {
         this.network.onPlayerId(id => this.myId = id);
         this.network.onClassPresets(presets => this.ui.updatePresets(presets));
         
@@ -86,7 +99,7 @@ class App {
         });
     }
 
-    private async connectToServer(token: string) {
+    private async connectToServer(token: string): Promise<void> {
         try {
             await this.network.connect(token);
             const login = await this.network.requestProfile();
@@ -99,7 +112,7 @@ class App {
         }
     }
 
-    private startGame(sessionId: string) {
+    private startGame(sessionId: string): void {
         localStorage.setItem('game_session_id', sessionId);
         this.ui.showGame(sessionId);
         
@@ -107,21 +120,23 @@ class App {
         this.renderer.reset();
         
         this.input.startListening();
-        this.input.saveListener(action => this.network.sendAction(action));
+        this.input.onInputChanged(action => this.network.sendPlayerAction(action));
 
         this.lastTime = performance.now();
         this.tick();
     }
 
-    private stopGame() {
+    private stopGame(): void {
         localStorage.removeItem('game_session_id');
         this.input.stopListening();
         if (this.gameLoopId) cancelAnimationFrame(this.gameLoopId);
         
-        this.network.requestProfile().then(login => this.ui.showLobby(login));
+        this.network.requestProfile()
+            .then(login => this.ui.showLobby(login))
+            .catch(() => this.ui.showAuth());
     }
 
-    private tick = () => {
+    private tick = (): void => {
         const startTime = performance.now();
         const deltaTime = (startTime - this.lastTime) / 1000;
         this.lastTime = startTime;

@@ -9,6 +9,7 @@ export type EntityType = z.infer<typeof EntityTypeSchema>;
 export const EntityStatsSchema = z.object({
     maxHp: z.number(),
     maxMana: z.number(),
+    manaRegen: z.number(),
     speed: z.number(),
     visualId: z.string(),
     archetype: ArchetypeSchema

@@ -6,6 +6,7 @@ import { MapGenerator } from '../../domain/world/FloorGenerator';
 import { GAME_CONFIG } from '@game/shared';
 
 export class SessionManagementUseCase {
+    private deleteTimers = new Map<string, ReturnType<typeof setTimeout>>();
     constructor(
         private repo: IGameRepository,
         private idGen: IIdGenerator,
@@ -37,6 +38,12 @@ export class SessionManagementUseCase {
         const session = this.repo.get(sessionId);
         if (!session) return false;
 
+        const pendingTimer = this.deleteTimers.get(sessionId);
+        if (pendingTimer) {
+            clearTimeout(pendingTimer);
+            this.deleteTimers.delete(sessionId);
+        }
+
         const player = EntityFactory.createPlayer(
             userId, login, archetype, weaponId, 
             session.roomWidth / 2, session.roomHeight / 2, 
@@ -53,7 +60,16 @@ export class SessionManagementUseCase {
 
         session.removePlayer(userId);
         if (session.isEmpty()) {
-            this.repo.delete(sessionId);
+            if (!this.deleteTimers.has(sessionId)) {
+                const GRACE_PERIOD_MS = 15000;
+
+                const timer = setTimeout(() => {
+                    this.repo.delete(sessionId);
+                    this.deleteTimers.delete(sessionId);
+                }, GRACE_PERIOD_MS);
+
+                this.deleteTimers.set(sessionId, timer);
+            }
         }
     }
 }

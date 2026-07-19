@@ -15,7 +15,7 @@ export class Bullet extends MoveableEntity {
         dirX: number, dirY: number, 
         config: ProjectileStats
     ) {
-        super(id, x, y, 8, 8, config.speed, config.visualId);
+        super(id, x, y, config.radius, config.radius, config.speed, config.visualId);
         this.vx = dirX;
         this.vy = dirY;
         this.damage = config.damage;

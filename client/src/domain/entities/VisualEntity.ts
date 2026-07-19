@@ -22,11 +22,21 @@ export class VisualEntity {
     public currentAnimation: 'move' | 'attack' | 'idle' = 'idle';
     public currentFrame: number = 0;
     public type: EntityType = 'player';
+    public speed: number = 0;
 
     private frameTimer: number = 0;
-    private readonly timePerFrame: number = 0.2; // время на один кадр
+    private readonly timePerFrame: number = 0.2;
 
-    constructor(id: string, x: number, y: number, w: number, h: number, visualId: string, type: 'player' | 'enemy' | 'bullet') {
+    constructor(
+        id: string, 
+        x: number, 
+        y: number, 
+        w: number, 
+        h: number, 
+        visualId: string, 
+        type: 'player' | 'enemy' | 'bullet', 
+        speed: number = 0
+    ) {
         this.id = id;
         this.targetX = x;
         this.targetY = y;
@@ -36,6 +46,7 @@ export class VisualEntity {
         this.height = h;
         this.visualId = visualId;
         this.type = type;
+        this.speed = speed;
     }
 
     public updateInterpolation(dt: number, lerpSpeed: number = 12): void {
@@ -51,7 +62,7 @@ export class VisualEntity {
             if (distance > 0) {
                 const dirX = dx / distance;
                 const dirY = dy / distance;
-                const step = 600 * dt;
+                const step = this.speed * dt;
                 if (step >= distance) {
                     this.renderX = this.targetX;
                     this.renderY = this.targetY;
@@ -62,7 +73,7 @@ export class VisualEntity {
             }
         }
 
-        this.updateAnimation(dt)
+        this.updateAnimation(dt);
     }
 
     public hasReachedTarget(epsilon: number = 2): boolean {
@@ -72,24 +83,18 @@ export class VisualEntity {
     }
 
     private updateAnimation(dt: number): void {
-        // Пули или умирающие сущности обычно не анимируют по стандартному циклу
         if (this.isDying || this.type === 'bullet') return;
 
-        // Если сущность стоит на месте (в состоянии idle), принудительно сбрасываем на 1-й кадр
         if (this.currentAnimation === 'idle') {
             this.currentFrame = 0;
             this.frameTimer = 0;
             return;
         }
 
-        // Накапливаем прошедшее время
         this.frameTimer += dt;
 
-        // Если накопилось достаточно времени для смены кадра
         if (this.frameTimer >= this.timePerFrame) {
-            this.frameTimer = 0; // Сбрасываем таймер
-            
-            // У вас в спрайт-листе ровно 3 кадра, поэтому гоняем по кругу: 0, 1, 2
+            this.frameTimer = 0;
             this.currentFrame = (this.currentFrame + 1) % 3;
         }
     }

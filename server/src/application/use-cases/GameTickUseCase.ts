@@ -3,6 +3,7 @@ import { IClientBroadcaster } from '../interfaces/IClientBroadcaster';
 import { CollisionEngine } from '../../domain/physics/CollisionEngine';
 import { GameSnapshotDTO, GameSnapshotSchema, GAME_CONFIG } from '@game/shared';
 import { EnemyAIService } from '../../domain/services/EnemyAIService';
+import { PlayerCombatService } from '../../domain/services/PlayerCombatService'; 
 import { IIdGenerator } from '../interfaces/IIdGenerator';
 import { RoomTransitionService } from '../../domain/services/RoomTransitionService';
 import { Player } from '../../domain/entities/Player';
@@ -22,6 +23,22 @@ export class GameTickUseCase {
             
             for (const player of session.players.values()) {
                 if (player.isDead()) continue;
+
+                player.processInputQueue();
+                player.applyInputFromHeldKeys();
+                const room = session.getRoom(player.roomX, player.roomY);
+                if (room) {
+                    const bullet = PlayerCombatService.handleAttack(
+                        player,
+                        room,
+                        currentTime,
+                        () => this.idGen.generateId('bullet')
+                    );
+                    
+                    if (bullet) {
+                        room.bullets.push(bullet);
+                    }
+                }
                 
                 player.updateEntity(deltaTime);
                 RoomTransitionService.handleTransition(

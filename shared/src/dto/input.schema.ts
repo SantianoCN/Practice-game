@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { ArchetypeSchema } from '../types/stats.schema';
+import { PlayerCommandSchema } from '../types/command.schema';
 
 export const LoginDataSchema = z.object({
     login: z.string().min(3).max(20),
@@ -28,17 +29,7 @@ export const SessionJoinRequestSchema = z.object({
 export type SessionJoinRequestDTO = z.infer<typeof SessionJoinRequestSchema>;
 
 export const PlayerActionSchema = z.object({
-    keys: z.object({
-        up: z.boolean(),
-        down: z.boolean(),
-        left: z.boolean(),
-        right: z.boolean(),
-        attack: z.boolean(),
-        weapon1: z.boolean(),
-        weapon2: z.boolean(),
-        weapon3: z.boolean(),
-        interact: z.boolean()
-    })
+    keys: PlayerCommandSchema
 });
 export type PlayerActionDTO = z.infer<typeof PlayerActionSchema>;
 

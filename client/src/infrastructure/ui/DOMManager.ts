@@ -1,4 +1,6 @@
-import { Archetype } from '@game/shared';
+import { Archetype, PlayerClassPresetDTO, StartingWeaponStats } from '@game/shared';
+import warriorImgUrl from '../../../assets/hero/warrior-sword.png';
+import mageImgUrl from '../../../assets/hero/volhv.png';
 
 export class DOMManager {
     public onAuthReq?: (url: string, l: string, p: string) => void;
@@ -14,7 +16,7 @@ export class DOMManager {
         this.bindEvents();
     }
 
-    private bindEvents() {
+    private bindEvents(): void {
         document.getElementById('loginBtn')?.addEventListener('click', () => {
             const l = (document.getElementById('username') as HTMLInputElement).value;
             const p = (document.getElementById('password') as HTMLInputElement).value;
@@ -37,7 +39,6 @@ export class DOMManager {
         });
 
         document.getElementById('logoutBtn')?.addEventListener('click', () => this.onLogout?.());
-
         document.getElementById('disconnectBtn')?.addEventListener('click', () => this.onLeaveRoom?.());
         
         document.getElementById('copySessionBtn')?.addEventListener('click', () => {
@@ -50,7 +51,7 @@ export class DOMManager {
         });
     }
 
-    public showAuth(error?: string) {
+    public showAuth(error?: string): void {
         document.getElementById('auth-screen')!.classList.remove('hidden');
         document.getElementById('lobby-screen')!.classList.add('hidden');
         document.getElementById('game-screen')!.classList.add('hidden');
@@ -61,27 +62,27 @@ export class DOMManager {
         }
     }
 
-    public showLobby(login: string) {
+    public showLobby(login: string): void {
         document.getElementById('auth-screen')!.classList.add('hidden');
         document.getElementById('lobby-screen')!.classList.remove('hidden');
         document.getElementById('game-screen')!.classList.add('hidden');
         document.getElementById('welcomeText')!.innerText = `РУС: ${login}`;
     }
 
-    public showGame(sessionId: string) {
+    public showGame(sessionId: string): void {
         document.getElementById('auth-screen')!.classList.add('hidden');
         document.getElementById('lobby-screen')!.classList.add('hidden');
         document.getElementById('game-screen')!.classList.remove('hidden');
         document.getElementById('sessionDisplay')!.innerText = sessionId;
     }
 
-    public showErrorLobby(msg: string) {
+    public showErrorLobby(msg: string): void {
         const err = document.getElementById('lobbyError')!;
         err.innerText = msg;
         err.style.display = 'block';
     }
 
-    public updatePresets(presets: any) {
+    public updatePresets(presets: Record<string, PlayerClassPresetDTO>): void {
         const heroList = document.getElementById('heroCardList')!;
         heroList.innerHTML = '';
         const presetKeys = Object.keys(presets) as Archetype[]; 
@@ -101,8 +102,16 @@ export class DOMManager {
                 el.classList.add('active');
             }
 
-            const iconAlt = key === 'mage' ? 'Волхв' : 'Ратоборец';
-            const iconHtml = `<img src="" alt="${iconAlt}" class="hero-card-img" />`;
+            let iconAlt = '';
+            switch(key) {
+                case 'mage':
+                    iconAlt = mageImgUrl;
+                    break;
+                case 'warrior':
+                    iconAlt = warriorImgUrl;
+                    break;
+            }
+            const iconHtml = `<img src="${iconAlt}" alt="${key}" class="hero-card-img" />`;
 
             el.innerHTML = `
                 <div class="hero-card-icon">${iconHtml}</div>
@@ -118,6 +127,10 @@ export class DOMManager {
                 
                 this.selectedArch = key;
                 document.getElementById('heroPreviewName')!.innerText = preset.name;
+                const previewImg = document.querySelector('#heroPreviewSprite img') as HTMLImageElement;
+                if (previewImg) {
+                    previewImg.src = key === 'mage' ? mageImgUrl : warriorImgUrl;
+                }
                 this.updateWeapons(preset.startingWeapons);
             };
 
@@ -125,10 +138,14 @@ export class DOMManager {
         });
 
         document.getElementById('heroPreviewName')!.innerText = presets[this.selectedArch].name;
+        const defaultPreviewImg = document.querySelector('#heroPreviewSprite img') as HTMLImageElement;
+        if (defaultPreviewImg) {
+            defaultPreviewImg.src = this.selectedArch === 'mage' ? mageImgUrl : warriorImgUrl;
+        }
         this.updateWeapons(presets[this.selectedArch].startingWeapons);
     }
 
-    private updateWeapons(weapons: any[]) {
+    private updateWeapons(weapons: StartingWeaponStats[]): void {
         const wList = document.getElementById('weaponCardList')!;
         wList.innerHTML = '';
 
@@ -152,14 +169,14 @@ export class DOMManager {
             let iconHtml = `<img src="../../../assets/sword.png" alt="${weaponAlt}" class="weapon-card-img" />`;
             switch (weaponAlt) {
                 case 'Секира Перуна':
-                iconHtml = `<img src="../../../assets/axe.png" alt="${weaponAlt}" class="weapon-card-img" />`;
-                break;
+                    iconHtml = `<img src="../../../assets/axe.png" alt="${weaponAlt}" class="weapon-card-img" />`;
+                    break;
                 case 'Посох Огня':
-                iconHtml = `<img src="../../../assets/fireball.png" alt="${weaponAlt}" class="weapon-card-img" />`;
-                break;
+                    iconHtml = `<img src="../../../assets/fireball.png" alt="${weaponAlt}" class="weapon-card-img" />`;
+                    break;
                 case 'Посох Хлада':
-                iconHtml = `<img src=".../../../assets/iceball.png" alt="${weaponAlt}" class="weapon-card-img" />`;
-                break;
+                    iconHtml = `<img src=".../../../assets/iceball.png" alt="${weaponAlt}" class="weapon-card-img" />`;
+                    break;
             }
 
             el.innerHTML = `

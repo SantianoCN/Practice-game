@@ -170,8 +170,8 @@ export class MapGenerator {
         }
 
         for (const ch of template.chests) {
-            const width = this.CELL_SIZE;
-            const height = this.CELL_SIZE;
+            const width = 20;
+            const height = 20;
             const x = ch.gridX * this.CELL_SIZE + width / 2;
             const y = ch.gridY * this.CELL_SIZE + height / 2;
 

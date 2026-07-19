@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const ProjectileStatsSchema = z.object({
+    radius: z.number(),
     damage: z.number(),
     range: z.number(),
     speed: z.number(),
@@ -10,6 +11,7 @@ export type ProjectileStats = z.infer<typeof ProjectileStatsSchema>;
 
 export const WeaponStatsSchema = z.object({
     cooldownMs: z.number(),
+    manaCost: z.number(),
     projectile: ProjectileStatsSchema,
     visualId: z.string()
 });
