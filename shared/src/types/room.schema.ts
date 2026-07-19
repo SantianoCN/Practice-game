@@ -7,6 +7,14 @@ export type RoomType = z.infer<typeof RoomTypeSchema>;
 export const DirectionSchema = z.enum(['Top', 'Bottom', 'Left', 'Right']);
 export type Direction = z.infer<typeof DirectionSchema>;
 
+export const RoomInitSchema = z.object({
+    gridX: z.number(),
+    gridY: z.number(),
+    type: RoomTypeSchema,
+    obstacles: z.array(ObstacleStateSchema)
+});
+export type RoomInitDTO = z.infer<typeof RoomInitSchema>;
+
 export const RoomStateSchema = z.object({
     gridX: z.number(),
     gridY: z.number(),
@@ -18,7 +26,6 @@ export const RoomStateSchema = z.object({
         Left: z.boolean(),
         Right: z.boolean()
     }),
-    obstacles: z.array(ObstacleStateSchema),
     chests: z.array(ChestStateSchema),
     droppedItems: z.array(DroppedItemStateSchema)
 });

@@ -15,65 +15,69 @@ export class TextureRenderer implements EntityRenderer {
         this.texture.onload = () => { this.isLoaded = true; };
         this.texture.src = imagePath;
     }
-public draw(context: CanvasRenderingContext2D, entity: VisualEntity): void {
-    // Безопасный дефолт, теперь только 'left' или 'right'
-    const facing = entity.lastFacing === 'left' ? 'left' : 'right'; 
-    const animation = entity.currentAnimation || 'idle';
-    console.log(facing, animation)
 
-    if (this.isLoaded && this.frameWidth > 0) {
-        context.save();
+    public draw(context: CanvasRenderingContext2D, entity: VisualEntity): void {
+        const facing = entity.lastFacing === 'left' ? 'left' : 'right'; 
+        const animation = entity.currentAnimation || 'idle';
 
-        let startY = 0; // idle
-        
-        if (animation === 'move') {
-            startY = this.frameHeight; // walk
-        } else if (animation === 'attack') {
-            startY = this.frameHeight * 2; // attack)
-        }
+        const rx = Math.round(entity.renderX);
+        const ry = Math.round(entity.renderY);
+        const rw = Math.round(entity.width);
+        const rh = Math.round(entity.height);
 
-        const currentFrame = (entity.currentFrame || 0) % 3;
-        const startX = currentFrame * this.frameWidth;
+        if (this.isLoaded && this.frameWidth > 0) {
+            context.save();
 
-        if (facing === 'left') {
-            context.translate(entity.renderX, entity.renderY);
-            context.scale(-1, 1);
-            context.drawImage(
-                this.texture, 
-                startX, startY, this.frameWidth, this.frameHeight,
-                -entity.width / 2, -entity.height / 2, entity.width, entity.height
-            );
+            let startY = 0; // idle
+            
+            if (animation === 'move') {
+                startY = this.frameHeight; // walk
+            } else if (animation === 'attack') {
+                startY = this.frameHeight * 2; // attack
+            }
+
+            const currentFrame = (entity.currentFrame || 0) % 3;
+            const startX = currentFrame * this.frameWidth;
+
+            if (facing === 'left') {
+                context.translate(rx, ry);
+                context.scale(-1, 1);
+                context.drawImage(
+                    this.texture, 
+                    startX, startY, this.frameWidth, this.frameHeight,
+                    -Math.round(rw / 2), -Math.round(rh / 2), rw, rh
+                );
+            } else {
+                context.drawImage(
+                    this.texture, 
+                    startX, startY, this.frameWidth, this.frameHeight,
+                    rx - Math.round(rw / 2), ry - Math.round(rh / 2), rw, rh
+                );
+            }
+            
+            context.restore();
         } else {
-            context.drawImage(
-                this.texture, 
-                startX, startY, this.frameWidth, this.frameHeight,
-                entity.renderX - entity.width / 2, entity.renderY - entity.height / 2, entity.width, entity.height
-            );
+            context.fillStyle = '#ff00ff';
+            context.fillRect(rx - Math.round(rw / 2), ry - Math.round(rh / 2), rw, rh);
         }
-        
-        context.restore();
-    } else {
-        context.fillStyle = '#ff00ff';
-        context.fillRect(entity.renderX - entity.width / 2, entity.renderY - entity.height / 2, entity.width, entity.height);
-    }
 
-    if (entity.hp !== undefined && entity.maxHp !== undefined && entity.type !== 'player') {
-        this.drawHpBar(context, entity);
+        if (entity.hp !== undefined && entity.maxHp !== undefined && entity.type !== 'player') {
+            this.drawHpBar(context, entity);
+        }
     }
-}
 
     private drawHpBar(context: CanvasRenderingContext2D, entity: VisualEntity): void {
-        const barWidth = entity.width;
+        const barWidth = Math.round(entity.width);
         const barHeight = 5;
-        const barX = entity.renderX - barWidth / 2;
-        const barY = entity.renderY - entity.height / 2 - 10;
+        const barX = Math.round(entity.renderX - barWidth / 2);
+        const barY = Math.round(entity.renderY - entity.height / 2 - 10);
 
         context.fillStyle = 'rgba(0, 0, 0, 0.6)';
         context.fillRect(barX, barY, barWidth, barHeight);
 
         const hpPercentage = Math.max(0, entity.hp / entity.maxHp);
         context.fillStyle = '#2ecc71'; 
-        context.fillRect(barX, barY, barWidth * hpPercentage, barHeight);
+        context.fillRect(barX, barY, Math.round(barWidth * hpPercentage), barHeight);
     }
 }
 
@@ -81,7 +85,11 @@ export class BoxRenderer implements EntityRenderer {
     constructor(private color: string) {}
 
     public draw(context: CanvasRenderingContext2D, entity: VisualEntity): void {
+        const rx = Math.round(entity.renderX);
+        const ry = Math.round(entity.renderY);
+        const rw = Math.round(entity.width);
+        const rh = Math.round(entity.height);
         context.fillStyle = this.color;
-        context.fillRect(entity.renderX - entity.width / 2, entity.renderY - entity.height / 2, entity.width, entity.height);
+        context.fillRect(rx - Math.round(rw / 2), ry - Math.round(rh / 2), rw, rh);
     }
 }

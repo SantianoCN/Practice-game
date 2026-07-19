@@ -10,7 +10,8 @@ import {
     PlayerClassPresetDTO,
     ClientEvent, 
     ServerEvent,
-    ProfileResponseDTO
+    ProfileResponseDTO,
+    RoomInitDTO
 } from '@game/shared';
 
 export class SocketClient implements INetworkClient {
@@ -89,5 +90,9 @@ export class SocketClient implements INetworkClient {
     
     public onError(cb: (msg: string) => void): void { 
         this.socket.on(ServerEvent.ERROR, cb); 
+    }
+
+    public onRoomInit(cb: (data: RoomInitDTO) => void) { 
+        this.socket.on('server:room-init', cb); 
     }
 }

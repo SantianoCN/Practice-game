@@ -27,8 +27,8 @@ export class DroppedItem extends StaticEntity {
         id: string,
         x: number,
         y: number,
-        width: number = 10,
-        height: number = 10,
+        width: number = 20,
+        height: number = 20,
         visualId: string,
         public content: LootItem
     ) {

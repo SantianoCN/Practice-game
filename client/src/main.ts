@@ -73,6 +73,10 @@ class App {
             }
         };
 
+        this.network.onRoomInit(roomInit => {
+            this.stateSync.setStaticRoom(roomInit);
+        });
+
         this.ui.onLeaveRoom = () => {
             this.network.leaveSession();
             this.stopGame();
@@ -146,6 +150,7 @@ class App {
         this.renderer.render(
             this.stateSync.entities, 
             this.stateSync.currentRoomState, 
+            this.stateSync.staticObstacles,
             this.myId
         );
 

@@ -198,7 +198,7 @@ export class CollisionEngine {
                     if (item.type == 'weapon') {
                         droppedItems.push(new DroppedItem(id, x, y, 10, 30, item.weapon.config.visualId, item));
                     }else if (item.type == 'gold'){
-                        droppedItems.push(new DroppedItem(id, x, y, 15, 15, 'gold', item));
+                        droppedItems.push(new DroppedItem(id, x, y, 20, 20, 'gold', item));
                     }
                 }
                 chest.visualId = 'chestOpen';

@@ -2,10 +2,10 @@ import { EntityStats } from '../types/stats.schema';
 import { WeaponStats, ProjectileStats, StartingWeaponStats } from '../types/weapon.schema';
 import { PlayerClassPreset } from '../types/preset.schema';
 
-export const FIREBALL: ProjectileStats = { radius: 8, damage: 10, range: 400, speed: 300, visualId: 'red_ball' };
-export const SLASH: ProjectileStats = { radius: 8, damage: 15, range: 60, speed: 400, visualId: 'slash_effect' };
-export const ICE_BALL: ProjectileStats = { radius: 8, damage: 6, range: 350, speed: 250, visualId: 'blue_ball' };
-export const AXE_SLASH: ProjectileStats = { radius: 8, damage: 30, range: 50, speed: 300, visualId: 'axe_slash' };
+export const FIREBALL: ProjectileStats = { radius: 10, damage: 10, range: 400, speed: 300, visualId: 'red_ball' };
+export const SLASH: ProjectileStats = { radius: 10, damage: 15, range: 60, speed: 400, visualId: 'slash_effect' };
+export const ICE_BALL: ProjectileStats = { radius: 10, damage: 6, range: 350, speed: 250, visualId: 'blue_ball' };
+export const AXE_SLASH: ProjectileStats = { radius: 10, damage: 30, range: 50, speed: 300, visualId: 'axe_slash' };
 
 export const STAFF: WeaponStats = { cooldownMs: 0, manaCost: 10, projectile: FIREBALL, visualId: 'staff' };
 export const SWORD: WeaponStats = { cooldownMs: 800, manaCost: 0, projectile: SLASH, visualId: 'iron_sword' };
@@ -40,11 +40,11 @@ export const STARTING_ICE_STAFF: StartingWeaponStats = {
     config: ICE_STAFF
 };
 
-export const WARRIOR_PRESET: EntityStats = { maxHp: 150, maxMana: 20, manaRegen: 5, speed: 100, visualId: 'Warrior', archetype: 'warrior' };
-export const MAGE_PRESET: EntityStats = { maxHp: 80, maxMana: 150, manaRegen: 20, speed: 200, visualId: 'Mage', archetype: 'mage' };
+export const WARRIOR_PRESET: EntityStats = { maxHp: 150, maxMana: 20, manaRegen: 5, speed: 100, visualId: 'Warrior', width: 40, height: 40, archetype: 'warrior' };
+export const MAGE_PRESET: EntityStats = { maxHp: 80, maxMana: 150, manaRegen: 20, speed: 130, visualId: 'Mage', width: 40, height: 40, archetype: 'mage' };
 
-export const WARRIOR_PRESET_LIZARD: EntityStats = { maxHp: 10, maxMana: Infinity, manaRegen: Infinity, speed: 90, visualId: 'red_box', archetype: 'warrior' };
-export const MAGE_PRESET_LIZARD: EntityStats = { maxHp: 10, maxMana: Infinity, manaRegen: Infinity, speed: 110, visualId: 'orange_box', archetype: 'mage' };
+export const WARRIOR_PRESET_LIZARD: EntityStats = { maxHp: 10, maxMana: Infinity, manaRegen: Infinity, speed: 90, visualId: 'red_box', width: 40, height: 40, archetype: 'warrior' };
+export const MAGE_PRESET_LIZARD: EntityStats = { maxHp: 10, maxMana: Infinity, manaRegen: Infinity, speed: 110, visualId: 'orange_box', width: 40, height: 40, archetype: 'mage' };
 
 export const PLAYER_CLASSES: Record<string, PlayerClassPreset> = {
     warrior: {

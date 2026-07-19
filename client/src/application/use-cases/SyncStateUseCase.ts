@@ -3,13 +3,21 @@ import {
     RoomState, 
     PlayerState, 
     EnemyState, 
-    BulletState 
+    BulletState,
+    RoomInitDTO,
+    ObstacleState
 } from '@game/shared';
 import { VisualEntity } from '../../domain/entities/VisualEntity';
 
 export class SyncStateUseCase {
     public entities = new Map<string, VisualEntity>();
     public currentRoomState: RoomState | null = null;
+    
+    public staticObstacles: ObstacleState[] = [];
+
+    public setStaticRoom(roomInit: RoomInitDTO): void {
+        this.staticObstacles = roomInit.obstacles;
+    }
 
     public processSnapshot(snapshot: GameSnapshotDTO): void {
         const activeIds = new Set<string>();
@@ -98,5 +106,6 @@ export class SyncStateUseCase {
     public clear(): void {
         this.entities.clear();
         this.currentRoomState = null;
+        this.staticObstacles = [];
     }
 }

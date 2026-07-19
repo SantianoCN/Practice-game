@@ -1,7 +1,7 @@
 import { IGameRepository } from '../interfaces/IGameRepository';
 import { IClientBroadcaster } from '../interfaces/IClientBroadcaster';
 import { CollisionEngine } from '../../domain/physics/CollisionEngine';
-import { GameSnapshotDTO, GameSnapshotSchema, GAME_CONFIG } from '@game/shared';
+import { GameSnapshotDTO, GameSnapshotSchema, GAME_CONFIG, RoomInitSchema } from '@game/shared';
 import { EnemyAIService } from '../../domain/services/EnemyAIService';
 import { PlayerCombatService } from '../../domain/services/PlayerCombatService'; 
 import { IIdGenerator } from '../interfaces/IIdGenerator';
@@ -10,6 +10,8 @@ import { Player } from '../../domain/entities/Player';
 import { Room } from '../../domain/entities/Room';
 
 export class GameTickUseCase {
+    private playerLastRoom = new Map<string, string>();
+
     constructor(
         private repo: IGameRepository,
         private broadcaster: IClientBroadcaster,
@@ -23,6 +25,8 @@ export class GameTickUseCase {
             
             for (const player of session.players.values()) {
                 if (player.isDead()) continue;
+
+                const prevRoomKey = `${player.roomX}:${player.roomY}`;
 
                 player.processInputQueue();
                 player.applyInputFromHeldKeys();
@@ -48,6 +52,21 @@ export class GameTickUseCase {
                     session.roomWidth,
                     session.roomHeight
                 );
+
+                const currentRoomKey = `${player.roomX}:${player.roomY}`;
+                if (prevRoomKey !== currentRoomKey || !this.playerLastRoom.has(player.id)) {
+                    this.playerLastRoom.set(player.id, currentRoomKey);
+                    const newRoom = session.getRoom(player.roomX, player.roomY);
+                    if (newRoom) {
+                        const roomInit = RoomInitSchema.parse({
+                            gridX: newRoom.gridX,
+                            gridY: newRoom.gridY,
+                            type: newRoom.type,
+                            obstacles: newRoom.obstacles
+                        });
+                        this.broadcaster.broadcastRoomInit(player.id, roomInit);
+                    }
+                }
             }
 
             const activeRooms = new Set<Room>();

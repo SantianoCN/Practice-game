@@ -3,6 +3,7 @@ import { Enemy } from '../entities/Enemy';
 import { Obstacle } from '../entities/Obstacle';
 import { Chest, LootItem } from '../entities/Chest';
 import { Weapon } from '../entities/Weapon';
+import { EntityFactory } from '../factories/EntityFactory';
 import { ROOM_TEMPLATES, RoomTemplate } from './RoomTemplates';
 import { AXE, FIREBALL, ICE_STAFF, MAGE_PRESET_LIZARD, STAFF, SWORD, WARRIOR_PRESET_LIZARD,
     GAME_CONFIG, IDGenerator, RoomType
@@ -170,8 +171,8 @@ export class MapGenerator {
         }
 
         for (const ch of template.chests) {
-            const width = 20;
-            const height = 20;
+            const width = 28;
+            const height = 28;
             const x = ch.gridX * this.CELL_SIZE + width / 2;
             const y = ch.gridY * this.CELL_SIZE + height / 2;
 
@@ -199,12 +200,17 @@ export class MapGenerator {
         const x = padding + Math.random() * (this.roomWidth - padding * 2);
         const y = padding + Math.random() * (this.roomHeight - padding * 2);
 
-        const isMage = Math.random() > 0.5;
-        const stats = isMage ? MAGE_PRESET_LIZARD : WARRIOR_PRESET_LIZARD;
-        const weaponConfig = isMage ? STAFF : SWORD;
-        
-        const weapon = new Weapon(this.generateId('wpn'), 'Вражеское Оружие', weaponConfig);
-        const enemy = new Enemy(this.generateId('enm'), x, y, stats, weapon);
+        let chance = Math.random() > 0.5;
+        const stats = chance ? MAGE_PRESET_LIZARD : WARRIOR_PRESET_LIZARD;
+        chance = Math.random() > 0.5;
+        let weaponConfig;
+        if (stats === MAGE_PRESET_LIZARD) {
+            weaponConfig = chance ? STAFF : ICE_STAFF;
+        } else {
+            weaponConfig = chance ? SWORD : AXE;
+        }
+
+        const enemy = EntityFactory.createEnemy(x, y, stats, weaponConfig, this.generateId);
         
         room.enemies.push(enemy);
     }

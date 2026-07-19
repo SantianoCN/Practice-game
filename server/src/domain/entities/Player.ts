@@ -35,7 +35,7 @@ export class Player extends LivingEntity {
         public maxMana: number,
         public manaRegen: number
     ) {
-        super(id, x, y, 32, 32, stats.speed, stats.visualId, stats.maxHp, stats.maxHp, stats.archetype);
+        super(id, x, y, stats.width, stats.height, stats.speed, stats.visualId, stats.maxHp, stats.maxHp, stats.archetype);
         this.inventory = [startWeapon];
     }
 

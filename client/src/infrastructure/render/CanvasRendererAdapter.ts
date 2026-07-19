@@ -1,13 +1,12 @@
 import { VisualEntity } from '../../domain/entities/VisualEntity';
 import { RoomState, ChestState, BaseEntityState } from '@game/shared';
 import { TextureRenderer, EntityRenderer } from './SupportRenderer';
-import { GAME_CONFIG } from '@game/shared';
 
 import warriorImgUrl from './../../../assets/hero/warrior-sword-anim.png'; 
 import volhvImgUrl from './../../../assets/hero/volhv.png'; 
 import lizardAxeImgUrl from './../../../assets/enemy/lizard-axe.png';
 import lizardMageImgUrl from './../../../assets/enemy/lizard-mage.png';
-import coinImgUrl from './../../../assets/loot/coin.png'
+import coinImgUrl from './../../../assets/loot/coin.png';
 import battleAxeImgUrl from './../../../assets/weapon/axe.png';
 import ironSwordImgUrl from './../../../assets/weapon/sword.png';
 import fireStaffImgUrl from './../../../assets/weapon/fire_staff.png';
@@ -26,6 +25,10 @@ export class CanvasRendererAdapter {
     private visitedMatrix: MapCell[][] = [];
     private readonly matrixSize = 10;
 
+    private offscreenCanvas: HTMLCanvasElement;
+    private offscreenContext: CanvasRenderingContext2D;
+    private currentRoomKey: string = '';
+
     private playerRenderers: Record<string, EntityRenderer>;
     private enemyRenderers: Record<string, EntityRenderer>;
     private textures: Record<string, HTMLImageElement> = {};
@@ -34,8 +37,19 @@ export class CanvasRendererAdapter {
         this.canvas = canvas;
         const ctx = canvas.getContext('2d');
         if (!ctx) throw new Error('Cannot get 2D context');
-        this.initVisitedMatrix();
         this.context = ctx;
+
+        this.offscreenCanvas = document.createElement('canvas');
+        this.offscreenCanvas.width = canvas.width;
+        this.offscreenCanvas.height = canvas.height;
+        const oCtx = this.offscreenCanvas.getContext('2d');
+        if (!oCtx) throw new Error('Cannot get offscreen 2D context');
+        this.offscreenContext = oCtx;
+
+        this.context.imageSmoothingEnabled = false;
+        this.offscreenContext.imageSmoothingEnabled = false;
+
+        this.initVisitedMatrix();
 
         this.playerRenderers = {
             'Warrior': new TextureRenderer(warriorImgUrl),
@@ -64,9 +78,22 @@ export class CanvasRendererAdapter {
         return img;
     }
 
-    public render(entitiesMap: Map<string, VisualEntity>, room: RoomState | null, myId: string): void {
+    public render(
+        entitiesMap: Map<string, VisualEntity>, 
+        room: RoomState | null, 
+        staticObstacles: BaseEntityState[], 
+        myId: string
+    ): void {
         this.clear();
         
+        if (room) {
+            const roomKey = `${room.gridX}:${room.gridY}`;
+            if (this.currentRoomKey !== roomKey) {
+                this.currentRoomKey = roomKey;
+                this.prerenderStaticScene(room.type, staticObstacles);
+            }
+        }
+
         const players = new Map<string, VisualEntity>();
         const enemies = new Map<string, VisualEntity>();
         const bullets = new Map<string, VisualEntity>();
@@ -83,11 +110,35 @@ export class CanvasRendererAdapter {
         this.updateVisitedRooms(room);
         this.drawGUI(players, myId);
 
-        this.drawDebugHitboxes(entitiesMap, room); 
+        this.drawDebugHitboxes(entitiesMap, room, staticObstacles); 
     }
 
     public reset(): void {
         this.initVisitedMatrix();
+        this.currentRoomKey = '';
+    }
+
+    private prerenderStaticScene(roomType: string, obstacles: BaseEntityState[]): void {
+        this.offscreenContext.clearRect(0, 0, this.offscreenCanvas.width, this.offscreenCanvas.height);
+
+        let floorColor = '#3c2415';
+        if (roomType === 'Start') floorColor = '#4a2f1b';
+        if (roomType === 'Boss') floorColor = '#3a0d0a';
+        if (roomType === 'Treasure') floorColor = '#5c4314';
+        if (roomType === 'Shop') floorColor = '#1e2b30';
+
+        this.offscreenContext.fillStyle = floorColor;
+        this.offscreenContext.fillRect(0, 0, this.offscreenCanvas.width, this.offscreenCanvas.height);
+
+        this.offscreenContext.fillStyle = 'black';
+        for (const obstacle of obstacles) {
+            this.offscreenContext.fillRect(
+                obstacle.x - obstacle.width / 2, 
+                obstacle.y - obstacle.height / 2, 
+                obstacle.width, 
+                obstacle.height
+            );
+        }
     }
 
     private initVisitedMatrix(): void {
@@ -201,8 +252,14 @@ export class CanvasRendererAdapter {
         bulletsMap: Map<string, VisualEntity>,
         room: RoomState | null
     ): void {
-        this.drawMap(room);
-        this.drawObstacles(room?.obstacles ?? []);
+        if (room && this.currentRoomKey) {
+            this.context.drawImage(this.offscreenCanvas, 0, 0);
+            this.drawDoors(room);
+        } else {
+            this.context.fillStyle = 'white';
+            this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+
         if (room?.chests) this.drawChests(room.chests);
         if (room?.droppedItems) this.drawDroppedItems(room.droppedItems);
         this.drawBullets(bulletsMap);
@@ -212,22 +269,7 @@ export class CanvasRendererAdapter {
         this.drawMiniMap(room.gridX, room.gridY);
     }
 
-    private drawMap(room: RoomState | null): void {
-        if (!room) {
-            this.context.fillStyle = 'white';
-            this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
-            return;
-        }
-
-        let floorColor = '#3c2415';
-        if (room.type === 'Start') floorColor = '#4a2f1b';
-        if (room.type === 'Boss') floorColor = '#3a0d0a';
-        if (room.type === 'Treasure') floorColor = '#5c4314';
-        if (room.type === 'Shop') floorColor = '#1e2b30';
-
-        this.context.fillStyle = floorColor;
-        this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
+    private drawDoors(room: RoomState): void {
         const doorColor = room.isClear ? '#b8860b' : '#5c120c'; 
         this.context.fillStyle = doorColor;
 
@@ -297,8 +339,12 @@ export class CanvasRendererAdapter {
 
             this.context.save();
             this.context.beginPath();
+            
             const radius = Math.round(bullet.width / 2);
-            this.context.arc(Math.round(bullet.renderX - bullet.width / 2), Math.round(bullet.renderY - bullet.height / 2), radius, 0, Math.PI * 2);
+            const bx = Math.round(bullet.renderX);
+            const by = Math.round(bullet.renderY);
+            
+            this.context.arc(bx, by, radius, 0, Math.PI * 2);
             this.context.shadowBlur = 8;
             this.context.shadowColor = bulletColor;
             this.context.fillStyle = bulletColor;
@@ -323,21 +369,17 @@ export class CanvasRendererAdapter {
         });
     }
 
-    private drawObstacles(obstacles: BaseEntityState[]): void {
-        for (const obstacle of obstacles) {
-            this.context.fillStyle = 'black';
-            this.context.fillRect(obstacle.x - obstacle.width / 2, obstacle.y - obstacle.height / 2, obstacle.width, obstacle.height);
-        }
-    }
-
     private drawChests(chests: ChestState[]): void {
-        if (!chests || chests.length === 0) return;
+    if (!chests || chests.length === 0) return;
 
         for (const chest of chests) {
-            const x = chest.x - chest.width / 2;
-            const y = chest.y - chest.height / 2;
+            const cx = Math.round(chest.x - chest.width / 2);
+            const cy = Math.round(chest.y - chest.height / 2);
+            const cw = Math.round(chest.width);
+            const ch = Math.round(chest.height);
+            
             const texture = this.textures[chest.visualId];
-            this.context.drawImage(texture, x, y , chest.width, chest.height);
+            this.context.drawImage(texture, cx, cy, cw, ch);
         }
     }
 
@@ -345,8 +387,10 @@ export class CanvasRendererAdapter {
         if (!droppedItems || droppedItems.length === 0) return;
 
         for (const item of droppedItems) {
-            const x = item.x - item.width / 2, y = item.y - item.height / 2;
-            const w = item.width, h = item.height;
+            const ix = Math.round(item.x - item.width / 2);
+            const iy = Math.round(item.y - item.height / 2);
+            const iw = Math.round(item.width);
+            const ih = Math.round(item.height);
             
             this.context.shadowColor = 'rgba(0, 0, 0, 0.2)';
             this.context.shadowBlur = 5;
@@ -356,12 +400,11 @@ export class CanvasRendererAdapter {
             const texture = this.textures[item.visualId];
 
             if (texture) {
-                this.context.drawImage(texture, x, y, w, h);
+                this.context.drawImage(texture, ix, iy, iw, ih);
             } else {
                 this.context.fillStyle = '#0c8a93a4';
-                this.context.fillRect(x, y, w, h);
+                this.context.fillRect(ix, iy, iw, ih);
             }
-            console.log(item.visualId)
         }
     }
 
@@ -370,16 +413,20 @@ export class CanvasRendererAdapter {
         this.context.fillRect(entity.renderX - entity.width / 2, entity.renderY - entity.height / 2, entity.width, entity.height);
     }
 
-    public drawDebugHitboxes(entitiesMap: Map<string, VisualEntity>, room: RoomState | null): void {
+    public drawDebugHitboxes(
+        entitiesMap: Map<string, VisualEntity>, 
+        room: RoomState | null, 
+        staticObstacles: BaseEntityState[]
+    ): void {
         this.context.save();
         this.context.lineWidth = 1;
 
         entitiesMap.forEach(entity => {
             if (entity.isDying) return;
 
-            let color = '#00ff00';
-            if (entity.type === 'enemy') color = '#ff0000';
-            if (entity.type === 'bullet') color = '#ffff00';
+            let color = '#00ff00'; 
+            if (entity.type === 'enemy') color = '#ff0000'; 
+            if (entity.type === 'bullet') color = '#ffff00'; 
 
             this.context.strokeStyle = color;
             this.context.strokeRect(
@@ -390,19 +437,19 @@ export class CanvasRendererAdapter {
             );
         });
 
-        if (room) {
-            if (room.obstacles) {
-                this.context.strokeStyle = '#0000ff';
-                room.obstacles.forEach(obs => {
-                    this.context.strokeRect(
-                        Math.round(obs.x - obs.width / 2),
-                        Math.round(obs.y - obs.height / 2),
-                        obs.width,
-                        obs.height
-                    );
-                });
-            }
+        if (staticObstacles) {
+            this.context.strokeStyle = '#0000ff';
+            staticObstacles.forEach(obs => {
+                this.context.strokeRect(
+                    Math.round(obs.x - obs.width / 2),
+                    Math.round(obs.y - obs.height / 2),
+                    obs.width,
+                    obs.height
+                );
+            });
+        }
 
+        if (room) {
             if (room.chests) {
                 this.context.strokeStyle = '#ff00ff';
                 room.chests.forEach(chest => {

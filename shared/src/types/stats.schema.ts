@@ -12,6 +12,8 @@ export const EntityStatsSchema = z.object({
     manaRegen: z.number(),
     speed: z.number(),
     visualId: z.string(),
+    width: z.number(),
+    height: z.number(),
     archetype: ArchetypeSchema
 });
 export type EntityStats = z.infer<typeof EntityStatsSchema>;
