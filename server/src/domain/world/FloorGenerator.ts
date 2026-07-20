@@ -183,7 +183,7 @@ export class MapGenerator {
             const x = obs.startX * this.CELL_SIZE + width / 2;
             const y = obs.startY * this.CELL_SIZE + height / 2;
 
-            const obstacle = new Obstacle(this.generateId('obs'), x, y, width, height, 'stone_block');
+            const obstacle = new Obstacle(this.generateId('obs'), x, y, width, height, obs.obj);
             room.obstacles.push(obstacle);
         }
 

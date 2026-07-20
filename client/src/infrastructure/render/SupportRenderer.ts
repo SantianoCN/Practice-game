@@ -17,7 +17,7 @@ export class TextureRenderer implements EntityRenderer {
     }
 
     public draw(context: CanvasRenderingContext2D, entity: VisualEntity): void {
-        const facing = entity.lastFacing === 'left' ? 'left' : 'right'; 
+        const facing = entity.lastFacing; 
         const animation = entity.currentAnimation || 'idle';
 
         const rx = Math.round(entity.renderX);

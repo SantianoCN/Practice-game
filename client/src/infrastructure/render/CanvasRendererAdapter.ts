@@ -2,17 +2,25 @@ import { VisualEntity } from '../../domain/entities/VisualEntity';
 import { RoomState, ChestState, BaseEntityState } from '@game/shared';
 import { TextureRenderer, EntityRenderer } from './SupportRenderer';
 
+//Player
 import warriorImgUrl from './../../../assets/hero/warrior-sword-anim.png'; 
-import volhvImgUrl from './../../../assets/hero/volhv.png'; 
-import lizardAxeImgUrl from './../../../assets/enemy/lizard-axe.png';
-import lizardMageImgUrl from './../../../assets/enemy/lizard-mage.png';
+import volhvImgUrl from './../../../assets/hero/volhv-fire-anim.png';
+//Enemy
+import lizardAxeImgUrl from './../../../assets/enemy/lizard-axe-anim.png';
+import lizardMageImgUrl from './../../../assets/enemy/lizard-mage-anim.png';
+//Loot
 import coinImgUrl from './../../../assets/loot/coin.png';
 import battleAxeImgUrl from './../../../assets/weapon/axe.png';
 import ironSwordImgUrl from './../../../assets/weapon/sword.png';
 import fireStaffImgUrl from './../../../assets/weapon/fire_staff.png';
 import iceStaffImgUrl from './../../../assets/weapon/ice_staff.png';
+//Environment
 import chestImgUrl from '../../../assets/chest.png';
 import chestOpenImgUrl from '../../../assets/chest-open.png';
+import benchSideImgUrl from './../../../assets/environment/benchSide.png';
+import benchFaceImgUrl from './../../../assets/environment/benchFace.png';
+import bencBackImgUrl from './../../../assets/environment/benchBack.png';
+import tableImgUrl from './../../../assets/environment/table.png'
 
 interface MapCell {
     state: 'unseen' | 'visible' | 'visited';
@@ -24,6 +32,7 @@ export class CanvasRendererAdapter {
     private canvas: HTMLCanvasElement;
     private visitedMatrix: MapCell[][] = [];
     private readonly matrixSize = 10;
+    private readonly floorCellSize = 20;
 
     private offscreenCanvas: HTMLCanvasElement;
     private offscreenContext: CanvasRenderingContext2D;
@@ -68,7 +77,11 @@ export class CanvasRendererAdapter {
             'iron_sword': this.preloadImage(ironSwordImgUrl),
             'fire_staff': this.preloadImage(fireStaffImgUrl),
             'ice_staff': this.preloadImage(iceStaffImgUrl),
-            'gold': this.preloadImage(coinImgUrl)
+            'gold': this.preloadImage(coinImgUrl),
+            'table': this.preloadImage(tableImgUrl),
+            'benchSide': this.preloadImage(benchSideImgUrl),
+            'benchFace': this.preloadImage(benchFaceImgUrl),
+            'benchBack': this.preloadImage(bencBackImgUrl)
         };
     }
 
@@ -138,6 +151,7 @@ export class CanvasRendererAdapter {
                 obstacle.width, 
                 obstacle.height
             );
+            console.log(obstacle.visualId)
         }
     }
 
@@ -254,6 +268,11 @@ export class CanvasRendererAdapter {
     ): void {
         if (room && this.currentRoomKey) {
             this.context.drawImage(this.offscreenCanvas, 0, 0);
+            // for (let x = 0; x <= this.canvas.width - this.floorCellSize; x += this.floorCellSize) {
+            //     for (let y = 0; y <= this.canvas.height - this.floorCellSize; y += this.floorCellSize) {
+            //         this.context.strokeRect(x, y, this.floorCellSize, this.floorCellSize)
+            //     }
+            // }
             this.drawDoors(room);
         } else {
             this.context.fillStyle = 'white';
