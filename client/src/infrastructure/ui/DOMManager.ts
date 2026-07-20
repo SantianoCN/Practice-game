@@ -4,8 +4,11 @@ import mageImgUrl from '../../../assets/hero/volhv.png';
 
 export class DOMManager {
     public onAuthReq?: (url: string, l: string, p: string) => void;
-    public onCreateRoom?: (arch: Archetype, weapon: string) => void;
-    public onJoinRoom?: (sid: string, arch: Archetype, weapon: string) => void;
+    public onCreateRoom?: (arch: Archetype, weapon: string) => void;   // Синглплеер
+    public onCreateLobby?: (arch: Archetype, weapon: string) => void;  // Создать лобби
+    public onJoinRoom?: (sid: string, arch: Archetype, weapon: string) => void; // Войти в лобби
+    public onStartMatch?: () => void;  // Запустить поход (НОВЫЙ)
+    
     public onLeaveRoom?: () => void;
     public onLogout?: () => void;
 
@@ -17,6 +20,7 @@ export class DOMManager {
     }
 
     private bindEvents(): void {
+        // Авторизация и регистрация
         document.getElementById('loginBtn')?.addEventListener('click', () => {
             const l = (document.getElementById('username') as HTMLInputElement).value;
             const p = (document.getElementById('password') as HTMLInputElement).value;
@@ -29,24 +33,38 @@ export class DOMManager {
             this.onAuthReq?.('http://localhost:3000/register', l, p);
         });
 
+        // 1. Одиночная игра (Сингл)
         document.getElementById('createRoomBtn')?.addEventListener('click', () => {
             this.onCreateRoom?.(this.selectedArch, this.selectedWeapon);
         });
 
+        // Создание лобби (СТАТЬ ВОЕВОДОЙ)
+        document.getElementById('createLobbyBtn')?.addEventListener('click', () => {
+            this.onCreateLobby?.(this.selectedArch, this.selectedWeapon);
+        });
+
+        // Вступление в отряд (В БОЙ!)
         document.getElementById('joinRoomBtn')?.addEventListener('click', () => {
             const sid = (document.getElementById('sessionIdInput') as HTMLInputElement).value;
             this.onJoinRoom?.(sid, this.selectedArch, this.selectedWeapon);
         });
 
+        // Кнопка старта игры воеводой на экране Canvas
+        document.getElementById('startMatchBtn')?.addEventListener('click', () => {
+            this.onStartMatch?.();
+        });
+
+        // Системные кнопки выхода
         document.getElementById('logoutBtn')?.addEventListener('click', () => this.onLogout?.());
         document.getElementById('disconnectBtn')?.addEventListener('click', () => this.onLeaveRoom?.());
         
+        // Копирование ID сессии/лобби в буфер обмена
         document.getElementById('copySessionBtn')?.addEventListener('click', () => {
             const btn = document.getElementById('copySessionBtn')!;
             const text = document.getElementById('sessionDisplay')?.innerText || '';
             navigator.clipboard.writeText(text).then(() => {
                 btn.innerText = 'СКОПИРОВАНО!';
-                setTimeout(() => btn.innerText = 'СКОПИРОВАТЬ', 1200);
+                setTimeout(() => btn.innerText = 'СКОПИРОВАТЬ ID', 1200);
             });
         });
     }
@@ -69,11 +87,32 @@ export class DOMManager {
         document.getElementById('welcomeText')!.innerText = `РУС: ${login}`;
     }
 
-    public showGame(sessionId: string): void {
+    public showGame(sessionId: string, isSingleplayer: boolean = false): void {
         document.getElementById('auth-screen')!.classList.add('hidden');
         document.getElementById('lobby-screen')!.classList.add('hidden');
         document.getElementById('game-screen')!.classList.remove('hidden');
-        document.getElementById('sessionDisplay')!.innerText = sessionId;
+
+        const sessionContainer = document.getElementById('sessionContainer')!;
+        const copyBtn = document.getElementById('copySessionBtn')!;
+        const sessionDisplay = document.getElementById('sessionDisplay')!;
+
+        if (isSingleplayer) {
+            sessionContainer.classList.add('hidden');
+            copyBtn.classList.add('hidden');
+        } else {
+            sessionContainer.classList.remove('hidden');
+            copyBtn.classList.remove('hidden');
+            sessionDisplay.innerText = sessionId;
+        }
+    }
+
+    public showStartMatchButton(show: boolean): void {
+        const startBtn = document.getElementById('startMatchBtn')!;
+        if (show) {
+            startBtn.classList.remove('hidden');
+        } else {
+            startBtn.classList.add('hidden');
+        }
     }
 
     public showErrorLobby(msg: string): void {

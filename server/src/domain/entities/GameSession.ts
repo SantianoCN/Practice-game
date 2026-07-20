@@ -4,6 +4,9 @@ import { Room } from './Room';
 export class GameSession {
     public players: Map<string, Player> = new Map();
     public floorMap: (Room | null)[][] = [];
+    
+    public isLobby: boolean = false;
+    public hostId: string = '';
 
     constructor(
         public readonly sessionId: string,

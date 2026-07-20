@@ -45,22 +45,45 @@ export class SocketController {
             }
         });
 
-        this.socket.on(ClientEvent.CONNECT_SESSION, (rawData, callback) => {
+        this.socket.on(ClientEvent.CREATE_LOBBY, (rawData, callback) => {
+            if (typeof callback !== 'function') return;
+
+            const parsed = SessionCreateRequestSchema.safeParse(rawData);
+            if (!parsed.success) {
+                return callback({ success: false, message: 'Неверные данные настройки лобби' });
+            }
+
+            try {
+                const sessionId = this.sessionUseCase.createLobby(userId, this.login, parsed.data.archetype, parsed.data.weaponId);
+                this.socket.data.sessionId = sessionId;
+                callback({ success: true, sessionId });
+            } catch (err: any) {
+                callback({ success: false, message: err.message });
+            }
+        });
+
+        this.socket.on(ClientEvent.CONNECT_LOBBY, (rawData, callback) => {
             if (typeof callback !== 'function') return;
 
             const parsed = SessionJoinRequestSchema.safeParse(rawData);
             if (!parsed.success) {
-                return callback({ success: false, message: 'Неверные данные' });
+                return callback({ success: false, message: 'Неверные параметры подключения' });
             }
 
-            const success = this.sessionUseCase.joinSession(parsed.data.sessionId, userId, this.login, parsed.data.archetype, parsed.data.weaponId);
+            const success = this.sessionUseCase.joinLobby(parsed.data.sessionId, userId, this.login, parsed.data.archetype, parsed.data.weaponId);
 
             if (success) {
                 this.socket.data.sessionId = parsed.data.sessionId;
-                callback({ success: true, sessionId: parsed.data.sessionId, message: "успешное подключение" });
+                callback({ success: true, sessionId: parsed.data.sessionId, message: "Вы вошли в лобби ожидания" });
             } else {
-                callback({ success: false, message: 'Сессия не найдена или заполнена' });
+                callback({ success: false, message: 'Лобби не найдено или игра уже началась' });
             }
+        });
+
+        this.socket.on(ClientEvent.START_GAME, () => {
+            const sessionId = this.socket.data.sessionId;
+            if (!sessionId) return;
+            this.sessionUseCase.startMatch(sessionId, userId);
         });
 
         this.socket.on(ClientEvent.PLAYER_ACTION, (rawData) => {

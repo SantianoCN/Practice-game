@@ -27,6 +27,23 @@ export class MapGenerator {
         private generateId: IDGenerator
     ) {}
 
+    public generateLobby(): (Room | null)[][] {
+        this.grid = Array(this.gridSize).fill(null).map(() => Array(this.gridSize).fill(null));
+        this.roomsCreated = [];
+
+        const startX = Math.floor(this.gridSize / 2);
+        const startY = Math.floor(this.gridSize / 2);
+
+        const lobbyRoom = new Room(startX, startY, 'Start', 0);
+        lobbyRoom.isClear = true;
+        lobbyRoom.hasDoors = { Top: false, Bottom: false, Left: false, Right: false };
+
+        this.grid[startY][startX] = lobbyRoom;
+        this.roomsCreated.push(lobbyRoom);
+
+        return this.grid;
+    }
+
     public generate(): (Room | null)[][] {
         this.grid = Array(this.gridSize).fill(null).map(() => Array(this.gridSize).fill(null));
         this.roomsCreated = [];

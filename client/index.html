@@ -1,3 +1,4 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -23,6 +24,7 @@
             <div id="errorText" class="error-message">Неверный логин или пароль</div>
         </form>
     </div>
+
     <div id="lobby-screen" class="lobby-container hidden">
         <header class="lobby-header">
             <h1 class="logo"><img src="" alt="Скрещенные мечи" class="pixel-logo-icon" /> РУСЫ ПРОТИВ ЯЩЕРОВ: Roguelike</h1>
@@ -65,9 +67,11 @@
             <aside class="panel right-panel">
                 <h3 class="panel-title">НАСТРОЙКИ ЗАБЕГА</h3>
                 <div class="section connection-section">
-                    <label>НОВАЯ СЕССИЯ</label>
-                    <button id="createRoomBtn" class="button button-alt" style="margin-top: 5px;">РУБИТЬ ЯЩЕРОВ</button>
+                    <label>ОДИНОЧНЫЙ ЗАБЕГ</label>
+                    <button id="createRoomBtn" class="button button-alt" style="margin-top: 5px;">ИДТИ ОДНОМУ</button>
                     <div class="divider">ИЛИ</div>
+                    <label>СЕТЕВОЙ ОТРЯД</label>
+                    <button id="createLobbyBtn" class="button button-primary" style="margin-top: 5px; margin-bottom: 15px;">СТАТЬ ВОЕВОДОЙ</button>
                     <label for="sessionIdInput">ВСТУПИТЬ В ОТРЯД</label>
                     <input type="text" id="sessionIdInput" class="text-center" placeholder="ВСТАВЬТЕ ID СЕССИИ">
                     <button id="joinRoomBtn" class="button button-success">В БОЙ!</button>
@@ -78,8 +82,9 @@
     </div>
     <div id="game-screen" class="hidden">
         <div id="topBar">
-            <div>Комната ID: <span id="sessionDisplay">Загрузка...</span></div>
+            <div id="sessionContainer">Комната ID: <span id="sessionDisplay">Загрузка...</span></div>
             <button id="copySessionBtn" class="button button-primary copy-btn">СКОПИРОВАТЬ</button>
+            <button id="startMatchBtn" class="button button-success hidden" style="width: auto; margin-right: 10px;">НАЧАТЬ ПОХОД</button>
             <button id="disconnectBtn" class="button button-danger" style="width: auto;">Покинуть бой</button>
         </div>
         <canvas id="gameCanvas" width="800" height="600"></canvas>

@@ -5,6 +5,7 @@ import { Room } from '../entities/Room';
 import { Chest, DroppedItem } from '../entities/Chest';
 import { Player } from '../entities/Player';
 import { BoundingBox, IDGenerator } from '@game/shared';
+import { SpatialGrid } from './SpatialGrid';
 
 export class CollisionEngine {
     
@@ -59,10 +60,12 @@ export class CollisionEngine {
         }
     }
 
-    public static resolveObstacles(entity: MoveableEntity, obstacles: Obstacle[]): void {
+    public static resolveObstacles(entity: MoveableEntity, obstacleGrid: SpatialGrid<Obstacle>): void {
         const eBounds = entity.getBounds();
+        
+        const potentialObstacles = obstacleGrid.query(eBounds);
 
-        for (const obs of obstacles) {
+        for (const obs of potentialObstacles) {
             const oBounds = obs.getBounds();
 
             if (this.isOverlapping(eBounds, oBounds)) {
@@ -128,12 +131,22 @@ export class CollisionEngine {
     }
 
     public static resolveBullets(bullets: Bullet[], targets: LivingEntity[]): void {
+        if (bullets.length === 0 || targets.length === 0) return;
+
+        const targetGrid = new SpatialGrid<LivingEntity>(100);
+        for (const target of targets) {
+            if (!target.isDead()) {
+                targetGrid.insert(target);
+            }
+        }
+
         for (const bullet of bullets) {
             if (bullet.isDestroyed) continue;
             const bBounds = bullet.getBounds();
 
-            for (const target of targets) {
-                if (target.isDead()) continue;
+            const potentialTargets = targetGrid.query(bBounds);
+
+            for (const target of potentialTargets) {
                 if (bullet.ownerType === target.entityType) continue;
 
                 if (this.isOverlapping(bBounds, target.getBounds())) {
@@ -147,10 +160,12 @@ export class CollisionEngine {
 
     public static resolveBulletEnvironment(
         bullets: Bullet[], 
-        obstacles: Obstacle[], 
+        obstacleGrid: SpatialGrid<Obstacle>,
         roomWidth: number, 
         roomHeight: number
     ): void {
+        if (bullets.length === 0) return;
+
         for (const bullet of bullets) {
             if (bullet.isDestroyed) continue;
 
@@ -166,7 +181,8 @@ export class CollisionEngine {
                 continue;
             }
 
-            for (const obs of obstacles) {
+            const potentialObstacles = obstacleGrid.query(bBounds);
+            for (const obs of potentialObstacles) {
                 if (this.isOverlapping(bBounds, obs.getBounds())) {
                     bullet.isDestroyed = true;
                     break;
@@ -197,8 +213,8 @@ export class CollisionEngine {
                     const y = chest.y + (Math.floor(Math.random() * 3) - 1) * cellSize;
                     if (item.type == 'weapon') {
                         droppedItems.push(new DroppedItem(id, x, y, 10, 30, item.weapon.config.visualId, item));
-                    }else if (item.type == 'gold'){
-                        droppedItems.push(new DroppedItem(id, x, y, 20, 20, 'gold', item));
+                    } else if (item.type == 'gold'){
+                        droppedItems.push(new DroppedItem(id, x, y, 15, 15, 'gold', item));
                     }
                 }
                 chest.visualId = 'chestOpen';
@@ -223,11 +239,11 @@ export class CollisionEngine {
                         player.addGold(item.content.amount);
                         break;
                     case 'weapon': {
-                        if (!player.isInteracting) return;
+                        if (!player.isInteracting) continue;
                         player.isInteracting = false; 
                         const dropped = player.addWeaponToInventory(item.content.weapon);
                         if (dropped) {
-                            const droppedItem = new  DroppedItem(
+                            const droppedItem = new DroppedItem(
                                 dropped.id, 
                                 player.x, 
                                 player.y, 
@@ -236,7 +252,7 @@ export class CollisionEngine {
                                 dropped.config.visualId, 
                                 {
                                     type: 'weapon',
-                                    weapon:  dropped 
+                                    weapon: dropped 
                                 });
                             droppedItems.push(droppedItem);
                         }

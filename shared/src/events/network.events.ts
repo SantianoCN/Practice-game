@@ -1,6 +1,8 @@
 export const ClientEvent = {
     CREATE_SESSION: 'client:create-session',
-    CONNECT_SESSION: 'client:connect-session',
+    CREATE_LOBBY: 'client:create-lobby',
+    CONNECT_LOBBY: 'client:connect-lobby',
+    START_GAME: 'client:start-game',
     LEAVE_SESSION: 'client:leave-session',
     PLAYER_ACTION: 'client:player-action',
     REQUEST_PROFILE: 'client:request-profile'

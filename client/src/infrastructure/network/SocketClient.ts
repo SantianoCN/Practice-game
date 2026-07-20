@@ -1,14 +1,14 @@
 import { io, Socket } from 'socket.io-client';
 import { INetworkClient } from '../../application/interfaces/INetworkClient';
 import { 
-    PlayerActionDTO, 
-    GameSnapshotDTO, 
-    SessionCreateRequestDTO, 
+    PlayerActionDTO,
+    GameSnapshotDTO,
+    SessionCreateRequestDTO,
     SessionCreateResponseDTO,
-    SessionJoinRequestDTO, 
+    SessionJoinRequestDTO,
     SessionJoinResponseDTO,
     PlayerClassPresetDTO,
-    ClientEvent, 
+    ClientEvent,
     ServerEvent,
     ProfileResponseDTO,
     RoomInitDTO
@@ -56,12 +56,24 @@ export class SocketClient implements INetworkClient {
         });
     }
 
-    public joinSession(req: SessionJoinRequestDTO): Promise<SessionJoinResponseDTO> {
+    public createLobby(req: SessionCreateRequestDTO): Promise<SessionCreateResponseDTO> {
         return new Promise(resolve => {
-            this.socket.emit(ClientEvent.CONNECT_SESSION, req, (res: SessionJoinResponseDTO) => {
+            this.socket.emit(ClientEvent.CREATE_LOBBY, req, (res: SessionCreateResponseDTO) => {
                 resolve(res);
             });
         });
+    }
+
+    public joinLobby(req: SessionJoinRequestDTO): Promise<SessionJoinResponseDTO> {
+        return new Promise(resolve => {
+            this.socket.emit(ClientEvent.CONNECT_LOBBY, req, (res: SessionJoinResponseDTO) => {
+                resolve(res);
+            });
+        });
+    }
+
+    public sendStartMatch(): void {
+        this.socket.emit(ClientEvent.START_GAME);
     }
 
     public sendPlayerAction(action: PlayerActionDTO): void {

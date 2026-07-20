@@ -68,7 +68,7 @@ export class EnemyAIService {
 
             enemy.updateEntity(deltaTime);
             CollisionEngine.resolveWallBounds(enemy, roomWidth, roomHeight, room, false);
-            CollisionEngine.resolveObstacles(enemy, room.obstacles);
+            CollisionEngine.resolveObstacles(enemy, room.getObstacleGrid());
 
             if (enemy.aiState === 'attack' && enemy.targetId && closestPlayer) {
                 const dirX = closestPlayer.x - enemy.x;

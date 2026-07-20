@@ -15,6 +15,7 @@ class App {
     private myId = '';
     private gameLoopId?: number;
     private lastTime = performance.now();
+    private isHost = false;
 
     constructor() {
         const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
@@ -54,22 +55,63 @@ class App {
         this.ui.onCreateRoom = async (arch, weapon) => {
             const token = localStorage.getItem('session_token');
             if (!token) return;
+            this.isHost = false;
+            this.ui.showStartMatchButton(false);
+            
+            // БЕЗОПАСНАЯ ПРЕВЕНТИВНАЯ ОЧИСТКА: стираем старые данные ДО запроса
+            this.stateSync.clear();
+            this.renderer.reset();
+            
             const res = await this.network.createSession({ token, archetype: arch, weaponId: weapon });
             if (res.success && res.sessionId) {
-                this.startGame(res.sessionId);
+                this.startGame(res.sessionId, true); // Запускаем без очистки внутри
             } else {
-                this.ui.showErrorLobby(res.message || 'Ошибка создания комнаты');
+                this.ui.showErrorLobby(res.message || 'Ошибка создания одиночной игры');
             }
         };
 
+        // 2. Сетевая игра: "СТАТЬ ВОЕВОДОЙ"
+        this.ui.onCreateLobby = async (arch, weapon) => {
+            const token = localStorage.getItem('session_token');
+            if (!token) return;
+            this.isHost = true;
+            
+            // Очищаем старые следы до отправки запроса
+            this.stateSync.clear();
+            this.renderer.reset();
+            
+            const res = await this.network.createLobby({ token, archetype: arch, weaponId: weapon });
+            if (res.success && res.sessionId) {
+                this.ui.showStartMatchButton(true);
+                this.startGame(res.sessionId, false);
+            } else {
+                this.ui.showErrorLobby(res.message || 'Ошибка создания лобби');
+            }
+        };
+
+        // 3. Сетевая игра: "В БОЙ!"
         this.ui.onJoinRoom = async (sid, arch, weapon) => {
             const token = localStorage.getItem('session_token');
             if (!token) return;
-            const res = await this.network.joinSession({ sessionId: sid, token, archetype: arch, weaponId: weapon });
+            this.isHost = false;
+            this.ui.showStartMatchButton(false);
+            
+            // Очищаем старые следы до отправки запроса
+            this.stateSync.clear();
+            this.renderer.reset();
+            
+            const res = await this.network.joinLobby({ sessionId: sid, token, archetype: arch, weaponId: weapon });
             if (res.success) {
-                this.startGame(sid);
+                this.startGame(sid, false);
             } else {
-                this.ui.showErrorLobby(res.message || 'Ошибка подключения к комнате');
+                this.ui.showErrorLobby(res.message || 'Не удалось войти в лобби');
+            }
+        };
+
+        this.ui.onStartMatch = () => {
+            if (this.isHost) {
+                this.network.sendStartMatch();
+                this.ui.showStartMatchButton(false);
             }
         };
 
@@ -116,12 +158,9 @@ class App {
         }
     }
 
-    private startGame(sessionId: string): void {
+    private startGame(sessionId: string, isSingleplayer: boolean = false): void {
         localStorage.setItem('game_session_id', sessionId);
-        this.ui.showGame(sessionId);
-        
-        this.stateSync.clear();
-        this.renderer.reset();
+        this.ui.showGame(sessionId, isSingleplayer);
         
         this.input.startListening();
         this.input.onInputChanged(action => this.network.sendPlayerAction(action));

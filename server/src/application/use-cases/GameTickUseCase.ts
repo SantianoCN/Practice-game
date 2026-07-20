@@ -10,7 +10,7 @@ import { Player } from '../../domain/entities/Player';
 import { Room } from '../../domain/entities/Room';
 
 export class GameTickUseCase {
-    private playerLastRoom = new Map<string, string>();
+    private playerLastRoomInstance = new Map<string, Room>();
 
     constructor(
         private repo: IGameRepository,
@@ -26,10 +26,9 @@ export class GameTickUseCase {
             for (const player of session.players.values()) {
                 if (player.isDead()) continue;
 
-                const prevRoomKey = `${player.roomX}:${player.roomY}`;
-
                 player.processInputQueue();
                 player.applyInputFromHeldKeys();
+                
                 const room = session.getRoom(player.roomX, player.roomY);
                 if (room) {
                     const bullet = PlayerCombatService.handleAttack(
@@ -45,27 +44,31 @@ export class GameTickUseCase {
                 }
                 
                 player.updateEntity(deltaTime);
-                RoomTransitionService.handleTransition(
-                    player,
-                    Array.from(session.players.values()),
-                    session.floorMap,
-                    session.roomWidth,
-                    session.roomHeight
-                );
+                
+                if (!session.isLobby) {
+                    RoomTransitionService.handleTransition(
+                        player,
+                        Array.from(session.players.values()),
+                        session.floorMap,
+                        session.roomWidth,
+                        session.roomHeight
+                    );
+                }
 
-                const currentRoomKey = `${player.roomX}:${player.roomY}`;
-                if (prevRoomKey !== currentRoomKey || !this.playerLastRoom.has(player.id)) {
-                    this.playerLastRoom.set(player.id, currentRoomKey);
-                    const newRoom = session.getRoom(player.roomX, player.roomY);
-                    if (newRoom) {
-                        const roomInit = RoomInitSchema.parse({
-                            gridX: newRoom.gridX,
-                            gridY: newRoom.gridY,
-                            type: newRoom.type,
-                            obstacles: newRoom.obstacles
-                        });
-                        this.broadcaster.broadcastRoomInit(player.id, roomInit);
-                    }
+                const currentRoom = session.getRoom(player.roomX, player.roomY);
+                const lastRoom = this.playerLastRoomInstance.get(player.id);
+
+                if (currentRoom && lastRoom !== currentRoom) {
+                    this.playerLastRoomInstance.set(player.id, currentRoom);
+                    
+                    const roomInit = RoomInitSchema.parse({
+                        gridX: currentRoom.gridX,
+                        gridY: currentRoom.gridY,
+                        type: currentRoom.type,
+                        obstacles: currentRoom.obstacles
+                    });
+                    
+                    this.broadcaster.broadcastRoomInit(player.id, roomInit);
                 }
             }
 
@@ -87,20 +90,22 @@ export class GameTickUseCase {
                 const playersInRoom = Array.from(session.players.values())
                     .filter(p => p.roomX === room.gridX && p.roomY === room.gridY);
 
-                EnemyAIService.updateEnemies(
-                    room.enemies, 
-                    playersInRoom, 
-                    room, 
-                    deltaTime, 
-                    currentTime, 
-                    session.roomWidth, 
-                    session.roomHeight,
-                    (prefix) => this.idGen.generateId(prefix)
-                );
+                if (!session.isLobby) {
+                    EnemyAIService.updateEnemies(
+                        room.enemies, 
+                        playersInRoom, 
+                        room, 
+                        deltaTime, 
+                        currentTime, 
+                        session.roomWidth, 
+                        session.roomHeight,
+                        (prefix) => this.idGen.generateId(prefix)
+                    );
+                }
 
                 for (const player of playersInRoom) {
                     CollisionEngine.resolveWallBounds(player, session.roomWidth, session.roomHeight, room, true);
-                    CollisionEngine.resolveObstacles(player, room.obstacles);
+                    CollisionEngine.resolveObstacles(player, room.getObstacleGrid());
                     CollisionEngine.resolveChests(player, room.chests, room.droppedItems, GAME_CONFIG.CELL_SIZE, (prefix) => this.idGen.generateId(prefix));
                     CollisionEngine.resolveLootPickup(player, room.droppedItems);
                 }
@@ -109,7 +114,7 @@ export class GameTickUseCase {
                     bullet.updatePosition(deltaTime);
                 }
 
-                CollisionEngine.resolveBulletEnvironment(room.bullets, room.obstacles, session.roomWidth, session.roomHeight);
+                CollisionEngine.resolveBulletEnvironment(room.bullets, room.getObstacleGrid(), session.roomWidth, session.roomHeight);
                 CollisionEngine.resolveBullets(room.bullets, room.enemies);
                 CollisionEngine.resolveBullets(room.bullets, playersInRoom);
                 
