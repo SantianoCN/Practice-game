@@ -1,6 +1,7 @@
 import { IAccountRepository } from '../interfaces/IAccountRepository';
 import { IIdGenerator } from '../interfaces/IIdGenerator';
 import { LoginDataDTO } from '@game/shared';
+import { Account } from '../../domain/entities/Account';
 
 export class AuthUseCase {
     constructor(
@@ -8,28 +9,27 @@ export class AuthUseCase {
         private idGen: IIdGenerator
     ) {}
 
-    public async login(data: LoginDataDTO): Promise<string | null> {
+    public async login(data: LoginDataDTO): Promise<{ token: string; account: Account } | null> {
         const account = await this.repo.getByLogin(data.login);
         if (account && account.passwordHash === data.password) {
             const token = this.idGen.generateUUID('token');
-            await this.repo.updateToken(account.id, token);
-            return token;
+            const updatedAccount = await this.repo.updateToken(account.id, token);
+            return { token, account: updatedAccount };
         }
         return null;
     }
 
-    public async register(data: LoginDataDTO): Promise<string | null> {
+    public async register(data: LoginDataDTO): Promise<{ token: string; account: Account } | null> {
         const existing = await this.repo.getByLogin(data.login);
         if (existing) return null;
 
         const token = this.idGen.generateUUID('token');
-        await this.repo.create(data.login, data.password, token);
-        return token;
+        const account = await this.repo.create(data.login, data.password, token);
+        return { token, account };
     }
 
-    public async resolveToken(token: string): Promise<string | null> {
-        const account = await this.repo.getByToken(token);
-        return account ? account.login : null;
+    public async resolveToken(token: string): Promise<Account | null> {
+        return this.repo.getByToken(token);
     }
 
     public async logout(token: string): Promise<boolean> {

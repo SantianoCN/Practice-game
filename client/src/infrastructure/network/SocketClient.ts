@@ -1,17 +1,10 @@
 import { io, Socket } from 'socket.io-client';
 import { INetworkClient } from '../../application/interfaces/INetworkClient';
 import { 
-    PlayerActionDTO,
-    GameSnapshotDTO,
-    SessionCreateRequestDTO,
-    SessionCreateResponseDTO,
-    SessionJoinRequestDTO,
-    SessionJoinResponseDTO,
-    PlayerClassPresetDTO,
-    ClientEvent,
-    ServerEvent,
-    ProfileResponseDTO,
-    RoomInitDTO
+    PlayerActionDTO, GameSnapshotDTO, SessionCreateRequestDTO, 
+    SessionCreateResponseDTO, SessionJoinRequestDTO, SessionJoinResponseDTO, 
+    PlayerClassPresetDTO, ClientEvent, ServerEvent, ProfileResponseDTO, RoomInitDTO,
+    BuyItemResponseDTO, PlayerProgressDTO
 } from '@game/shared';
 
 export class SocketClient implements INetworkClient {
@@ -24,23 +17,27 @@ export class SocketClient implements INetworkClient {
         });
     }
 
-    public connect(token: string): Promise<void> {
+    public connect(token: string): Promise<{ login: string, progress?: PlayerProgressDTO }> {
         return new Promise((resolve, reject) => {
-            if (this.socket.connected) return resolve();
+            if (this.socket.connected) return resolve({ login: '' });
             
             this.socket.auth = { token };
             this.socket.connect();
             
-            this.socket.once('connect', () => resolve());
+            this.socket.once('connect', () => {
+                this.requestProfile()
+                    .then(res => resolve(res))
+                    .catch(err => reject(err));
+            });
             this.socket.once('connect_error', (err) => reject(err));
         });
     }
 
-    public requestProfile(): Promise<string> {
+    public requestProfile(): Promise<{ login: string, progress?: PlayerProgressDTO }> {
         return new Promise((resolve, reject) => {
             this.socket.emit(ClientEvent.REQUEST_PROFILE, (res: ProfileResponseDTO) => {
                 if (res?.success && res.login) {
-                    resolve(res.login);
+                    resolve({ login: res.login, progress: res.progress });
                 } else {
                     reject(res?.message || 'Ошибка профиля');
                 }
@@ -67,6 +64,22 @@ export class SocketClient implements INetworkClient {
     public joinLobby(req: SessionJoinRequestDTO): Promise<SessionJoinResponseDTO> {
         return new Promise(resolve => {
             this.socket.emit(ClientEvent.CONNECT_LOBBY, req, (res: SessionJoinResponseDTO) => {
+                resolve(res);
+            });
+        });
+    }
+
+    public buyItem(itemPresetId: string): Promise<BuyItemResponseDTO> {
+        return new Promise(resolve => {
+            this.socket.emit(ClientEvent.BUY_ITEM, { itemPresetId }, (res: BuyItemResponseDTO) => {
+                resolve(res);
+            });
+        });
+    }
+
+    public completeSession(): Promise<BuyItemResponseDTO> {
+        return new Promise(resolve => {
+            this.socket.emit(ClientEvent.COMPLETE_SESSION, {}, (res: BuyItemResponseDTO) => {
                 resolve(res);
             });
         });
@@ -106,5 +119,17 @@ export class SocketClient implements INetworkClient {
 
     public onRoomInit(cb: (data: RoomInitDTO) => void) { 
         this.socket.on('server:room-init', cb); 
+    }
+
+    public onSyncProgress(cb: (progress: PlayerProgressDTO) => void): void {
+        this.socket.on(ServerEvent.SYNC_PROGRESS, cb);
+    }
+
+    public onSessionCompleted(cb: (data: { message: string, progress: PlayerProgressDTO }) => void): void {
+        this.socket.on(ServerEvent.SESSION_COMPLETED, cb);
+    }
+
+    public onSessionTerminated(cb: (data: { message: string }) => void): void {
+        this.socket.on(ServerEvent.SESSION_TERMINATED, cb);
     }
 }

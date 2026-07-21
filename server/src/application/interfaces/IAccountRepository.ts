@@ -8,4 +8,11 @@ export interface IAccountRepository {
     create(login: string, passwordHash: string, token: string): Promise<Account>;
 
     updateToken(id: string, token: string): Promise<Account>;
+
+    updateProgress(
+        accountId: string, 
+        metaGold: number, 
+        unlockedClasses: string[], 
+        unlockedWeapons: string[]
+    ): Promise<Account>;
 }

@@ -573,3 +573,30 @@ input.text-center {
 #hudWeapon {
     color: #bdc3c7;
 }
+
+.hero-card.locked, .weapon-card.locked {
+    filter: grayscale(1);
+    opacity: 0.55;
+    border-color: #2c1a10;
+}
+
+.hero-card.locked:hover, .weapon-card.locked:hover {
+    border-color: #5c120c;
+    background-color: #170d07;
+}
+
+.buy-button-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    height: 100%;
+}
+
+.buy-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    color: #a32c24;
+    text-shadow: 2px 2px 0px #000;
+}

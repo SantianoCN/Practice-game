@@ -15,7 +15,9 @@ import { ProcessInputUseCase } from './application/use-cases/ProcessInputUseCase
 import { GameTickUseCase } from './application/use-cases/GameTickUseCase';
 import { AuthUseCase } from './application/use-cases/AuthUseCase';
 import { OpenChestUseCase } from './application/use-cases/OpenChestUseCase';
-import { GAME_CONFIG } from '@game/shared';
+import { BuyItemUseCase } from './application/use-cases/BuyItemUseCase'; 
+import { CompleteSessionUseCase } from './application/use-cases/CompleteSessionUseCase'; // <-- Новый импорт
+import { GAME_CONFIG, PlayerProgressDTO } from '@game/shared';
 
 async function bootstrap() {
     const app = express();
@@ -32,13 +34,16 @@ async function bootstrap() {
     const broadcaster = new SocketBroadcaster(io);
     const presetProvider = new StaticPresetProvider();
     const authUseCase = new AuthUseCase(accountRepo, idGen);
+    const buyItemUseCase = new BuyItemUseCase(accountRepo); 
+    const completeSessionUseCase = new CompleteSessionUseCase(gameRepo, accountRepo); // <-- Создаем экземпляр Use Case завершения забега
+    
     const sessionUseCase = new SessionManagementUseCase(
-            gameRepo, 
-            idGen, 
-            presetProvider, 
-            GAME_CONFIG.ROOM_WIDTH, 
-            GAME_CONFIG.ROOM_HEIGHT
-        );    
+        gameRepo, 
+        idGen, 
+        presetProvider, 
+        GAME_CONFIG.ROOM_WIDTH, 
+        GAME_CONFIG.ROOM_HEIGHT
+    );    
     const inputUseCase = new ProcessInputUseCase(gameRepo);
     
     const openChestUseCase = new OpenChestUseCase(gameRepo, presetProvider, idGen);
@@ -52,15 +57,39 @@ async function bootstrap() {
     );
 
     app.post('/register', async (req, res) => {
-        const token = await authUseCase.register(req.body);
-        if (!token) return res.send({ success: false, message: 'пользователь уже существует' });
-        res.send({ success: true, refreshToken: token, login: req.body.login });
+        const result = await authUseCase.register(req.body);
+        if (!result) return res.send({ success: false, message: 'пользователь уже существует' });
+        
+        const progressDTO: PlayerProgressDTO | undefined = result.account.progress ? {
+            metaGold: result.account.progress.metaGold,
+            unlockedClasses: result.account.progress.unlockedClasses,
+            unlockedWeapons: result.account.progress.unlockedWeapons
+        } : undefined;
+
+        res.send({ 
+            success: true, 
+            refreshToken: result.token, 
+            login: req.body.login,
+            progress: progressDTO
+        });
     });
 
     app.post('/login', async (req, res) => {
-        const token = await authUseCase.login(req.body);
-        if (!token) return res.send({ success: false, message: 'неверный логин или пароль' });
-        res.send({ success: true, refreshToken: token, login: req.body.login });
+        const result = await authUseCase.login(req.body);
+        if (!result) return res.send({ success: false, message: 'неверный логин или пароль' });
+        
+        const progressDTO: PlayerProgressDTO | undefined = result.account.progress ? {
+            metaGold: result.account.progress.metaGold,
+            unlockedClasses: result.account.progress.unlockedClasses,
+            unlockedWeapons: result.account.progress.unlockedWeapons
+        } : undefined;
+
+        res.send({ 
+            success: true, 
+            refreshToken: result.token, 
+            login: req.body.login,
+            progress: progressDTO
+        });
     });
 
     app.post('/logout', async (req, res) => {
@@ -73,16 +102,16 @@ async function bootstrap() {
         const token = socket.handshake.auth.token;
         if (!token) return next(new Error('Токен не обнаружен'));
         
-        const login = await authUseCase.resolveToken(token);
-        if (!login) return next(new Error('Неверный токен'));
+        const account = await authUseCase.resolveToken(token);
+        if (!account) return next(new Error('Неверный токен'));
         
-        socket.data.login = login;
+        socket.data.login = account.login;
         next();
     });
 
     io.on('connection', (socket) => {
         console.log(`[Network] Client connected: ${socket.id} (Login: ${socket.data.login})`);
-        new SocketController(socket, sessionUseCase, inputUseCase, socket.data.login);
+        new SocketController(io, socket, sessionUseCase, inputUseCase, accountRepo, buyItemUseCase, completeSessionUseCase, socket.data.login);
     });
 
     const TICK_INTERVAL = 1000 / GAME_CONFIG.TICK_RATE;

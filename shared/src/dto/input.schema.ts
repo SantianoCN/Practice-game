@@ -13,6 +13,18 @@ export const TokenRequestSchema = z.object({
 });
 export type TokenRequestDTO = z.infer<typeof TokenRequestSchema>;
 
+export const PlayerProgressSchema = z.object({
+    metaGold: z.number(),
+    unlockedClasses: z.array(z.string()),
+    unlockedWeapons: z.array(z.string())
+});
+export type PlayerProgressDTO = z.infer<typeof PlayerProgressSchema>;
+
+export const BuyItemRequestSchema = z.object({
+    itemPresetId: z.string()
+});
+export type BuyItemRequestDTO = z.infer<typeof BuyItemRequestSchema>;
+
 export const SessionCreateRequestSchema = z.object({
     token: z.string(),
     archetype: ArchetypeSchema,
@@ -41,6 +53,7 @@ export interface BaseResponseDTO {
 export interface LoginResponseDTO extends BaseResponseDTO {
     refreshToken?: string;
     login?: string;
+    progress?: PlayerProgressDTO;
 }
 
 export interface LogoutResponseDTO extends BaseResponseDTO {}
@@ -55,4 +68,9 @@ export interface SessionJoinResponseDTO extends BaseResponseDTO {
 
 export interface ProfileResponseDTO extends BaseResponseDTO {
     login?: string;
+    progress?: PlayerProgressDTO;
+}
+
+export interface BuyItemResponseDTO extends BaseResponseDTO {
+    progress?: PlayerProgressDTO;
 }
