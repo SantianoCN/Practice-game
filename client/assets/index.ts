@@ -24,12 +24,10 @@ import caveTile2 from './environment/caveTile2.png';
 import caveTile3 from './environment/caveTile3.png';
 import caveTile4 from './environment/caveTile4.png';
 
-
-
 export const ASSETS = {
     hero: { warriorSword, warriorAxe, volhvFire, volhvIce },
     enemy: { lizardAxe, lizardMage },
     loot: { coin },
     weapon: { battleAxe, ironSword, fireStaff, iceStaff },
-    env: { chest, chestOpen, stone, caveTile1, caveTile2, caveTile3, caveTile4 }
+    env: { chest, chestOpen, stone, caveTile1, caveTile2, caveTile3, caveTile4}
 };

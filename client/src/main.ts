@@ -7,7 +7,7 @@ import { BaseResponseDTO } from '@game/shared';
 
 class App {
     private ui = new DOMManager();
-    private network = new SocketClient('http://localhost:3000');
+    private network = new SocketClient('http://localhost:3001');
     private input = new KeyboardAdapter();
     private renderer: CanvasRendererAdapter;
     private stateSync = new SyncStateUseCase();

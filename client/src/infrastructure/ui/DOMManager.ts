@@ -24,13 +24,13 @@ export class DOMManager {
         document.getElementById('loginBtn')?.addEventListener('click', () => {
             const l = (document.getElementById('username') as HTMLInputElement).value;
             const p = (document.getElementById('password') as HTMLInputElement).value;
-            this.onAuthReq?.('http://localhost:3000/login', l, p);
+            this.onAuthReq?.('http://localhost:3001/login', l, p);
         });
 
         document.getElementById('registerBtn')?.addEventListener('click', () => {
             const l = (document.getElementById('username') as HTMLInputElement).value;
             const p = (document.getElementById('password') as HTMLInputElement).value;
-            this.onAuthReq?.('http://localhost:3000/register', l, p);
+            this.onAuthReq?.('http://localhost:3001/register', l, p);
         });
 
         // 1. Одиночная игра (Сингл)

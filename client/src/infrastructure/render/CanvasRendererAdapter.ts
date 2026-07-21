@@ -110,7 +110,7 @@ export class CanvasRendererAdapter {
         this.updateVisitedRooms(room);
         this.drawGUI(players, myId);
 
-        this.drawDebugHitboxes(entitiesMap, room, staticObstacles); 
+        // this.drawDebugHitboxes(entitiesMap, room, staticObstacles); 
     }
 
     public reset(): void {
@@ -374,6 +374,17 @@ export class CanvasRendererAdapter {
 
     private drawBullets(bulletsMap: Map<string, VisualEntity>): void {
         bulletsMap.forEach(bullet => {
+            console.log(bullet.visualId)
+            if (bullet.visualId === 'axe_slash') {
+                this.drawAxeSlash(bullet, '#e67e22');
+                return;
+            }
+
+            if (bullet.visualId === 'slash_effect') {
+                this.drawSwordSlash(bullet, '#00d2d3');
+                return;
+            }
+
             let bulletColor = 'black';
             if (bullet.visualId === 'red_ball') bulletColor = 'red';
             else if (bullet.visualId === 'blue_ball') bulletColor = 'blue';
@@ -394,6 +405,83 @@ export class CanvasRendererAdapter {
         });
     }
 
+    private getBulletAngle(bullet: VisualEntity): number {
+        const b = bullet as any;
+
+        const prevX = b.prevX ?? bullet.renderX;
+        const prevY = b.prevY ?? bullet.renderY;
+
+        const dx = bullet.renderX - prevX;
+        const dy = bullet.renderY - prevY;
+
+        if (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01) {
+            b.currentAngle = Math.atan2(dy, dx);
+        }
+
+        b.prevX = bullet.renderX;
+        b.prevY = bullet.renderY;
+
+        return b.currentAngle || 0;
+    }
+
+    private drawAxeSlash(bullet: VisualEntity, color: string): void {
+        const bx = Math.round(bullet.renderX);
+        const by = Math.round(bullet.renderY);
+        const radius = Math.round(bullet.width);
+
+        const angle = this.getBulletAngle(bullet);
+
+        this.context.save();
+        this.context.translate(bx, by);
+        this.context.rotate(angle);
+        this.context.beginPath();
+        const arcAngle = Math.PI / 3; 
+        this.context.arc(0, 0, radius, -arcAngle, arcAngle, false);
+        this.context.arc(0, 0, radius * 0.35, arcAngle, -arcAngle, true);
+        this.context.closePath();
+
+        const gradient = this.context.createRadialGradient(0, 0, radius * 0.2, 0, 0, radius);
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+        gradient.addColorStop(0.5, color);
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+        this.context.fillStyle = gradient;
+        this.context.shadowBlur = 12;
+        this.context.shadowColor = color;
+        this.context.fill();
+
+        this.context.restore();
+    }
+
+    private drawSwordSlash(bullet: VisualEntity, color: string): void {
+        const bx = Math.round(bullet.renderX);
+        const by = Math.round(bullet.renderY);
+        const slashLength = Math.round(bullet.height || 45);
+        const slashWidth = Math.round(bullet.width || 20);
+
+        const angle = this.getBulletAngle(bullet);
+
+        this.context.save();
+        this.context.translate(bx, by);
+        this.context.rotate(angle);
+        this.context.beginPath();
+        this.context.moveTo(0, -slashLength / 2);
+        this.context.quadraticCurveTo(slashWidth, 0, 0, slashLength / 2);
+        this.context.quadraticCurveTo(slashWidth * 0.25, 0, 0, -slashLength / 2);
+        this.context.closePath();
+
+        this.context.fillStyle = '#ffffff';
+        this.context.shadowBlur = 15;
+        this.context.shadowColor = color;
+        this.context.fill();
+
+        this.context.strokeStyle = color;
+        this.context.lineWidth = 2;
+        this.context.stroke();
+
+        this.context.restore();
+    }
+
     private drawPlayers(playersMap: Map<string, VisualEntity>): void {
         playersMap.forEach(player => {
             const renders = this.playerRenderers[player.visualId];
@@ -407,7 +495,6 @@ export class CanvasRendererAdapter {
                     renderIndex = 1
                 }
             }
-            console.log(player.activeWeaponVisualId, renderIndex);
             if (renders) renders[renderIndex].draw(this.context, player);
             else this.drawFallback(player);
         });
