@@ -86,7 +86,7 @@ async function bootstrap() {
     tick();
 
     const PORT = process.env.PORT || 3000;
-    const HOST = '0.0.0.0'; // Слушаем всю локальную сеть
+    const HOST = 'localhost'; // Слушаем всю локальную сеть
     httpServer.listen(PORT, () => {
         console.log(`[Server] Clean Architecture Engine running on http://${HOST}:${PORT}`);
     });

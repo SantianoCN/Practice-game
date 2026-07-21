@@ -81,15 +81,15 @@ export class TextureRenderer implements EntityRenderer {
     }
 }
 
-export class BoxRenderer implements EntityRenderer {
-    constructor(private color: string) {}
+// import { stoneWallPattern } from "./../../../assets/environment/patrn";
 
-    public draw(context: CanvasRenderingContext2D, entity: VisualEntity): void {
-        const rx = Math.round(entity.renderX);
-        const ry = Math.round(entity.renderY);
-        const rw = Math.round(entity.width);
-        const rh = Math.round(entity.height);
-        context.fillStyle = this.color;
-        context.fillRect(rx - Math.round(rw / 2), ry - Math.round(rh / 2), rw, rh);
-    }
-}
+// export class DrawRenderer implements EntityRenderer {
+//     private drawTexture = {
+//         'stone_wall': stoneWallPattern
+//     }
+//     constructor(private color: string) {}
+
+//     public draw(context: CanvasRenderingContext2D, obj: string): void {
+
+//     }
+// }

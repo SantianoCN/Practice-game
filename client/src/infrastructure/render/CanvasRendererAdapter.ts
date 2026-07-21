@@ -1,26 +1,9 @@
 import { VisualEntity } from '../../domain/entities/VisualEntity';
 import { RoomState, ChestState, BaseEntityState } from '@game/shared';
-import { TextureRenderer, EntityRenderer } from './SupportRenderer';
+import { TextureRenderer, EntityRenderer, DrawRenderer } from './SupportRenderer';
 
-//Player
-import warriorImgUrl from './../../../assets/hero/warrior-sword-anim.png'; 
-import volhvImgUrl from './../../../assets/hero/volhv-fire-anim.png';
-//Enemy
-import lizardAxeImgUrl from './../../../assets/enemy/lizard-axe-anim.png';
-import lizardMageImgUrl from './../../../assets/enemy/lizard-mage-anim.png';
-//Loot
-import coinImgUrl from './../../../assets/loot/coin.png';
-import battleAxeImgUrl from './../../../assets/weapon/axe.png';
-import ironSwordImgUrl from './../../../assets/weapon/sword.png';
-import fireStaffImgUrl from './../../../assets/weapon/fire_staff.png';
-import iceStaffImgUrl from './../../../assets/weapon/ice_staff.png';
-//Environment
-import chestImgUrl from '../../../assets/chest.png';
-import chestOpenImgUrl from '../../../assets/chest-open.png';
-import benchSideImgUrl from './../../../assets/environment/benchSide.png';
-import benchFaceImgUrl from './../../../assets/environment/benchFace.png';
-import bencBackImgUrl from './../../../assets/environment/benchBack.png';
-import tableImgUrl from './../../../assets/environment/table.png'
+import { ASSETS } from './../../../assets/index.ts';
+
 
 interface MapCell {
     state: 'unseen' | 'visible' | 'visited';
@@ -32,15 +15,15 @@ export class CanvasRendererAdapter {
     private canvas: HTMLCanvasElement;
     private visitedMatrix: MapCell[][] = [];
     private readonly matrixSize = 10;
-    private readonly floorCellSize = 20;
 
     private offscreenCanvas: HTMLCanvasElement;
     private offscreenContext: CanvasRenderingContext2D;
     private currentRoomKey: string = '';
 
-    private playerRenderers: Record<string, EntityRenderer>;
+    private playerRenderers: Record<string, EntityRenderer[]>;
     private enemyRenderers: Record<string, EntityRenderer>;
     private textures: Record<string, HTMLImageElement> = {};
+    private tileArr: Array<HTMLImageElement> = []
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -61,28 +44,32 @@ export class CanvasRendererAdapter {
         this.initVisitedMatrix();
 
         this.playerRenderers = {
-            'Warrior': new TextureRenderer(warriorImgUrl),
-            'Mage': new TextureRenderer(volhvImgUrl)
+            'Warrior': [new TextureRenderer(ASSETS.hero.warriorSword), new TextureRenderer(ASSETS.hero.warriorAxe)],
+            'Mage': [new TextureRenderer(ASSETS.hero.volhvFire), new TextureRenderer(ASSETS.hero.volhvIce)]
         };
 
         this.enemyRenderers = {
-            'red_box': new TextureRenderer(lizardAxeImgUrl),
-            'orange_box': new TextureRenderer(lizardMageImgUrl)
+            'red_box': new TextureRenderer(ASSETS.enemy.lizardAxe),
+            'orange_box': new TextureRenderer(ASSETS.enemy.lizardMage)
         };
 
         this.textures = {
-            'chest': this.preloadImage(chestImgUrl),
-            'chestOpen': this.preloadImage(chestOpenImgUrl),
-            'battle_axe': this.preloadImage(battleAxeImgUrl),
-            'iron_sword': this.preloadImage(ironSwordImgUrl),
-            'fire_staff': this.preloadImage(fireStaffImgUrl),
-            'ice_staff': this.preloadImage(iceStaffImgUrl),
-            'gold': this.preloadImage(coinImgUrl),
-            'table': this.preloadImage(tableImgUrl),
-            'benchSide': this.preloadImage(benchSideImgUrl),
-            'benchFace': this.preloadImage(benchFaceImgUrl),
-            'benchBack': this.preloadImage(bencBackImgUrl)
+            'chest': this.preloadImage(ASSETS.env.chest),
+            'chestOpen': this.preloadImage(ASSETS.env.chestOpen),
+            'stone': this.preloadImage(ASSETS.env.stone),
+            'battle_axe': this.preloadImage(ASSETS.weapon.battleAxe),
+            'iron_sword': this.preloadImage(ASSETS.weapon.ironSword),
+            'fire_staff': this.preloadImage(ASSETS.weapon.fireStaff),
+            'ice_staff': this.preloadImage(ASSETS.weapon.iceStaff),
+            'gold': this.preloadImage(ASSETS.loot.coin)
+            
+            // 'table': this.preloadImage(tableImgUrl),
+            // 'benchSide': this.preloadImage(benchSideImgUrl),
+            // 'benchFace': this.preloadImage(benchFaceImgUrl),
+            // 'benchBack': this.preloadImage(bencBackImgUrl)
         };
+
+        this.tileArr = [this.preloadImage(ASSETS.env.caveTile1), this.preloadImage(ASSETS.env.caveTile2), this.preloadImage(ASSETS.env.caveTile3), this.preloadImage(ASSETS.env.caveTile4)];
     }
 
     private preloadImage(src: string): HTMLImageElement {
@@ -133,25 +120,65 @@ export class CanvasRendererAdapter {
 
     private prerenderStaticScene(roomType: string, obstacles: BaseEntityState[]): void {
         this.offscreenContext.clearRect(0, 0, this.offscreenCanvas.width, this.offscreenCanvas.height);
+        const cellSize = 20;
+        for (let x = 0; x < this.canvas.width; x += cellSize) {
+            for (let y = 0; y < this.canvas.width; y += cellSize) {
+                const tileNum = Math.floor(Math.random() * this.tileArr.length)
+                this.offscreenContext.drawImage(this.tileArr[tileNum], x, y, cellSize, cellSize)
+            }            
+        }
 
         let floorColor = '#3c2415';
         if (roomType === 'Start') floorColor = '#4a2f1b';
-        if (roomType === 'Boss') floorColor = '#3a0d0a';
-        if (roomType === 'Treasure') floorColor = '#5c4314';
-        if (roomType === 'Shop') floorColor = '#1e2b30';
+        // if (roomType === 'Boss') floorColor = '#3a0d0a';
+        // if (roomType === 'Treasure') floorColor = '#5c4314';
+        // if (roomType === 'Shop') floorColor = '#1e2b30';
 
-        this.offscreenContext.fillStyle = floorColor;
-        this.offscreenContext.fillRect(0, 0, this.offscreenCanvas.width, this.offscreenCanvas.height);
-
-        this.offscreenContext.fillStyle = 'black';
+        // this.offscreenContext.fillStyle = floorColor;
+        // this.offscreenContext.fillRect(0, 0, this.offscreenCanvas.width, this.offscreenCanvas.height);
+        // for (let x = 0; x <= this.offscreenCanvas.width - 20; x += 20) {
+        //     for (let y = 0; y <= this.offscreenCanvas.height - 20; y += 20) {
+        //         this.offscreenContext.strokeRect(x, y, 20, 20)
+        //     }
+        // }
         for (const obstacle of obstacles) {
-            this.offscreenContext.fillRect(
-                obstacle.x - obstacle.width / 2, 
-                obstacle.y - obstacle.height / 2, 
-                obstacle.width, 
-                obstacle.height
-            );
-            console.log(obstacle.visualId)
+            if (this.textures[obstacle.visualId]){
+                const texture = this.textures[obstacle.visualId];
+                const obtacleSize = 20;
+                let repitX = 0;
+                let repitY = 0;
+                switch (obstacle.visualId) {
+                    case 'stone':
+                        for (let startX = obstacle.x - obstacle.width / 2; repitX < obstacle.width / obtacleSize; startX += obtacleSize) {
+                            repitX++;
+                            for (let startY = obstacle.y - obstacle.height / 2; repitY < obstacle.height / obtacleSize; startY += obtacleSize) {
+                                repitY++;
+                                this.offscreenContext.drawImage(texture, startX, startY, obtacleSize, obtacleSize);
+                                
+                            };
+                            repitY = 0
+                        };
+                        break;
+                    default:
+                        this.offscreenContext.fillStyle = '#d7009a'
+                        this.offscreenContext.fillRect(
+                            obstacle.x - obstacle.width / 2, 
+                            obstacle.y - obstacle.height / 2, 
+                            obstacle.width, 
+                            obstacle.height
+                        );
+                        break;
+                }
+
+            } else {
+                this.offscreenContext.fillStyle = '#d7009a'
+                this.offscreenContext.fillRect(
+                    obstacle.x - obstacle.width / 2, 
+                    obstacle.y - obstacle.height / 2, 
+                    obstacle.width, 
+                    obstacle.height
+                );
+            }
         }
     }
 
@@ -268,11 +295,6 @@ export class CanvasRendererAdapter {
     ): void {
         if (room && this.currentRoomKey) {
             this.context.drawImage(this.offscreenCanvas, 0, 0);
-            // for (let x = 0; x <= this.canvas.width - this.floorCellSize; x += this.floorCellSize) {
-            //     for (let y = 0; y <= this.canvas.height - this.floorCellSize; y += this.floorCellSize) {
-            //         this.context.strokeRect(x, y, this.floorCellSize, this.floorCellSize)
-            //     }
-            // }
             this.drawDoors(room);
         } else {
             this.context.fillStyle = 'white';
@@ -374,8 +396,19 @@ export class CanvasRendererAdapter {
 
     private drawPlayers(playersMap: Map<string, VisualEntity>): void {
         playersMap.forEach(player => {
-            const renderer = this.playerRenderers[player.visualId];
-            if (renderer) renderer.draw(this.context, player);
+            const renders = this.playerRenderers[player.visualId];
+            let renderIndex = 0
+            if (player.visualId == 'Warrior') {
+                if (player.activeWeaponVisualId === 'battle_axe') {
+                    renderIndex = 1
+                }                
+            } else if (player.visualId == 'Mage'){
+                if (player.activeWeaponVisualId === 'ice_staff') {
+                    renderIndex = 1
+                }
+            }
+            console.log(player.activeWeaponVisualId, renderIndex);
+            if (renders) renders[renderIndex].draw(this.context, player);
             else this.drawFallback(player);
         });
     }
