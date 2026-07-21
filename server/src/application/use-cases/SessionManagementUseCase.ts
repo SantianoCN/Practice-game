@@ -5,6 +5,7 @@ import { EntityFactory } from '../../domain/factories/EntityFactory';
 import { MapGenerator } from '../../domain/world/FloorGenerator';
 import { Room } from '../../domain/entities/Room';
 import { GAME_CONFIG } from '@game/shared';
+import { IPresetProvider } from '../interfaces/IPresetProvider'; 
 
 export class SessionManagementUseCase {
     private deleteTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -12,6 +13,7 @@ export class SessionManagementUseCase {
     constructor(
         private repo: IGameRepository,
         private idGen: IIdGenerator,
+        private presetProvider: IPresetProvider,
         private roomWidth: number,
         private roomHeight: number
     ) {}
@@ -46,12 +48,12 @@ export class SessionManagementUseCase {
             15,
             this.roomWidth,
             this.roomHeight,
-            (prefix) => this.idGen.generateId(prefix)
+            (prefix) => this.idGen.generateId(prefix),
+            (id) => this.presetProvider.getChestPreset(id)
         );
 
         session.floorMap = mapGenerator.generate();
         this.repo.save(session);
-        
         this.addPlayerToSession(session, userId, login, archetype, weaponId);
 
         return sessionId;
@@ -64,17 +66,17 @@ export class SessionManagementUseCase {
         session.isLobby = true;
         session.hostId = userId;
 
-        const mapGenerator = new MapGenerator(
-            GAME_CONFIG.MAP_SIZE,
-            1,
-            this.roomWidth,
-            this.roomHeight,
-            (prefix) => this.idGen.generateId(prefix)
-        );
+        session.floorMap = Array(GAME_CONFIG.MAP_SIZE).fill(null).map(() => Array(GAME_CONFIG.MAP_SIZE).fill(null));
 
-        session.floorMap = mapGenerator.generateLobby();
+        const startX = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
+        const startY = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
+
+        const lobbyRoom = new Room(startX, startY, 'Start', 0);
+        lobbyRoom.isClear = true;
+        lobbyRoom.hasDoors = { Top: false, Bottom: false, Left: false, Right: false };
+        session.floorMap[startY][startX] = lobbyRoom;
+        
         this.repo.save(session);
-
         this.addPlayerToSession(session, userId, login, archetype, weaponId);
 
         return sessionId;
@@ -104,7 +106,8 @@ export class SessionManagementUseCase {
             15, 
             session.roomWidth,
             session.roomHeight,
-            (prefix) => this.idGen.generateId(prefix)
+            (prefix) => this.idGen.generateId(prefix),
+            (id) => this.presetProvider.getChestPreset(id)
         );
 
         session.floorMap = mapGenerator.generate();

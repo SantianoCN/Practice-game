@@ -11,7 +11,7 @@ export interface ObstacleTemplate {
 export interface ChestTemplate {
     gridX: number;
     gridY: number;
-    items: string[];
+    presetId: string;
 }
 
 export interface RoomTemplate {
@@ -32,8 +32,8 @@ export const ROOM_TEMPLATES: RoomTemplate[] = [
             { startX: 25, startY: 10, endX: 25, endY: 20 }  
         ],
         chests: [
-            { gridX: 18, gridY: 12, items: ["weapon", "weapon"] },
-            { gridX: 22, gridY: 15, items: ["potion"] }
+            { gridX: 18, gridY: 12, presetId: "chest_wooden" },
+            { gridX: 22, gridY: 15, presetId: "chest_wooden" }
         ]
     }, 
     {
@@ -49,8 +49,8 @@ export const ROOM_TEMPLATES: RoomTemplate[] = [
             { startX: 25, startY: 20, endX: 30, endY: 20 }
         ],
         chests: [
-            { gridX: 20, gridY: 12, items: ["gold", "mana"] },
-            { gridX: 20, gridY: 18, items: ["weapon", "gold"] }
+            { gridX: 20, gridY: 12, presetId: "chest_gold_boss" },
+            { gridX: 20, gridY: 18, presetId: "chest_wooden" }
         ]
     },
     {
@@ -64,7 +64,7 @@ export const ROOM_TEMPLATES: RoomTemplate[] = [
             { startX: 26, startY: 16, endX: 28, endY: 18 }
         ],
         chests: [
-            { gridX: 20, gridY: 15, items: ["gold", "weapon"] }
+            { gridX: 20, gridY: 15, presetId: "chest_wooden" }
         ]
     },
     {
@@ -76,8 +76,8 @@ export const ROOM_TEMPLATES: RoomTemplate[] = [
             { startX: 20, startY: 10, endX: 20, endY: 20 }
         ],
         chests: [
-            { gridX: 16, gridY: 13, items: ["weapon"] },
-            { gridX: 24, gridY: 17, items: ["gold"] }
+            { gridX: 16, gridY: 13, presetId: "chest_wooden" },
+            { gridX: 24, gridY: 17, presetId: "chest_wooden" }
         ]
     },
     {
@@ -91,7 +91,7 @@ export const ROOM_TEMPLATES: RoomTemplate[] = [
             { startX: 16, startY: 17, endX: 24, endY: 18 }
         ],
         chests: [
-            { gridX: 20, gridY: 15, items: ["weapon", "gold"] }
+            { gridX: 20, gridY: 15, presetId: "chest_wooden" }
         ]
     }
 ];

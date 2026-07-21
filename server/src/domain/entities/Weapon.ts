@@ -6,6 +6,7 @@ export class Weapon {
 
     constructor(
         public id: string,
+        public presetId: string,
         public name: string,
         public config: WeaponStats
     ) {}

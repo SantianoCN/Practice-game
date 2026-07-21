@@ -1,21 +1,25 @@
 import { IGameRepository } from '../interfaces/IGameRepository';
 import { IClientBroadcaster } from '../interfaces/IClientBroadcaster';
 import { CollisionEngine } from '../../domain/physics/CollisionEngine';
-import { GameSnapshotDTO, GameSnapshotSchema, GAME_CONFIG, RoomInitSchema } from '@game/shared';
+import { GameSnapshotDTO, GameSnapshotSchema, RoomInitSchema } from '@game/shared';
 import { EnemyAIService } from '../../domain/services/EnemyAIService';
 import { PlayerCombatService } from '../../domain/services/PlayerCombatService'; 
 import { IIdGenerator } from '../interfaces/IIdGenerator';
 import { RoomTransitionService } from '../../domain/services/RoomTransitionService';
 import { Player } from '../../domain/entities/Player';
 import { Room } from '../../domain/entities/Room';
+import { DroppedItem } from '../../domain/entities/Chest';
+import { OpenChestUseCase } from './OpenChestUseCase';
+import { IPresetProvider } from '../interfaces/IPresetProvider';
+import { EffectApplier } from '../../domain/services/EffectApplier';
 
 export class GameTickUseCase {
-    private playerLastRoomInstance = new Map<string, Room>();
-
     constructor(
         private repo: IGameRepository,
         private broadcaster: IClientBroadcaster,
-        private idGen: IIdGenerator
+        private idGen: IIdGenerator,
+        private openChestUseCase: OpenChestUseCase,
+        private presetProvider: IPresetProvider
     ) {}
 
     public execute(deltaTime: number, currentTime: number): void {
@@ -56,10 +60,10 @@ export class GameTickUseCase {
                 }
 
                 const currentRoom = session.getRoom(player.roomX, player.roomY);
-                const lastRoom = this.playerLastRoomInstance.get(player.id);
 
-                if (currentRoom && lastRoom !== currentRoom) {
-                    this.playerLastRoomInstance.set(player.id, currentRoom);
+                if (currentRoom && (player.lastBroadcastedRoomX !== player.roomX || player.lastBroadcastedRoomY !== player.roomY)) {
+                    player.lastBroadcastedRoomX = player.roomX;
+                    player.lastBroadcastedRoomY = player.roomY;
                     
                     const roomInit = RoomInitSchema.parse({
                         gridX: currentRoom.gridX,
@@ -106,8 +110,39 @@ export class GameTickUseCase {
                 for (const player of playersInRoom) {
                     CollisionEngine.resolveWallBounds(player, session.roomWidth, session.roomHeight, room, true);
                     CollisionEngine.resolveObstacles(player, room.getObstacleGrid());
-                    CollisionEngine.resolveChests(player, room.chests, room.droppedItems, GAME_CONFIG.CELL_SIZE, (prefix) => this.idGen.generateId(prefix));
-                    CollisionEngine.resolveLootPickup(player, room.droppedItems);
+                    
+                    const interactedChestId = CollisionEngine.checkChestInteraction(player, room.chests);
+                    if (interactedChestId) {
+                        this.openChestUseCase.execute(session.sessionId, player.id, interactedChestId);
+                    }
+
+                    const pickedItems = CollisionEngine.resolveLootPickup(player, room.droppedItems);
+
+                    // 2. Доменный обработчик поочередно применяет эффекты из коробки к игроку
+                    for (const item of pickedItems) {
+                        for (const effect of item.onPickup) {
+                            // Вызываем чистую функцию без громоздких коллбэков
+                            const result = EffectApplier.apply(
+                                effect,
+                                player,
+                                (presetId) => this.presetProvider.getItemPreset(presetId),
+                                () => this.idGen.generateId('wpn')
+                            );
+
+                            if (result && result.droppedWeapon) {
+                                const droppedWeapon = result.droppedWeapon;
+                                const replacementItem = new DroppedItem(
+                                    this.idGen.generateId('item'),
+                                    player.x,
+                                    player.y,
+                                    droppedWeapon.config.visualId,
+                                    droppedWeapon.presetId,
+                                    [{ type: 'equip_weapon', weaponPresetId: droppedWeapon.presetId }]
+                                );
+                                room.droppedItems.push(replacementItem);
+                            }
+                        }
+                    }
                 }
 
                 for (const bullet of room.bullets) {

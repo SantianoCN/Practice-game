@@ -1,7 +1,7 @@
 import { Room } from '../entities/Room';
 import { Enemy } from '../entities/Enemy';
 import { Obstacle } from '../entities/Obstacle';
-import { Chest, LootItem } from '../entities/Chest';
+import { Chest } from '../entities/Chest';
 import { Weapon } from '../entities/Weapon';
 import { EntityFactory } from '../factories/EntityFactory';
 import { ROOM_TEMPLATES, RoomTemplate } from './RoomTemplates';
@@ -24,7 +24,8 @@ export class MapGenerator {
         private targetRoomCount: number,
         private roomWidth: number,
         private roomHeight: number,
-        private generateId: IDGenerator
+        private generateId: IDGenerator,
+        private getChestPreset: (presetId: string) => { width: number, height: number } | null
     ) {}
 
     public generateLobby(): (Room | null)[][] {
@@ -188,26 +189,23 @@ export class MapGenerator {
         }
 
         for (const ch of template.chests) {
-            const width = 28;
-            const height = 28;
+            const preset = this.getChestPreset(ch.presetId);
+
+            const width = preset ? preset.width : 28;
+            const height = preset ? preset.height : 28;
             const x = ch.gridX * this.CELL_SIZE + width / 2;
             const y = ch.gridY * this.CELL_SIZE + height / 2;
 
-            const lootItems: LootItem[] = ch.items.map(itemType => {
-                if (itemType === 'weapon') {
-                    const weapons = [SWORD, STAFF, ICE_STAFF, AXE];
-                    const randomWpn = weapons[Math.floor(Math.random() * weapons.length)];
-                    const weapon = new Weapon(
-                        this.generateId('weapon'),
-                        randomWpn.visualId,
-                        randomWpn
-                    );
-                    return { type: 'weapon', weapon: weapon };
-                }
-                return { type: 'gold', amount: Math.floor(Math.random() * 50) + 10 };
-            });
-
-            const chest = new Chest(this.generateId('chest'), x, y, width, height, ch.gridX, ch.gridY, lootItems);
+            const chest = new Chest(
+                this.generateId('chest'), 
+                x, 
+                y, 
+                width, 
+                height, 
+                ch.gridX, 
+                ch.gridY, 
+                ch.presetId
+            );
             room.chests.push(chest);
         }
     }
@@ -242,7 +240,13 @@ export class MapGenerator {
         bossStats.visualId = 'red_box'; 
 
         const bossWeaponConfig = { ...STAFF, cooldownMs: 500, projectile: FIREBALL };
-        const weapon = new Weapon(this.generateId('wpn'), 'Посох Ящера-Императора', bossWeaponConfig);
+        
+        const weapon = new Weapon(
+            this.generateId('wpn'), 
+            'wpn_fire_staff', 
+            'Посох Ящера-Императора', 
+            bossWeaponConfig
+        );
         
         const boss = new Enemy(this.generateId('boss'), x, y, bossStats, weapon);
         boss.width = 64; 

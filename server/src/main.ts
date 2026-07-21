@@ -9,11 +9,12 @@ import { CryptoIdGenerator } from './infrastructure/utils/CryptoIdGenerator';
 import { SocketBroadcaster } from './infrastructure/network/SocketBroadcaster';
 import { SocketController } from './infrastructure/network/SocketController';
 import { PrismaAccountRepo } from './infrastructure/persistence/PrismaAccountRepo';
-
+import { StaticPresetProvider } from './infrastructure/providers/StaticPresetProvider';
 import { SessionManagementUseCase } from './application/use-cases/SessionManagementUseCase';
 import { ProcessInputUseCase } from './application/use-cases/ProcessInputUseCase';
 import { GameTickUseCase } from './application/use-cases/GameTickUseCase';
 import { AuthUseCase } from './application/use-cases/AuthUseCase';
+import { OpenChestUseCase } from './application/use-cases/OpenChestUseCase';
 import { GAME_CONFIG } from '@game/shared';
 
 async function bootstrap() {
@@ -29,11 +30,26 @@ async function bootstrap() {
     const gameRepo = new InMemoryGameRepo();
     const idGen = new CryptoIdGenerator();
     const broadcaster = new SocketBroadcaster(io);
-
+    const presetProvider = new StaticPresetProvider();
     const authUseCase = new AuthUseCase(accountRepo, idGen);
-    const sessionUseCase = new SessionManagementUseCase(gameRepo, idGen, GAME_CONFIG.ROOM_WIDTH, GAME_CONFIG.ROOM_HEIGHT);
+    const sessionUseCase = new SessionManagementUseCase(
+            gameRepo, 
+            idGen, 
+            presetProvider, 
+            GAME_CONFIG.ROOM_WIDTH, 
+            GAME_CONFIG.ROOM_HEIGHT
+        );    
     const inputUseCase = new ProcessInputUseCase(gameRepo);
-    const gameTickUseCase = new GameTickUseCase(gameRepo, broadcaster, idGen);
+    
+    const openChestUseCase = new OpenChestUseCase(gameRepo, presetProvider, idGen);
+    
+    const gameTickUseCase = new GameTickUseCase(
+        gameRepo, 
+        broadcaster, 
+        idGen, 
+        openChestUseCase, 
+        presetProvider
+    );
 
     app.post('/register', async (req, res) => {
         const token = await authUseCase.register(req.body);
@@ -86,7 +102,7 @@ async function bootstrap() {
     tick();
 
     const PORT = process.env.PORT || 3000;
-    const HOST = '0.0.0.0'; // Слушаем всю локальную сеть
+    const HOST = '0.0.0.0'; 
     httpServer.listen(PORT, () => {
         console.log(`[Server] Clean Architecture Engine running on http://${HOST}:${PORT}`);
     });

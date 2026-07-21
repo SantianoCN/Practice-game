@@ -24,6 +24,8 @@ export class Player extends LivingEntity {
     
     public roomX: number = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
     public roomY: number = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
+    public lastBroadcastedRoomX: number | null = null;
+    public lastBroadcastedRoomY: number | null = null;
 
     constructor(
         id: string,

@@ -13,28 +13,28 @@ export const ICE_STAFF: WeaponStats = { cooldownMs: 1000, manaCost: 5, projectil
 export const AXE: WeaponStats = { cooldownMs: 1500, manaCost: 0, projectile: AXE_SLASH, visualId: 'battle_axe' };
 
 export const STARTING_SWORD: StartingWeaponStats = {
-    key: 'sword_iron',
+    key: 'wpn_iron_sword',
     name: 'Меч-Кладенец',
     description: 'Классический меч. Наносит средний урон с умеренной скоростью.',
     config: SWORD
 };
 
 export const STARTING_AXE: StartingWeaponStats = {
-    key: 'axe_heavy',
+    key: 'wpn_heavy_axe', 
     name: 'Секира Перуна',
     description: 'Тяжелый топор. Медленный замах, но наносит колоссальный урон одним ударом.',
     config: AXE
 };
 
 export const STARTING_STAFF: StartingWeaponStats = {
-    key: 'staff_fire',
+    key: 'wpn_fire_staff',
     name: 'Огненный посох',
     description: 'Стреляет мощными огненными шарами на среднюю дистанцию.',
     config: STAFF
 };
 
 export const STARTING_ICE_STAFF: StartingWeaponStats = {
-    key: 'staff_ice',
+    key: 'wpn_ice_staff',
     name: 'Ледяной посох',
     description: 'Посох льда. Наносит меньше урона, но стреляет в два раза чаще.',
     config: ICE_STAFF

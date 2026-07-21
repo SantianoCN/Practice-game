@@ -4,10 +4,10 @@ import mageImgUrl from '../../../assets/hero/volhv.png';
 
 export class DOMManager {
     public onAuthReq?: (url: string, l: string, p: string) => void;
-    public onCreateRoom?: (arch: Archetype, weapon: string) => void;   // Синглплеер
-    public onCreateLobby?: (arch: Archetype, weapon: string) => void;  // Создать лобби
-    public onJoinRoom?: (sid: string, arch: Archetype, weapon: string) => void; // Войти в лобби
-    public onStartMatch?: () => void;  // Запустить поход (НОВЫЙ)
+    public onCreateRoom?: (arch: Archetype, weapon: string) => void;
+    public onCreateLobby?: (arch: Archetype, weapon: string) => void;
+    public onJoinRoom?: (sid: string, arch: Archetype, weapon: string) => void;
+    public onStartMatch?: () => void;
     
     public onLeaveRoom?: () => void;
     public onLogout?: () => void;
@@ -20,7 +20,6 @@ export class DOMManager {
     }
 
     private bindEvents(): void {
-        // Авторизация и регистрация
         document.getElementById('loginBtn')?.addEventListener('click', () => {
             const l = (document.getElementById('username') as HTMLInputElement).value;
             const p = (document.getElementById('password') as HTMLInputElement).value;
@@ -33,32 +32,26 @@ export class DOMManager {
             this.onAuthReq?.('http://localhost:3000/register', l, p);
         });
 
-        // 1. Одиночная игра (Сингл)
         document.getElementById('createRoomBtn')?.addEventListener('click', () => {
             this.onCreateRoom?.(this.selectedArch, this.selectedWeapon);
         });
 
-        // Создание лобби (СТАТЬ ВОЕВОДОЙ)
         document.getElementById('createLobbyBtn')?.addEventListener('click', () => {
             this.onCreateLobby?.(this.selectedArch, this.selectedWeapon);
         });
 
-        // Вступление в отряд (В БОЙ!)
         document.getElementById('joinRoomBtn')?.addEventListener('click', () => {
             const sid = (document.getElementById('sessionIdInput') as HTMLInputElement).value;
             this.onJoinRoom?.(sid, this.selectedArch, this.selectedWeapon);
         });
 
-        // Кнопка старта игры воеводой на экране Canvas
         document.getElementById('startMatchBtn')?.addEventListener('click', () => {
             this.onStartMatch?.();
         });
 
-        // Системные кнопки выхода
         document.getElementById('logoutBtn')?.addEventListener('click', () => this.onLogout?.());
         document.getElementById('disconnectBtn')?.addEventListener('click', () => this.onLeaveRoom?.());
         
-        // Копирование ID сессии/лобби в буфер обмена
         document.getElementById('copySessionBtn')?.addEventListener('click', () => {
             const btn = document.getElementById('copySessionBtn')!;
             const text = document.getElementById('sessionDisplay')?.innerText || '';
@@ -201,9 +194,9 @@ export class DOMManager {
             }
 
             let weaponAlt = 'Меч';
-            if (w.key === 'axe_heavy') weaponAlt = 'Секира Перуна';
-            if (w.key === 'staff_fire') weaponAlt = 'Посох Огня';
-            if (w.key === 'staff_ice') weaponAlt = 'Посох Хлада';
+            if (w.key === 'wpn_heavy_axe') weaponAlt = 'Секира Перуна';
+            if (w.key === 'wpn_fire_staff') weaponAlt = 'Посох Огня';
+            if (w.key === 'wpn_ice_staff') weaponAlt = 'Посох Хлада';
 
             let iconHtml = `<img src="../../../assets/sword.png" alt="${weaponAlt}" class="weapon-card-img" />`;
             switch (weaponAlt) {
@@ -214,7 +207,7 @@ export class DOMManager {
                     iconHtml = `<img src="../../../assets/fireball.png" alt="${weaponAlt}" class="weapon-card-img" />`;
                     break;
                 case 'Посох Хлада':
-                    iconHtml = `<img src=".../../../assets/iceball.png" alt="${weaponAlt}" class="weapon-card-img" />`;
+                    iconHtml = `<img src="../../../assets/iceball.png" alt="${weaponAlt}" class="weapon-card-img" />`;
                     break;
             }
 

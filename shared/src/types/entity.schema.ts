@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { GameEffectSchema } from './loot.schema';
 
 export const BaseEntityStateSchema = z.object({
     id: z.string(),
@@ -31,14 +32,19 @@ export const BulletStateSchema = BaseEntityStateSchema.extend({
 });
 export type BulletState = z.infer<typeof BulletStateSchema>;
 
-export const DroppedItemStateSchema = BaseEntityStateSchema;
-export type DroppedItemState = z.infer<typeof DroppedItemStateSchema>;
-
 export const ChestStateSchema = BaseEntityStateSchema.extend({
     gridX: z.number(),
-    gridY: z.number()
+    gridY: z.number(),
+    isOpened: z.boolean(),
+    presetId: z.string()
 });
 export type ChestState = z.infer<typeof ChestStateSchema>;
+
+export const DroppedItemStateSchema = BaseEntityStateSchema.extend({
+    presetId: z.string(),
+    onPickup: z.array(GameEffectSchema)
+});
+export type DroppedItemState = z.infer<typeof DroppedItemStateSchema>;
 
 export const ObstacleStateSchema = BaseEntityStateSchema;
 export type ObstacleState = z.infer<typeof ObstacleStateSchema>;

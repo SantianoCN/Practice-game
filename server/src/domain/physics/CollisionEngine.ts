@@ -4,7 +4,7 @@ import { Bullet } from '../entities/Bullet';
 import { Room } from '../entities/Room';
 import { Chest, DroppedItem } from '../entities/Chest';
 import { Player } from '../entities/Player';
-import { BoundingBox, IDGenerator } from '@game/shared';
+import { BoundingBox } from '@game/shared';
 import { SpatialGrid } from './SpatialGrid';
 
 export class CollisionEngine {
@@ -62,7 +62,6 @@ export class CollisionEngine {
 
     public static resolveObstacles(entity: MoveableEntity, obstacleGrid: SpatialGrid<Obstacle>): void {
         const eBounds = entity.getBounds();
-        
         const potentialObstacles = obstacleGrid.query(eBounds);
 
         for (const obs of potentialObstacles) {
@@ -74,23 +73,14 @@ export class CollisionEngine {
                 const overlapTop = eBounds.bottom - oBounds.top;
                 const overlapBottom = oBounds.bottom - eBounds.top;
 
-                const pushLeft = overlapLeft;
-                const pushRight = overlapRight;
-                const pushUp = overlapTop;
-                const pushDown = overlapBottom;
-
-                const minX = (pushLeft < pushRight) ? pushLeft : pushRight;
-                const minY = (pushUp < pushDown) ? pushUp : pushDown;
+                const minX = Math.min(overlapLeft, overlapRight);
+                const minY = Math.min(overlapTop, overlapBottom);
 
                 let resolveX = false;
                 let resolveY = false;
 
                 if (entity.vx === 0 && entity.vy === 0) {
-                    if (minX < minY) {
-                        resolveX = true;
-                    } else {
-                        resolveY = true;
-                    }
+                    if (minX < minY) resolveX = true; else resolveY = true;
                 } else if (entity.vx === 0) {
                     resolveY = true;
                 } else if (entity.vy === 0) {
@@ -98,27 +88,14 @@ export class CollisionEngine {
                 } else {
                     const tx = minX / Math.abs(entity.vx);
                     const ty = minY / Math.abs(entity.vy);
-
-                    if (tx < ty) {
-                        resolveX = true;
-                    } else {
-                        resolveY = true;
-                    }
+                    if (tx < ty) resolveX = true; else resolveY = true;
                 }
 
                 if (resolveX) {
-                    if (pushLeft < pushRight) {
-                        entity.x -= pushLeft;
-                    } else {
-                        entity.x += pushRight;
-                    }
+                    entity.x += (overlapLeft < overlapRight) ? -overlapLeft : overlapRight;
                     entity.vx = 0;
                 } else if (resolveY) {
-                    if (pushUp < pushDown) {
-                        entity.y -= pushUp;
-                    } else {
-                        entity.y += pushDown;
-                    }
+                    entity.y += (overlapTop < overlapBottom) ? -overlapTop : overlapBottom;
                     entity.vy = 0;
                 }
 
@@ -143,7 +120,6 @@ export class CollisionEngine {
         for (const bullet of bullets) {
             if (bullet.isDestroyed) continue;
             const bBounds = bullet.getBounds();
-
             const potentialTargets = targetGrid.query(bBounds);
 
             for (const target of potentialTargets) {
@@ -168,7 +144,6 @@ export class CollisionEngine {
 
         for (const bullet of bullets) {
             if (bullet.isDestroyed) continue;
-
             const bBounds = bullet.getBounds();
 
             if (
@@ -191,76 +166,42 @@ export class CollisionEngine {
         }
     }
 
-    public static resolveChests(
-        player: MoveableEntity, 
-        chests: Chest[], 
-        droppedItems: DroppedItem[],
-        cellSize: number,
-        idGen: IDGenerator
-    ): void {
+    public static checkChestInteraction(player: Player, chests: Chest[]): string | null {
         const playerBounds = player.getBounds();
         
         for (const chest of chests) {
             if (chest.isOpened) continue;
             
-            const chestBounds = chest.getBounds();
-
-            if (this.isOverlapping(playerBounds, chestBounds)) {
-
-                for (const item of chest.loot) {
-                    const id = idGen('item');
-                    const x = chest.x + (Math.floor(Math.random() * 3) - 1) * cellSize;
-                    const y = chest.y + (Math.floor(Math.random() * 3) - 1) * cellSize;
-                    if (item.type == 'weapon') {
-                        droppedItems.push(new DroppedItem(id, x, y, 10, 30, item.weapon.config.visualId, item));
-                    } else if (item.type == 'gold'){
-                        droppedItems.push(new DroppedItem(id, x, y, 15, 15, 'gold', item));
-                    }
+            if (this.isOverlapping(playerBounds, chest.getBounds())) {
+                if (player.isInteracting) {
+                    player.isInteracting = false; 
+                    return chest.id;
                 }
-                chest.visualId = 'chestOpen';
-                chest.isOpened = true;
             }
         }
+        return null;
     }
 
-    public static resolveLootPickup(
-        player: Player, 
-        droppedItems: DroppedItem[]
-    ): void {
+    public static resolveLootPickup(player: Player, droppedItems: DroppedItem[]): DroppedItem[] {
         const playerBounds = player.getBounds();
+        const collected: DroppedItem[] = [];
         
         for (let i = droppedItems.length - 1; i >= 0; i--) {
             const item = droppedItems[i];
-            const itemBounds = item.getBounds();
             
-            if (this.isOverlapping(playerBounds, itemBounds)) {
-                switch(item.content.type) {
-                    case 'gold':
-                        player.addGold(item.content.amount);
-                        break;
-                    case 'weapon': {
-                        if (!player.isInteracting) continue;
-                        player.isInteracting = false; 
-                        const dropped = player.addWeaponToInventory(item.content.weapon);
-                        if (dropped) {
-                            const droppedItem = new DroppedItem(
-                                dropped.id, 
-                                player.x, 
-                                player.y, 
-                                item.width, 
-                                item.height, 
-                                dropped.config.visualId, 
-                                {
-                                    type: 'weapon',
-                                    weapon: dropped 
-                                });
-                            droppedItems.push(droppedItem);
-                        }
-                        break;  
-                    }
+            if (this.isOverlapping(playerBounds, item.getBounds())) {
+                const hasWeaponEquip = item.onPickup.some(effect => effect.type === 'equip_weapon');
+                
+                if (hasWeaponEquip) {
+                    if (!player.isInteracting) continue;
+                    player.isInteracting = false;
                 }
+
+                collected.push(item);
                 droppedItems.splice(i, 1);
             }
         }
+
+        return collected;
     }
 }

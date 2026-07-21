@@ -24,6 +24,7 @@ export class EntityFactory {
 
         const weapon = new Weapon(
             generateId('wpn'),
+            weaponPreset.key,
             weaponPreset.name,
             weaponPreset.config
         );
@@ -52,6 +53,7 @@ export class EntityFactory {
     ): Enemy {
         const weapon = new Weapon(
             generateId('wpn'), 
+            weaponConfig.visualId,
             'Вражеское Оружие', 
             weaponConfig
         );

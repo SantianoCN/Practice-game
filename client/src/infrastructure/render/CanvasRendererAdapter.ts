@@ -7,6 +7,7 @@ import volhvImgUrl from './../../../assets/hero/volhv.png';
 import lizardAxeImgUrl from './../../../assets/enemy/lizard-axe.png';
 import lizardMageImgUrl from './../../../assets/enemy/lizard-mage.png';
 import coinImgUrl from './../../../assets/loot/coin.png';
+import potionRedImgUrl from './../../../assets/loot/potion_red.png';
 import battleAxeImgUrl from './../../../assets/weapon/axe.png';
 import ironSwordImgUrl from './../../../assets/weapon/sword.png';
 import fireStaffImgUrl from './../../../assets/weapon/fire_staff.png';
@@ -62,13 +63,18 @@ export class CanvasRendererAdapter {
         };
 
         this.textures = {
-            'chest': this.preloadImage(chestImgUrl),
-            'chestOpen': this.preloadImage(chestOpenImgUrl),
-            'battle_axe': this.preloadImage(battleAxeImgUrl),
+            'chest_wooden_closed': this.preloadImage(chestImgUrl),
+            'chest_wooden_opened': this.preloadImage(chestOpenImgUrl),
+            'chest_gold_closed': this.preloadImage(chestImgUrl),
+            'chest_gold_opened': this.preloadImage(chestOpenImgUrl),
+            
             'iron_sword': this.preloadImage(ironSwordImgUrl),
-            'fire_staff': this.preloadImage(fireStaffImgUrl),
+            'battle_axe': this.preloadImage(battleAxeImgUrl),
+            'staff': this.preloadImage(fireStaffImgUrl),
             'ice_staff': this.preloadImage(iceStaffImgUrl),
-            'gold': this.preloadImage(coinImgUrl)
+            
+            'gold_pile': this.preloadImage(coinImgUrl),
+            'potion_red': this.preloadImage(potionRedImgUrl)
         };
     }
 
@@ -370,7 +376,7 @@ export class CanvasRendererAdapter {
     }
 
     private drawChests(chests: ChestState[]): void {
-    if (!chests || chests.length === 0) return;
+        if (!chests || chests.length === 0) return;
 
         for (const chest of chests) {
             const cx = Math.round(chest.x - chest.width / 2);
@@ -378,8 +384,18 @@ export class CanvasRendererAdapter {
             const cw = Math.round(chest.width);
             const ch = Math.round(chest.height);
             
-            const texture = this.textures[chest.visualId];
-            this.context.drawImage(texture, cx, cy, cw, ch);
+            let textureKey = 'chest_wooden_closed';
+            
+            if (chest.presetId === 'chest_gold_boss') {
+                textureKey = chest.isOpened ? 'chest_gold_opened' : 'chest_gold_closed';
+            } else {
+                textureKey = chest.isOpened ? 'chest_wooden_opened' : 'chest_wooden_closed';
+            }
+
+            const texture = this.textures[textureKey];
+            if (texture) {
+                this.context.drawImage(texture, cx, cy, cw, ch);
+            }
         }
     }
 
@@ -392,8 +408,9 @@ export class CanvasRendererAdapter {
             const iw = Math.round(item.width);
             const ih = Math.round(item.height);
             
-            this.context.shadowColor = 'rgba(0, 0, 0, 0.2)';
-            this.context.shadowBlur = 5;
+            this.context.save();
+            this.context.shadowColor = 'rgba(0, 0, 0, 0.3)';
+            this.context.shadowBlur = 4;
             this.context.shadowOffsetX = 1;
             this.context.shadowOffsetY = 2;
 
@@ -402,9 +419,10 @@ export class CanvasRendererAdapter {
             if (texture) {
                 this.context.drawImage(texture, ix, iy, iw, ih);
             } else {
-                this.context.fillStyle = '#0c8a93a4';
+                this.context.fillStyle = '#d4af37';
                 this.context.fillRect(ix, iy, iw, ih);
             }
+            this.context.restore();
         }
     }
 
@@ -453,11 +471,9 @@ export class CanvasRendererAdapter {
             if (room.chests) {
                 this.context.strokeStyle = '#ff00ff';
                 room.chests.forEach(chest => {
-                    const x = chest.x;
-                    const y = chest.y;
                     this.context.strokeRect(
-                        Math.round(x - chest.width / 2),
-                        Math.round(y - chest.height / 2),
+                        Math.round(chest.x - chest.width / 2),
+                        Math.round(chest.y - chest.height / 2),
                         chest.width,
                         chest.height
                     );
