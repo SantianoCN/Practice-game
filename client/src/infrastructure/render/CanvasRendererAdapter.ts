@@ -115,6 +115,7 @@ export class CanvasRendererAdapter {
         if (!room) return;
         this.updateVisitedRooms(room);
         this.drawGUI(players, myId);
+        this.drawPortal(room)
 
         this.drawDebugHitboxes(entitiesMap, room, staticObstacles); 
     }
@@ -431,7 +432,7 @@ export class CanvasRendererAdapter {
         this.context.fillRect(entity.renderX - entity.width / 2, entity.renderY - entity.height / 2, entity.width, entity.height);
     }
 
-    public drawDebugHitboxes(
+    private drawDebugHitboxes(
         entitiesMap: Map<string, VisualEntity>, 
         room: RoomState | null, 
         staticObstacles: BaseEntityState[]
@@ -494,5 +495,17 @@ export class CanvasRendererAdapter {
         }
 
         this.context.restore();
+    }
+
+    private drawPortal(room: RoomState | null): void {
+        if (room?.portal?.isActive) {
+            this.context.fillStyle = '#681284';
+            this.context.fillRect(
+                room.portal.x - room.portal.width / 2,
+                room.portal.y - room.portal.height / 2,
+                room.portal.width,
+                room.portal.height
+            );
+        }
     }
 }

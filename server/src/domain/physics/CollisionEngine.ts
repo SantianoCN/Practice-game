@@ -4,8 +4,9 @@ import { Bullet } from '../entities/Bullet';
 import { Room } from '../entities/Room';
 import { Chest, DroppedItem } from '../entities/Chest';
 import { Player } from '../entities/Player';
-import { BoundingBox } from '@game/shared';
+import { BoundingBox, GAME_CONFIG } from '@game/shared';
 import { SpatialGrid } from './SpatialGrid';
+import { Portal } from '../entities/Portal'; 
 
 export class CollisionEngine {
     
@@ -26,7 +27,7 @@ export class CollisionEngine {
         isPlayer: boolean
     ): void {
         const bounds = entity.getBounds();
-        const doorSize = 100; 
+        const doorSize = GAME_CONFIG.DOOR_SIZE; 
         const isDoorOpen = room.isClear || room.enemies.length === 0;
 
         if (bounds.left < 0) {
@@ -204,4 +205,16 @@ export class CollisionEngine {
 
         return collected;
     }
+
+    public static checkPortalInteraction(player: Player, portal: Portal | null): boolean {
+    if (!portal || !portal.isActive) return false;
+
+    if (this.isOverlapping(player.getBounds(), portal.getBounds())) {
+        if (player.isInteracting) {
+            player.isInteracting = false;
+            return true;
+        }
+    }
+    return false;
+}
 }

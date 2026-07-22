@@ -1,7 +1,6 @@
 import { IAccountRepository } from '../interfaces/IAccountRepository';
-import { SHOP_PRICES } from '../../domain/services/ShopService';
 import { PlayerProgress } from '../../domain/entities/PlayerProgress';
-import { PLAYER_CLASSES } from '@game/shared'; // <-- Импортируем общие пресеты классов
+import { PLAYER_CLASSES, SHOP_PRICES } from '@game/shared';
 
 export class BuyItemUseCase {
     constructor(private accountRepo: IAccountRepository) {}

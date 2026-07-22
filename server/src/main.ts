@@ -16,8 +16,11 @@ import { GameTickUseCase } from './application/use-cases/GameTickUseCase';
 import { AuthUseCase } from './application/use-cases/AuthUseCase';
 import { OpenChestUseCase } from './application/use-cases/OpenChestUseCase';
 import { BuyItemUseCase } from './application/use-cases/BuyItemUseCase'; 
-import { CompleteSessionUseCase } from './application/use-cases/CompleteSessionUseCase'; // <-- Новый импорт
+import { CompleteSessionUseCase } from './application/use-cases/CompleteSessionUseCase';
 import { GAME_CONFIG, PlayerProgressDTO } from '@game/shared';
+import { NextFloorUseCase } from './application/use-cases/NextFloorUseCase';
+import { SaveSessionUseCase } from './application/use-cases/SaveSessionUseCase';
+import { PrismaSaveRepo } from './infrastructure/persistence/PrismaSaveRepo';
 
 async function bootstrap() {
     const app = express();
@@ -30,19 +33,23 @@ async function bootstrap() {
     const prisma = new PrismaClient();
     const accountRepo = new PrismaAccountRepo(prisma);
     const gameRepo = new InMemoryGameRepo();
+    const saveRepo = new PrismaSaveRepo(prisma);
     const idGen = new CryptoIdGenerator();
     const broadcaster = new SocketBroadcaster(io);
     const presetProvider = new StaticPresetProvider();
     const authUseCase = new AuthUseCase(accountRepo, idGen);
     const buyItemUseCase = new BuyItemUseCase(accountRepo); 
-    const completeSessionUseCase = new CompleteSessionUseCase(gameRepo, accountRepo); // <-- Создаем экземпляр Use Case завершения забега
+    const completeSessionUseCase = new CompleteSessionUseCase(gameRepo, accountRepo);
+    const nextFloorUseCase = new NextFloorUseCase(gameRepo, presetProvider, idGen);
+    const saveSessionUseCase = new SaveSessionUseCase(gameRepo, saveRepo);
     
     const sessionUseCase = new SessionManagementUseCase(
         gameRepo, 
         idGen, 
         presetProvider, 
         GAME_CONFIG.ROOM_WIDTH, 
-        GAME_CONFIG.ROOM_HEIGHT
+        GAME_CONFIG.ROOM_HEIGHT,
+        saveRepo
     );    
     const inputUseCase = new ProcessInputUseCase(gameRepo);
     
@@ -53,7 +60,8 @@ async function bootstrap() {
         broadcaster, 
         idGen, 
         openChestUseCase, 
-        presetProvider
+        presetProvider,
+        nextFloorUseCase
     );
 
     app.post('/register', async (req, res) => {
@@ -111,7 +119,7 @@ async function bootstrap() {
 
     io.on('connection', (socket) => {
         console.log(`[Network] Client connected: ${socket.id} (Login: ${socket.data.login})`);
-        new SocketController(io, socket, sessionUseCase, inputUseCase, accountRepo, buyItemUseCase, completeSessionUseCase, socket.data.login);
+        new SocketController(io, socket, sessionUseCase, inputUseCase, accountRepo, buyItemUseCase, completeSessionUseCase, saveSessionUseCase, nextFloorUseCase, saveRepo, socket.data.login);
     });
 
     const TICK_INTERVAL = 1000 / GAME_CONFIG.TICK_RATE;

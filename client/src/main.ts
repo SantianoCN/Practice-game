@@ -16,8 +16,6 @@ class App {
     private gameLoopId?: number;
     private lastTime = performance.now();
     private isHost = false;
-    
-    // Кэш данных для обновления списков
     private classPresets: Record<string, PlayerClassPresetDTO> = {};
     private metaProgress?: PlayerProgressDTO;
 
@@ -93,6 +91,46 @@ class App {
             }
         };
 
+        this.ui.onRestoreSave = async () => {
+            this.stateSync.clear();
+            this.renderer.reset();
+
+            try {
+                const res = await this.network.restoreSave();
+                if (res.success && res.sessionId) {
+                    this.isHost = true; // Тот, кто нажал продолжить, становится воеводой восстановленного лобби
+                    this.ui.showStartMatchButton(true);
+                    this.startGame(res.sessionId, false, true);
+                } else {
+                    this.ui.showErrorLobby(res.message || 'Не удалось продолжить поход');
+                }
+            } catch (err) {
+                this.ui.showErrorLobby('Ошибка отправки запроса продолжения');
+            }
+        };
+
+        this.ui.onPortalNextFloor = () => {
+            this.network.sendNextFloor();
+            this.ui.showPortalModal(false); // Прячем модалку после выбора
+            this.renderer.reset();
+            this.stateSync.clear();
+        };
+
+        this.ui.onPortalSaveAndExit = async () => {
+            try {
+                const res = await this.network.saveAndExit();
+                if (res.success) {
+                    this.ui.showPortalModal(false);
+                    // Сессия закроется на сервере, клиент вернется в лобби через onSessionTerminated / stopGame
+                } else {
+                    alert(res.message || 'Не удалось сохранить поход');
+                }
+            } catch (err) {
+                alert('Ошибка соединения с избой');
+            }
+        };
+
+
         this.ui.onJoinRoom = async (sid, arch, weapon) => {
             const token = localStorage.getItem('session_token');
             if (!token) return;
@@ -131,19 +169,6 @@ class App {
             }
         };
 
-        this.ui.onCompleteSession = async () => {
-            try {
-                const res = await this.network.completeSession();
-                if (res.success) {
-                    // Выход из сессии произойдет автоматически через событие onSessionCompleted
-                } else {
-                    alert(res.message || 'Не удалось завершить поход');
-                }
-            } catch (err) {
-                alert('Ошибка соединения при завершении похода');
-            }
-        };
-
         this.network.onRoomInit(roomInit => {
             this.stateSync.setStaticRoom(roomInit);
         });
@@ -177,18 +202,15 @@ class App {
             if (msg.includes('другого устройства')) this.ui.onLogout?.();
         });
  
-        // ШАГ 2+: Фоновая автоматическая синхронизация прогресса с сервером
         this.network.onSyncProgress(progress => {
             this.metaProgress = progress;
             this.ui.updatePresets(this.classPresets, progress);
         });
 
-        // Слушаем сигнал успешного завершения забега (сохранение золота в БД и выход)
         this.ui.onCompleteSession = async () => {
             try {
                 const res = await this.network.completeSession();
                 if (res.success) {
-                    // Если сервер вернул обновленный прогресс прямо в ответе (для одиночной игры)
                     if (res.progress) {
                         this.metaProgress = res.progress;
                         this.ui.updatePresets(this.classPresets, res.progress);
@@ -202,7 +224,10 @@ class App {
             }
         };
 
-        // Слушаем принудительное отключение сессии (например, хост закрыл игру)
+        this.network.onPortalInteract(() => {
+            this.ui.showPortalModal(true); // Показываем модалку хосту при касании портала
+        });
+
         this.network.onSessionTerminated(data => {
             alert(data.message);
             this.stopGame();
@@ -223,6 +248,9 @@ class App {
             } else {
                 this.ui.showLobby(profile.login);
                 this.ui.updatePresets(this.classPresets, this.metaProgress);
+                
+                // Переключаем видимость секции "Продолжить поход"
+                this.ui.showContinueButton(!!profile.activeSaveSessionId);
             }
         } catch (e) {
             this.ui.showAuth('Ошибка подключения к игровому серверу');
@@ -231,7 +259,7 @@ class App {
 
     private startGame(sessionId: string, isSingleplayer: boolean = false, isHost: boolean = false): void {
         localStorage.setItem('game_session_id', sessionId);
-        this.ui.showGame(sessionId, isSingleplayer, isHost); // Передаем флаги
+        this.ui.showGame(sessionId, isSingleplayer, isHost); 
         
         this.input.startListening();
         this.input.onInputChanged(action => this.network.sendPlayerAction(action));
@@ -243,6 +271,7 @@ class App {
     private stopGame(): void {
         localStorage.removeItem('game_session_id');
         this.input.stopListening();
+        this.ui.showPortalModal(false);
         if (this.gameLoopId) cancelAnimationFrame(this.gameLoopId);
         
         this.network.requestProfile()
@@ -252,6 +281,9 @@ class App {
                 }
                 this.ui.showLobby(profile.login);
                 this.ui.updatePresets(this.classPresets, this.metaProgress);
+                
+                // Перепроверяем, осталось ли сохранение после выхода в главное меню
+                this.ui.showContinueButton(!!profile.activeSaveSessionId);
             })
             .catch(() => this.ui.showAuth());
     }

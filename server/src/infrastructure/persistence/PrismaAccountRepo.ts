@@ -72,7 +72,6 @@ export class PrismaAccountRepo implements IAccountRepository {
         return this.mapToDomain(dbAccount);
     }
 
-    // ШАГ 4: Запись обновленного прогресса в БД
     async updateProgress(
         accountId: string, 
         metaGold: number, 
@@ -85,7 +84,6 @@ export class PrismaAccountRepo implements IAccountRepository {
                 progress: {
                     update: {
                         metaGold,
-                        // Склеиваем массивы обратно в плоские строки для SQLite
                         unlockedClasses: unlockedClasses.join(','),
                         unlockedWeapons: unlockedWeapons.join(',')
                     }

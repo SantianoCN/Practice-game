@@ -48,3 +48,8 @@ export type DroppedItemState = z.infer<typeof DroppedItemStateSchema>;
 
 export const ObstacleStateSchema = BaseEntityStateSchema;
 export type ObstacleState = z.infer<typeof ObstacleStateSchema>;
+
+export const PortalStateSchema = BaseEntityStateSchema.extend({
+    isActive: z.boolean()
+});
+export type PortalState = z.infer<typeof PortalStateSchema>;

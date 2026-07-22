@@ -12,6 +12,7 @@ export class Player extends LivingEntity {
 
     public ticksSinceLastInput: number = 0;
     private static readonly INPUT_TIMEOUT_TICKS = 8;
+    public isOnline: boolean = true;
 
     public heldKeys = {
         up: false,

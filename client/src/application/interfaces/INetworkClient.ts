@@ -5,14 +5,16 @@ import {
 } from '@game/shared';
 
 export interface INetworkClient {
-    connect(token: string): Promise<{ login: string, progress?: PlayerProgressDTO }>;
+    connect(token: string): Promise<{ login: string, progress?: PlayerProgressDTO, activeSaveSessionId?: string | null }>;
     disconnect(): void;
-    requestProfile(): Promise<{ login: string, progress?: PlayerProgressDTO }>;
+    requestProfile(): Promise<{ login: string, progress?: PlayerProgressDTO, activeSaveSessionId?: string | null }>;
     
     createSession(req: SessionCreateRequestDTO): Promise<SessionCreateResponseDTO>;
     createLobby(req: SessionCreateRequestDTO): Promise<SessionCreateResponseDTO>;
     joinLobby(req: SessionJoinRequestDTO): Promise<SessionJoinResponseDTO>;
     sendStartMatch(): void;
+    
+    restoreSave(): Promise<{ success: boolean; sessionId?: string; message?: string }>;
     
     buyItem(itemPresetId: string): Promise<BuyItemResponseDTO>;
     completeSession(): Promise<BuyItemResponseDTO>;
@@ -29,4 +31,7 @@ export interface INetworkClient {
     onSyncProgress(cb: (progress: PlayerProgressDTO) => void): void;
     onSessionCompleted(cb: (data: { message: string, progress: PlayerProgressDTO }) => void): void;
     onSessionTerminated(cb: (data: { message: string }) => void): void;
+    saveAndExit(): Promise<{ success: boolean; message?: string }>; // Перевод "client:save-and-exit" в типизированный метод
+    sendNextFloor(): void;
+    onPortalInteract(cb: () => void): void;
 }

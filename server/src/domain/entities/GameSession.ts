@@ -1,5 +1,6 @@
 import { Player } from './Player';
 import { Room } from './Room';
+import { FloorDifficulty } from '@game/shared';
 
 export class GameSession {
     public players: Map<string, Player> = new Map();
@@ -7,11 +8,14 @@ export class GameSession {
     
     public isLobby: boolean = false;
     public hostId: string = '';
+    public hostLogin: string = '';
+    public allowedLogins: Set<string> = new Set();
 
     constructor(
         public readonly sessionId: string,
         public readonly roomWidth: number,
-        public readonly roomHeight: number
+        public readonly roomHeight: number,
+        public difficulty: FloorDifficulty
     ) {}
 
     public getPlayer(userId: string): Player | undefined {
@@ -33,6 +37,6 @@ export class GameSession {
     }
 
     public isEmpty(): boolean {
-        return this.players.size === 0;
+        return Array.from(this.players.values()).filter(p => p.isOnline).length === 0;
     }
 }

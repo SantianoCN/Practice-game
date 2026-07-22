@@ -1,5 +1,5 @@
 import { ItemPreset } from '../types/loot.schema';
-import { SWORD, AXE, STAFF, ICE_STAFF } from './classes.config';
+import { SWORD, AXE, STAFF, ICE_STAFF } from './weapon.config';
 
 export const ITEMS_DATABASE: Record<string, ItemPreset> = {
     gold_coins: {

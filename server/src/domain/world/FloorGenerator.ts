@@ -6,8 +6,9 @@ import { Weapon } from '../entities/Weapon';
 import { EntityFactory } from '../factories/EntityFactory';
 import { ROOM_TEMPLATES, RoomTemplate } from './RoomTemplates';
 import { AXE, FIREBALL, ICE_STAFF, MAGE_PRESET_LIZARD, STAFF, SWORD, WARRIOR_PRESET_LIZARD,
-    GAME_CONFIG, IDGenerator, RoomType
+    GAME_CONFIG, IDGenerator, RoomType, FloorDifficulty
  } from '@game/shared';
+ import { Portal } from '../entities/Portal'; 
 
 interface Coords {
     x: number;
@@ -21,7 +22,7 @@ export class MapGenerator {
 
     constructor(
         private gridSize: number,
-        private targetRoomCount: number,
+        private difficulty: FloorDifficulty,
         private roomWidth: number,
         private roomHeight: number,
         private generateId: IDGenerator,
@@ -52,7 +53,7 @@ export class MapGenerator {
         const startX = Math.floor(this.gridSize / 2);
         const startY = Math.floor(this.gridSize / 2);
 
-        this.buildLayout(startX, startY, Math.floor(this.targetRoomCount / 2), this.targetRoomCount);
+        this.buildLayout(startX, startY, Math.floor(this.difficulty.ROOM_COUNT / 2), this.difficulty.ROOM_COUNT);
 
         this.assignRoomTypes();
 
@@ -150,31 +151,41 @@ export class MapGenerator {
     }
 
     private populateRooms(): void {
-        for (const room of this.roomsCreated) {
-            if (room.type === 'Start' || room.type === 'Shop') {
-                room.isClear = true;
-                continue;
-            }
+    for (const room of this.roomsCreated) {
+        if (room.type === 'Start' || room.type === 'Shop') {
+            room.isClear = true;
+            continue;
+        }
 
-            const matchingTemplates = ROOM_TEMPLATES.filter(t => t.type === room.type);
-            
-            if (matchingTemplates.length > 0) {
-                const template = matchingTemplates[Math.floor(Math.random() * matchingTemplates.length)];
-                this.applyTemplate(room, template);
-            }
+        const matchingTemplates = ROOM_TEMPLATES.filter(t => t.type === room.type);
+        
+        if (matchingTemplates.length > 0) {
+            const template = matchingTemplates[Math.floor(Math.random() * matchingTemplates.length)];
+            this.applyTemplate(room, template);
+        }
 
-            if (room.type === 'Boss') {
-                this.spawnBoss(room);
-            } else if (room.type === 'Normal') {
-                const enemyCount = Math.floor(Math.random() * 3) + 2; 
-                for (let i = 0; i < enemyCount; i++) {
-                    this.spawnEnemy(room);
-                }
-            } else if (room.type === 'Treasure') {
-                room.isClear = true;
+        if (room.type === 'Boss') {
+            this.spawnBoss(room);
+
+            room.portal = new Portal(
+                this.generateId('portal'),
+                this.roomWidth / 2,
+                this.roomHeight / 2,
+                48,
+                48,
+                'portal_closed'
+            );
+        } else if (room.type === 'Normal') {
+            const enemyCount = Math.floor(Math.random() * 3) + 2; 
+            for (let i = 0; i < enemyCount; i++) {
+                this.spawnEnemy(room);
             }
+        } else if (room.type === 'Treasure') {
+            room.isClear = true;
         }
     }
+}
+
 
     private applyTemplate(room: Room, template: RoomTemplate): void {
         for (const obs of template.obstacles) {
@@ -235,7 +246,7 @@ export class MapGenerator {
         const y = this.roomHeight / 2;
 
         const bossStats = { ...WARRIOR_PRESET_LIZARD };
-        bossStats.maxHp = 300; 
+        bossStats.maxHp = 10; 
         bossStats.speed = 120;
         bossStats.visualId = 'red_box'; 
 

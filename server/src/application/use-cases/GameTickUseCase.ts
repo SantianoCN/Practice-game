@@ -12,6 +12,7 @@ import { DroppedItem } from '../../domain/entities/Chest';
 import { OpenChestUseCase } from './OpenChestUseCase';
 import { IPresetProvider } from '../interfaces/IPresetProvider';
 import { EffectApplier } from '../../domain/services/EffectApplier';
+import { NextFloorUseCase } from './NextFloorUseCase';
 
 export class GameTickUseCase {
     constructor(
@@ -19,14 +20,14 @@ export class GameTickUseCase {
         private broadcaster: IClientBroadcaster,
         private idGen: IIdGenerator,
         private openChestUseCase: OpenChestUseCase,
-        private presetProvider: IPresetProvider
+        private presetProvider: IPresetProvider,
+        private nextFloorUseCase: NextFloorUseCase
     ) {}
 
     public execute(deltaTime: number, currentTime: number): void {
         const sessions = this.repo.getAll();
 
         for (const session of sessions) {
-            
             for (const player of session.players.values()) {
                 if (player.isDead()) continue;
 
@@ -107,10 +108,25 @@ export class GameTickUseCase {
                     );
                 }
 
+                let floorTransitionTriggered = false;
+
                 for (const player of playersInRoom) {
                     CollisionEngine.resolveWallBounds(player, session.roomWidth, session.roomHeight, room, true);
                     CollisionEngine.resolveObstacles(player, room.getObstacleGrid());
                     
+                    if (room.type === 'Boss' && room.portal && room.portal.isActive) {
+                        const wantsToTransition = CollisionEngine.checkPortalInteraction(player, room.portal);
+                        if (wantsToTransition) {
+                            if (session.hostId === player.id) {
+                                // Вместо моментального вызова nextFloorUseCase шлем хосту запрос выбора!
+                                this.broadcaster.broadcastPortalInteract(player.id);
+                            } else {
+                                // Обычным игрокам пишем вежливое предупреждение
+                                this.broadcaster.broadcastError(player.id, 'Только воевода (хост) решает, куда вести дружину!');
+                            }
+                        }
+                    }
+
                     const interactedChestId = CollisionEngine.checkChestInteraction(player, room.chests);
                     if (interactedChestId) {
                         this.openChestUseCase.execute(session.sessionId, player.id, interactedChestId);
@@ -118,10 +134,8 @@ export class GameTickUseCase {
 
                     const pickedItems = CollisionEngine.resolveLootPickup(player, room.droppedItems);
 
-                    // 2. Доменный обработчик поочередно применяет эффекты из коробки к игроку
                     for (const item of pickedItems) {
                         for (const effect of item.onPickup) {
-                            // Вызываем чистую функцию без громоздких коллбэков
                             const result = EffectApplier.apply(
                                 effect,
                                 player,
@@ -143,6 +157,10 @@ export class GameTickUseCase {
                             }
                         }
                     }
+                }
+
+                if (floorTransitionTriggered) {
+                    break; 
                 }
 
                 for (const bullet of room.bullets) {

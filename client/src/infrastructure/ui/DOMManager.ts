@@ -1,14 +1,6 @@
-import { Archetype, PlayerClassPresetDTO, StartingWeaponStats, PlayerProgressDTO } from '@game/shared';
+import { Archetype, PlayerClassPresetDTO, StartingWeaponStats, PlayerProgressDTO, SHOP_PRICES } from '@game/shared';
 import warriorImgUrl from '../../../assets/hero/warrior-sword.png';
 import mageImgUrl from '../../../assets/hero/volhv.png';
-
-// Цены на покупку предметов (полностью дублируют доменные цены сервера)
-const SHOP_PRICES: Record<string, number> = {
-    wpn_heavy_axe: 100,
-    wpn_fire_staff: 150,
-    wpn_ice_staff: 150,
-    mage: 300
-};
 
 export class DOMManager {
     public onAuthReq?: (url: string, l: string, p: string) => void;
@@ -19,13 +11,16 @@ export class DOMManager {
     
     public onLeaveRoom?: () => void;
     public onLogout?: () => void;
-    public onBuyItem?: (presetId: string) => void;         // <-- Коллбэк покупки
-    public onCompleteSession?: () => void;                 // <-- Коллбэк завершения
+    public onBuyItem?: (presetId: string) => void;         
+    public onCompleteSession?: () => void;                 
+    
+    public onRestoreSave?: () => void;
 
     private selectedArch: Archetype = 'warrior'; 
     private selectedWeapon = '';
-    
-    private progress?: PlayerProgressDTO;                  // <-- Локальный кэш прогресса игрока
+    private progress?: PlayerProgressDTO;  
+    public onPortalNextFloor?: () => void;
+    public onPortalSaveAndExit?: () => void;                
 
     constructor() {
         this.bindEvents();
@@ -52,6 +47,11 @@ export class DOMManager {
             this.onCreateLobby?.(this.selectedArch, this.selectedWeapon);
         });
 
+        // Подписываемся на клик по кнопке продолжения
+        document.getElementById('restoreSaveBtn')?.addEventListener('click', () => {
+            this.onRestoreSave?.();
+        });
+
         document.getElementById('joinRoomBtn')?.addEventListener('click', () => {
             const sid = (document.getElementById('sessionIdInput') as HTMLInputElement).value;
             this.onJoinRoom?.(sid, this.selectedArch, this.selectedWeapon);
@@ -76,6 +76,14 @@ export class DOMManager {
                 setTimeout(() => btn.innerText = 'СКОПИРОВАТЬ ID', 1200);
             });
         });
+
+        document.getElementById('portalNextBtn')?.addEventListener('click', () => {
+            this.onPortalNextFloor?.();
+        });
+
+        document.getElementById('portalSaveBtn')?.addEventListener('click', () => {
+            this.onPortalSaveAndExit?.();
+        });
     }
 
     public showAuth(error?: string): void {
@@ -96,6 +104,17 @@ export class DOMManager {
         document.getElementById('welcomeText')!.innerText = `РУС: ${login}`;
     }
 
+    // Показ/скрытие кнопки продолжения похода
+    public showContinueButton(show: boolean): void {
+        const sec = document.getElementById('continueSection');
+        if (!sec) return;
+        if (show) {
+            sec.classList.remove('hidden');
+        } else {
+            sec.classList.add('hidden');
+        }
+    }
+
     public showGame(sessionId: string, isSingleplayer: boolean = false, isHost: boolean = false): void {
         document.getElementById('auth-screen')!.classList.add('hidden');
         document.getElementById('lobby-screen')!.classList.add('hidden');
@@ -109,14 +128,12 @@ export class DOMManager {
         if (isSingleplayer) {
             sessionContainer.classList.add('hidden');
             copyBtn.classList.add('hidden');
-            // В одиночной игре кнопка завершения похода видна всегда
             completeBtn.classList.remove('hidden');
         } else {
             sessionContainer.classList.remove('hidden');
             copyBtn.classList.remove('hidden');
             sessionDisplay.innerText = sessionId;
             
-            // В кооперативе кнопка завершения похода для всей команды видна ТОЛЬКО хосту (воеводе)
             if (isHost) {
                 completeBtn.classList.remove('hidden');
             } else {
@@ -140,13 +157,9 @@ export class DOMManager {
         err.style.display = 'block';
     }
 
-    /**
-     * Основной метод обновления лобби. Принимает пресеты и прогресс игрока из БД.
-     */
     public updatePresets(presets: Record<string, PlayerClassPresetDTO>, progress?: PlayerProgressDTO): void {
         if (progress) {
             this.progress = progress;
-            // Обновляем мета-золото в шапке лобби
             const goldEl = document.getElementById('lobbyGold');
             if (goldEl) goldEl.innerText = `${progress.metaGold}G`;
         }
@@ -166,7 +179,6 @@ export class DOMManager {
             const el = document.createElement('div');
             el.className = 'hero-card';
             
-            // Проверяем разблокированность класса: красим серым, если закрыт
             const isUnlocked = this.progress ? this.progress.unlockedClasses.includes(key) : true;
             if (!isUnlocked) {
                 el.classList.add('locked');
@@ -201,7 +213,7 @@ export class DOMManager {
                 
                 this.selectedArch = key;
                 this.updateWeapons(preset.startingWeapons);
-                this.updatePreview(presets); // Вызов превью
+                this.updatePreview(presets); 
             };
 
             heroList.appendChild(el);
@@ -223,7 +235,6 @@ export class DOMManager {
             const el = document.createElement('div');
             el.className = 'weapon-card';
             
-            // Проверяем разблокированность оружия: красим серым, если закрыто
             const isUnlocked = this.progress ? this.progress.unlockedWeapons.includes(w.key) : true;
             if (!isUnlocked) {
                 el.classList.add('locked');
@@ -262,10 +273,8 @@ export class DOMManager {
                 el.classList.add('active');
                 this.selectedWeapon = w.key;
                 
-                // Перерисовываем превью при переключении оружия
                 const presetsElement = document.getElementById('heroCardList')!;
                 if (presetsElement) {
-                    // Трюк: перерисовываем превью по клику на оружие
                     const presets = (window as any).__classPresets;
                     if (presets) this.updatePreview(presets);
                 }
@@ -275,30 +284,24 @@ export class DOMManager {
         });
     }
 
-    /**
-     * Отрисовка центрального экрана превью.
-     * Если выбран заблокированный класс или оружие — вместо спрайта рендерит КНОПКУ КУПИТЬ!
-     */
     private updatePreview(presets: Record<string, PlayerClassPresetDTO>): void {
-        (window as any).__classPresets = presets; // сохраняем для быстрого доступа
+        (window as any).__classPresets = presets; 
         const preset = presets[this.selectedArch];
         if (!preset) return;
 
         const container = document.getElementById('heroPreviewSprite')!;
         container.innerHTML = '';
 
-        // Проверяем разблокированность класса и оружия
         const isClassUnlocked = this.progress ? this.progress.unlockedClasses.includes(this.selectedArch) : true;
         const isWeaponUnlocked = this.progress ? this.progress.unlockedWeapons.includes(this.selectedWeapon) : true;
 
         if (!isClassUnlocked) {
-            // КЛАСС ЗАБЛОКИРОВАН: Показываем кнопку КУПИТЬ класс вместо силуэта!
             const price = SHOP_PRICES[this.selectedArch] || 300;
             const buyContainer = document.createElement('div');
             buyContainer.className = 'buy-button-container';
             
             buyContainer.innerHTML = `
-                <div class="buy-title">ЭТОТ КЛАСС ЕЩЕ ЗАБЕРТ!</div>
+                <div class="buy-title">ЭТОТ КЛАСС ЕЩЕ ЗАПЕРТ!</div>
                 <button class="button button-success" style="width: 240px;">КУПИТЬ ЗА ${price}G</button>
             `;
             
@@ -309,7 +312,6 @@ export class DOMManager {
             document.getElementById('heroPreviewName')!.innerText = `${preset.name} (КУПИТЬ)`;
             
         } else if (!isWeaponUnlocked) {
-            // ОРУЖИЕ ЗАБЛОКИРОВАНО: Показываем кнопку КУПИТЬ оружие вместо силуэта!
             const price = SHOP_PRICES[this.selectedWeapon] || 150;
             const buyContainer = document.createElement('div');
             buyContainer.className = 'buy-button-container';
@@ -326,7 +328,6 @@ export class DOMManager {
             document.getElementById('heroPreviewName')!.innerText = `ОРУЖИЕ ЗАКРЫТО`;
             
         } else {
-            // ВСЁ РАЗБЛОКИРОВАНО: Показываем классический спрайт-силуэт и даем войти в поход!
             const spriteDiv = document.createElement('div');
             spriteDiv.className = 'hero-sprite';
             
@@ -344,6 +345,16 @@ export class DOMManager {
             nameSpan.innerText = preset.name;
             
             container.appendChild(nameSpan);
+        }
+    }
+
+    public showPortalModal(show: boolean): void {
+        const modal = document.getElementById('portalModal');
+        if (!modal) return;
+        if (show) {
+            modal.classList.remove('hidden');
+        } else {
+            modal.classList.add('hidden');
         }
     }
 }

@@ -4,24 +4,23 @@ import { GameSession } from '../../domain/entities/GameSession';
 import { EntityFactory } from '../../domain/factories/EntityFactory';
 import { MapGenerator } from '../../domain/world/FloorGenerator';
 import { Room } from '../../domain/entities/Room';
-import { Chest } from '../../domain/entities/Chest';
 import { GAME_CONFIG } from '@game/shared';
 import { IPresetProvider } from '../interfaces/IPresetProvider'; 
+import { GAME_DIFFICULTY } from '@game/shared/';
+import { ISaveRepository } from '../interfaces/ISaveRepository';
 
 export class SessionManagementUseCase {
     private deleteTimers = new Map<string, ReturnType<typeof setTimeout>>();
+    private reconnectTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
     constructor(
         private repo: IGameRepository,
         private idGen: IIdGenerator,
         private presetProvider: IPresetProvider,
         private roomWidth: number,
-        private roomHeight: number
+        private roomHeight: number,        private saveRepo: ISaveRepository
     ) {}
 
-    /**
-     * ШАГ 6: Получить сессию по ID (используется контроллером для проверки хоста)
-     */
     public getSession(sessionId: string): GameSession | undefined {
         return this.repo.get(sessionId);
     }
@@ -35,6 +34,17 @@ export class SessionManagementUseCase {
         this.repo.delete(sessionId);
     }
 
+    public terminateSessionWithNotification(sessionId: string, message: string, io: any): void {
+        const session = this.repo.get(sessionId);
+        if (!session) return;
+
+        for (const player of session.players.values()) {
+            if (player.isOnline) {
+                io.to(player.id).emit('server:session-terminated', { message });
+            }
+        }
+        this.terminateSession(sessionId);
+    }
 
     private addPlayerToSession(session: GameSession, userId: string, login: string, archetype: string, weaponId: string): void {
         const pendingTimer = this.deleteTimers.get(session.sessionId);
@@ -57,14 +67,16 @@ export class SessionManagementUseCase {
 
     public createSession(userId: string, login: string, archetype: string, weaponId: string): string {
         const sessionId = this.idGen.generateUUID('session');
-        const session = new GameSession(sessionId, this.roomWidth, this.roomHeight);
+        const difficulty = GAME_DIFFICULTY.LVL1;
+        const session = new GameSession(sessionId, this.roomWidth, this.roomHeight, difficulty);
         
         session.isLobby = false;
-        session.hostId = userId; // <-- ШАГ 6+: Объявляем создателя одиночного похода его хостом!
+        session.hostId = userId;
+        session.hostLogin = login;
 
         const mapGenerator = new MapGenerator(
             GAME_CONFIG.MAP_SIZE,
-            15,
+            difficulty,
             this.roomWidth,
             this.roomHeight,
             (prefix) => this.idGen.generateId(prefix),
@@ -80,10 +92,12 @@ export class SessionManagementUseCase {
 
     public createLobby(userId: string, login: string, archetype: string, weaponId: string): string {
         const sessionId = this.idGen.generateUUID('session');
-        const session = new GameSession(sessionId, this.roomWidth, this.roomHeight);
+        const difficulty = GAME_DIFFICULTY.LVL1;
+        const session = new GameSession(sessionId, this.roomWidth, this.roomHeight, difficulty);
         
         session.isLobby = true;
         session.hostId = userId;
+        session.hostLogin = login;
 
         session.floorMap = Array(GAME_CONFIG.MAP_SIZE).fill(null).map(() => Array(GAME_CONFIG.MAP_SIZE).fill(null));
 
@@ -93,8 +107,6 @@ export class SessionManagementUseCase {
         const lobbyRoom = new Room(startX, startY, 'Start', 0);
         lobbyRoom.isClear = true;
         lobbyRoom.hasDoors = { Top: false, Bottom: false, Left: false, Right: false };
-        
-        this.spawnTestChests(lobbyRoom);
 
         session.floorMap[startY][startX] = lobbyRoom;
         
@@ -104,67 +116,31 @@ export class SessionManagementUseCase {
         return sessionId;
     }
 
-    /**
-     * Вспомогательный метод для спавна тестовых сундуков по бокам от игрока
-     */
-    private spawnTestChests(room: Room): void {
-        const cellSize = GAME_CONFIG.CELL_SIZE;
+    public async loadRestoredLobby(sessionId: string): Promise<string | null> {
+        const session = await this.saveRepo.loadRun(sessionId);
+        if (!session) return null;
 
-        const woodenPreset = this.presetProvider.getChestPreset('chest_wooden');
-        const goldPreset = this.presetProvider.getChestPreset('chest_gold_boss');
+        session.isLobby = true; // Загруженный сейв принудительно разворачиваем как лобби
 
-        const woodenW = woodenPreset ? woodenPreset.width : 28;
-        const woodenH = woodenPreset ? woodenPreset.height : 28;
+        // Генерируем временную пустую сетку комнат для лобби ожидания в ОЗУ
+        session.floorMap = Array(GAME_CONFIG.MAP_SIZE).fill(null).map(() => Array(GAME_CONFIG.MAP_SIZE).fill(null));
 
-        const goldW = goldPreset ? goldPreset.width : 36;
-        const goldH = goldPreset ? goldPreset.height : 36;
+        const startX = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
+        const startY = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
 
-        // 1. Спавним 10 деревянных сундуков слева (сетка 2 колонки x 5 рядов)
-        for (let i = 0; i < 10; i++) {
-            const col = i % 2;             
-            const row = Math.floor(i / 2); 
-            
-            const x = 100 + col * 60;      
-            const y = 140 + row * 70;      
+        // Создаем временную безопасную комнату лобби, чтобы игроки могли ходить и видеть друг друга до старта
+        const lobbyRoom = new Room(startX, startY, 'Start', 0);
+        lobbyRoom.isClear = true;
+        lobbyRoom.hasDoors = { Top: false, Bottom: false, Left: false, Right: false };
 
-            const woodenChest = new Chest(
-                this.idGen.generateId('chest'),
-                x,
-                y,
-                woodenW,
-                woodenH,
-                Math.floor(x / cellSize),
-                Math.floor(y / cellSize),
-                'chest_wooden'
-            );
-            room.chests.push(woodenChest);
-        }
+        session.floorMap[startY][startX] = lobbyRoom;
 
-        // 2. Спавним 10 золотых сундуков справа (сетка 2 колонки x 5 рядов)
-        for (let i = 0; i < 10; i++) {
-            const col = i % 2;             
-            const row = Math.floor(i / 2); 
-            
-            const x = 640 + col * 60;      
-            const y = 140 + row * 70;      
-
-            const goldChest = new Chest(
-                this.idGen.generateId('chest'),
-                x,
-                y,
-                goldW,
-                goldH,
-                Math.floor(x / cellSize),
-                Math.floor(y / cellSize),
-                'chest_gold_boss'
-            );
-            room.chests.push(goldChest);
-        }
+        this.repo.save(session);
+        return session.sessionId;
     }
 
     public joinLobby(sessionId: string, userId: string, login: string, archetype: string, weaponId: string): boolean {
         const session = this.repo.get(sessionId);
-        
         if (!session) return false;
         
         if (!session.isLobby) {
@@ -172,10 +148,43 @@ export class SessionManagementUseCase {
             return false;
         }
 
+        // Если это восстановленная сессия по белому списку
+        if (session.allowedLogins.size > 0) {
+            if (!session.allowedLogins.has(login)) {
+                console.log(`[Security Action] Игрок ${login} не имеет прав доступа к сессии ${sessionId}`);
+                return false;
+            }
+
+            // Находим уже воссозданный оффлайн-персонаж в сессии
+            const existingPlayer = Array.from(session.players.values()).find(p => p.name === login);
+            if (existingPlayer) {
+                // Перенаправляем оффлайн-id на активный сокет зашедшего друга
+                session.removePlayer(existingPlayer.id);
+                existingPlayer.id = userId;
+                existingPlayer.isOnline = true;
+
+                // Сбрасываем его координаты строго на центр лобби ожидания
+                existingPlayer.roomX = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
+                existingPlayer.roomY = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
+                existingPlayer.x = this.roomWidth / 2;
+                existingPlayer.y = this.roomHeight / 2;
+                existingPlayer.vx = 0;
+                existingPlayer.vy = 0;
+                existingPlayer.lastBroadcastedRoomX = null;
+                existingPlayer.lastBroadcastedRoomY = null;
+
+                session.addPlayer(existingPlayer);
+                console.log(`[Restore Join] Игрок ${login} вернулся на свое сохраненное место в лобби.`);
+                return true;
+            }
+            return false;
+        }
+
+        // Обычное новое подключение
         this.addPlayerToSession(session, userId, login, archetype, weaponId);
         return true;
     }
-
+    
     public startMatch(sessionId: string, userId: string): boolean {
         const session = this.repo.get(sessionId);
         if (!session || !session.isLobby) return false;
@@ -183,7 +192,7 @@ export class SessionManagementUseCase {
 
         const mapGenerator = new MapGenerator(
             GAME_CONFIG.MAP_SIZE,
-            15, 
+            session.difficulty, 
             session.roomWidth,
             session.roomHeight,
             (prefix) => this.idGen.generateId(prefix),
@@ -196,12 +205,12 @@ export class SessionManagementUseCase {
         const startX = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
         const startY = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
 
-        const startRoom = session.getRoom(startX, startY);
-        if (startRoom) {
-            this.spawnTestChests(startRoom);
-        }
-
+        // Инициализируем только тех, кто реально пришел в лобби
         for (const player of session.players.values()) {
+            if (!player.isOnline) {
+                // Если кто-то из слотов сейва не пришел, убираем их ХП-модель из текущего уровня ОЗУ
+                continue;
+            }
             player.roomX = startX;
             player.roomY = startY;
             player.x = session.roomWidth / 2;
@@ -211,6 +220,67 @@ export class SessionManagementUseCase {
         }
 
         return true;
+    }
+
+    public handlePlayerDisconnect(sessionId: string, userId: string, login: string): void {
+        const session = this.repo.get(sessionId);
+        if (!session) return;
+
+        const player = session.getPlayer(userId);
+        if (!player) return;
+
+        player.isOnline = false;
+        console.log(`[Disconnect Tracking] Игрок ${login} потерял связь. Запуск таймера...`);
+
+        // Производим мягкую миграцию лидера, если отключился текущий Хост
+        if (session.hostId === userId) {
+            const activeOnlinePlayers = Array.from(session.players.values())
+                .filter(p => p.id !== userId && p.isOnline);
+
+            if (activeOnlinePlayers.length > 0) {
+                session.hostId = activeOnlinePlayers[0].id;
+                session.hostLogin = activeOnlinePlayers[0].name;
+                console.log(`[Host Migration] Новым воеводой назначен: ${activeOnlinePlayers[0].name}`);
+            }
+        }
+
+        const reconnectKey = `${sessionId}:${login}`;
+        const timer = setTimeout(() => {
+            console.log(`[Timeout Expired] Время возвращения ${login} истекло.`);
+            this.reconnectTimers.delete(reconnectKey);
+            // Персонаж остается в ОЗУ в офлайн режиме (isOnline = false),
+            // чтобы завтра записаться в сейв на портале, но сегодня играть он уже не сможет.
+        }, 120000); // 120 секунд
+
+        this.reconnectTimers.set(reconnectKey, timer);
+    }
+
+    public tryReconnectPlayer(sessionId: string, newUserId: string, login: string): boolean {
+        const session = this.repo.get(sessionId);
+        if (!session) return false;
+
+        const reconnectKey = `${sessionId}:${login}`;
+        const timer = this.reconnectTimers.get(reconnectKey);
+
+        if (timer) {
+            clearTimeout(timer);
+            this.reconnectTimers.delete(reconnectKey);
+
+            const player = Array.from(session.players.values()).find(p => p.name === login);
+            if (player) {
+                session.removePlayer(player.id);
+                player.id = newUserId;
+                player.isOnline = true;
+                session.addPlayer(player);
+
+                player.lastBroadcastedRoomX = null;
+                player.lastBroadcastedRoomY = null;
+                
+                console.log(`[Reconnect Success] Игрок ${login} успешно вернулся в строй!`);
+                return true;
+            }
+        }
+        return false;
     }
 
     public leaveSession(sessionId: string, userId: string): void {

@@ -15,3 +15,6 @@ export * from './dto/input.schema';
 export * from './dto/snapshot.schema';
 export * from './types/command.schema';
 export * from './events/network.events';
+export * from './config/shop.config'
+export * from './config/weapon.config'
+export * from './config/difficulty.config'

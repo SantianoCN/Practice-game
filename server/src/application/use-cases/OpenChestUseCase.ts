@@ -32,7 +32,6 @@ export class OpenChestUseCase {
 
         chest.open(chestPreset.visualIdOpened);
 
-        // Роллим лут в виде плоских эффектов
         const rolledLoots = LootService.rollLoot(lootTable, (id) => 
             this.presetProvider.getItemPreset(id)
         );

@@ -4,6 +4,7 @@ import { Obstacle } from './Obstacle';
 import { Bullet } from './Bullet';
 import { Direction, RoomType } from '@game/shared';
 import { SpatialGrid } from '../physics/SpatialGrid';
+import { Portal } from './Portal';
 
 export class Room {
     public isClear: boolean = false;
@@ -14,6 +15,7 @@ export class Room {
     public obstacles: Obstacle[] = [];
     public droppedItems: DroppedItem[] = [];
     public bullets: Bullet[] = [];
+    public portal: Portal | null = null;
 
     private obstacleGrid: SpatialGrid<Obstacle> | null = null;
 
@@ -39,6 +41,9 @@ export class Room {
         const allEnemiesDead = this.enemies.every(e => e.isDead());
         if (allEnemiesDead) {
             this.isClear = true;
+            if (this.type === 'Boss' && this.portal) {
+                this.portal.activate();
+            }
         }
     }
 

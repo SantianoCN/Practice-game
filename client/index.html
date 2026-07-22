@@ -59,6 +59,11 @@
             <aside class="panel right-panel">
                 <h3 class="panel-title">НАСТРОЙКИ ЗАБЕГА</h3>
                 <div class="section connection-section">
+                    <div id="continueSection" class="hidden">
+                        <label>ОТРЯД ЖДЕТ ВАС</label>
+                        <button id="restoreSaveBtn" class="button button-success" style="margin-top: 5px; margin-bottom: 15px; background-color: #b8860b; box-shadow: inset 4px 4px 0px #d4af37, inset -4px -4px 0px #5c3d24;">ПРОДОЛЖИТЬ ПОХОД</button>
+                        <div class="divider">ИЛИ НАЧАТЬ НОВЫЙ</div>
+                    </div>
                     <label>ОДИНОЧНЫЙ ЗАБЕГ</label>
                     <button id="createRoomBtn" class="button button-alt" style="margin-top: 5px;">ИДТИ ОДНОМУ</button>
                     <div class="divider">ИЛИ</div>
@@ -77,11 +82,14 @@
             <div id="sessionContainer">Комната ID: <span id="sessionDisplay">Загрузка...</span></div>
             <button id="copySessionBtn" class="button button-primary copy-btn">СКОПИРОВАТЬ</button>
             <button id="startMatchBtn" class="button button-success hidden" style="width: auto; margin-right: 10px;">НАЧАТЬ ПОХОД</button>
-            
-            <!-- ШАГ 6: Кнопка успешного завершения забега (сохранение золота в БД) -->
-            <button id="completeSessionBtn" class="button button-success hidden" style="width: auto; margin-right: 10px; background-color: #b8860b;">ЗАВЕРШИТЬ ПОХОД</button>
-            
+            <button id="completeSessionBtn" class="button button-success hidden" style="width: auto; margin-right: 10px; background-color: #b8860b;">ЗАВЕРШИТЬ ПОХОД</button>           
             <button id="disconnectBtn" class="button button-danger" style="width: auto;">Покинуть бой</button>
+        </div>
+        <div id="portalModal" class="card hidden" style="position: absolute; z-index: 100; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 380px;">
+            <h2>ВРАТА ЭТАЖА</h2>
+            <p style="margin-bottom: 25px; line-height: 1.6; font-size: 8px;">Воевода, куда поведешь дружину дальше?</p>
+            <button id="portalNextBtn" class="button button-success" style="margin-bottom: 15px;">ИДТИ ДАЛЬШЕ</button>
+            <button id="portalSaveBtn" class="button button-alt">СОХРАНИТЬ И ВЫЙТИ</button>
         </div>
         <canvas id="gameCanvas" width="800" height="600"></canvas>
         <div id="gameHUD">

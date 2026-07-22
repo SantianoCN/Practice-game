@@ -12,14 +12,40 @@ model Account {
   login        String          @unique
   passwordHash String
   refreshToken String          @default("")
-  progress     PlayerProgress? // Связь один-к-одному с таблицей прогресса
+  progress     PlayerProgress? 
 }
 
 model PlayerProgress {
   id              String  @id @default(uuid())
   accountId       String  @unique
   account         Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  metaGold        Int     @default(0) // Мета-золото между забегами
-  unlockedClasses String  @default("warrior") // Храним через запятую: "warrior"
-  unlockedWeapons String  @default("wpn_iron_sword") // Храним через запятую: "wpn_iron_sword"
+  metaGold        Int     @default(0)
+  unlockedClasses String  @default("warrior")
+  unlockedWeapons String  @default("wpn_iron_sword")
+}
+
+model RunSave {
+  id          String            @id @default(uuid())
+  sessionId   String            @unique
+  hostLogin   String
+  floorNumber Int               @default(1)
+  roomWidth   Int               @default(800)
+  roomHeight  Int               @default(600)
+  players     PlayerSaveState[]
+  createdAt   DateTime          @default(now())
+}
+
+model PlayerSaveState {
+  id             String  @id @default(uuid())
+  runSaveId      String
+  runSave        RunSave @relation(fields: [runSaveId], references: [id], onDelete: Cascade)
+  login          String
+  archetype      String
+  hp             Int
+  maxHp          Int
+  mana           Float
+  maxMana        Int
+  gold           Int
+  weaponPresetId String
+  inventory      String  @default("")
 }

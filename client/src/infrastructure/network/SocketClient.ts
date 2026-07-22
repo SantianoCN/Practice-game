@@ -3,7 +3,7 @@ import { INetworkClient } from '../../application/interfaces/INetworkClient';
 import { 
     PlayerActionDTO, GameSnapshotDTO, SessionCreateRequestDTO, 
     SessionCreateResponseDTO, SessionJoinRequestDTO, SessionJoinResponseDTO, 
-    PlayerClassPresetDTO, ClientEvent, ServerEvent, ProfileResponseDTO, RoomInitDTO,
+    PlayerClassPresetDTO, ClientEvent, ServerEvent, RoomInitDTO,
     BuyItemResponseDTO, PlayerProgressDTO
 } from '@game/shared';
 
@@ -17,9 +17,9 @@ export class SocketClient implements INetworkClient {
         });
     }
 
-    public connect(token: string): Promise<{ login: string, progress?: PlayerProgressDTO }> {
+    public connect(token: string): Promise<{ login: string, progress?: PlayerProgressDTO, activeSaveSessionId?: string | null }> {
         return new Promise((resolve, reject) => {
-            if (this.socket.connected) return resolve({ login: '' });
+            if (this.socket.connected) return resolve({ login: '', activeSaveSessionId: null });
             
             this.socket.auth = { token };
             this.socket.connect();
@@ -33,16 +33,37 @@ export class SocketClient implements INetworkClient {
         });
     }
 
-    public requestProfile(): Promise<{ login: string, progress?: PlayerProgressDTO }> {
+    public requestProfile(): Promise<{ login: string, progress?: PlayerProgressDTO, activeSaveSessionId?: string | null }> {
         return new Promise((resolve, reject) => {
-            this.socket.emit(ClientEvent.REQUEST_PROFILE, (res: ProfileResponseDTO) => {
+            this.socket.emit(ClientEvent.REQUEST_PROFILE, (res: any) => {
                 if (res?.success && res.login) {
-                    resolve({ login: res.login, progress: res.progress });
+                    resolve({ 
+                        login: res.login, 
+                        progress: res.progress, 
+                        // Считываем ID сессии сохранения из ответа сервера
+                        activeSaveSessionId: res.activeSaveSessionId || null 
+                    });
                 } else {
                     reject(res?.message || 'Ошибка профиля');
                 }
             });
         });
+    }
+
+    public saveAndExit(): Promise<{ success: boolean; message?: string }> {
+        return new Promise(resolve => {
+            this.socket.emit(ClientEvent.SAVE_AND_EXIT, {}, (res: any) => {
+                resolve(res);
+            });
+        });
+    }
+
+    public sendNextFloor(): void {
+        this.socket.emit(ClientEvent.NEXT_FLOOR);
+    }
+
+    public onPortalInteract(cb: () => void): void {
+        this.socket.on(ServerEvent.PORTAL_INTERACT, cb);
     }
 
     public createSession(req: SessionCreateRequestDTO): Promise<SessionCreateResponseDTO> {
@@ -64,6 +85,15 @@ export class SocketClient implements INetworkClient {
     public joinLobby(req: SessionJoinRequestDTO): Promise<SessionJoinResponseDTO> {
         return new Promise(resolve => {
             this.socket.emit(ClientEvent.CONNECT_LOBBY, req, (res: SessionJoinResponseDTO) => {
+                resolve(res);
+            });
+        });
+    }
+
+    // Запрос к серверу на воссоздание лобби из файла сохранения
+    public restoreSave(): Promise<{ success: boolean; sessionId?: string; message?: string }> {
+        return new Promise(resolve => {
+            this.socket.emit(ClientEvent.RESTORE_SAVE, {}, (res: any) => {
                 resolve(res);
             });
         });
@@ -118,7 +148,7 @@ export class SocketClient implements INetworkClient {
     }
 
     public onRoomInit(cb: (data: RoomInitDTO) => void) { 
-        this.socket.on('server:room-init', cb); 
+        this.socket.on(ServerEvent.ROOM_INIT, cb); 
     }
 
     public onSyncProgress(cb: (progress: PlayerProgressDTO) => void): void {

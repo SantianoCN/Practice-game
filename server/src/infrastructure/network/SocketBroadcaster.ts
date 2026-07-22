@@ -14,6 +14,10 @@ export class SocketBroadcaster implements IClientBroadcaster {
     }
 
     public broadcastRoomInit(userId: string, roomInit: RoomInitDTO): void {
-        this.io.to(userId).emit('server:room-init', roomInit);
+        this.io.to(userId).emit(ServerEvent.ROOM_INIT, roomInit);
+    }
+
+    public broadcastPortalInteract(userId: string): void {
+        this.io.to(userId).emit(ServerEvent.PORTAL_INTERACT);
     }
 }

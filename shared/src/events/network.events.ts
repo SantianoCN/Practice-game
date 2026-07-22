@@ -7,7 +7,10 @@ export const ClientEvent = {
     PLAYER_ACTION: 'client:player-action',
     REQUEST_PROFILE: 'client:request-profile',
     COMPLETE_SESSION: 'client:complete-session',
-    BUY_ITEM: 'client:buy-item' 
+    BUY_ITEM: 'client:buy-item',
+    NEXT_FLOOR: 'client:next-floor',
+    RESTORE_SAVE: 'client:restore-save',
+    SAVE_AND_EXIT: 'client:save-and-exit'
 } as const;
 
 export const ServerEvent = {
@@ -19,7 +22,9 @@ export const ServerEvent = {
     PLAYER_ID: 'server:player-id',
     SYNC_PROGRESS: 'server:sync-progress',
     SESSION_COMPLETED: 'server:session-completed', 
-    SESSION_TERMINATED: 'server:session-terminated'
+    SESSION_TERMINATED: 'server:session-terminated',
+    PORTAL_INTERACT: 'server:portal-interact',
+    ROOM_INIT: 'server:room-init'
 } as const;
 
 export type ClientEventType = typeof ClientEvent[keyof typeof ClientEvent];

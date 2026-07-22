@@ -5,7 +5,7 @@ export class Account {
     public login: string;
     public passwordHash: string;
     public refreshToken: string;
-    public progress?: PlayerProgress; // Мета-прогресс игрока
+    public progress?: PlayerProgress;
 
     constructor(
         id: string, 

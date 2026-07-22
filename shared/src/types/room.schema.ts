@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ObstacleStateSchema, ChestStateSchema, DroppedItemStateSchema } from './entity.schema';
+import { ObstacleStateSchema, ChestStateSchema, DroppedItemStateSchema, PortalStateSchema } from './entity.schema';
 
 export const RoomTypeSchema = z.enum(['Start', 'Normal', 'Boss', 'Treasure', 'Shop']);
 export type RoomType = z.infer<typeof RoomTypeSchema>;
@@ -27,6 +27,7 @@ export const RoomStateSchema = z.object({
         Right: z.boolean()
     }),
     chests: z.array(ChestStateSchema),
-    droppedItems: z.array(DroppedItemStateSchema)
+    droppedItems: z.array(DroppedItemStateSchema),
+    portal: PortalStateSchema.nullable().optional()
 });
 export type RoomState = z.infer<typeof RoomStateSchema>;
