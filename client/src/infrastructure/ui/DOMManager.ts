@@ -1,3 +1,5 @@
+// src/infrastructure/ui/DOMManager.ts
+
 import { Archetype, PlayerClassPresetDTO, StartingWeaponStats, PlayerProgressDTO, SHOP_PRICES } from '@game/shared';
 import warriorImgUrl from '../../../assets/hero/warrior-sword.png';
 import mageImgUrl from '../../../assets/hero/volhv.png';
@@ -308,7 +310,13 @@ export class DOMManager {
                 this.onBuyItem?.(this.selectedArch);
             };
             container.appendChild(buyContainer);
-            document.getElementById('heroPreviewName')!.innerText = `${preset.name} (КУПИТЬ)`;
+
+            // ИСПРАВЛЕНИЕ: Динамически создаем имя в ДОМе вместо попытки найти его
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'hero-name';
+            nameSpan.id = 'heroPreviewName';
+            nameSpan.innerText = `${preset.name} (КУПИТЬ)`;
+            container.appendChild(nameSpan);
 
         } else if (!isWeaponUnlocked) {
             const price = SHOP_PRICES[this.selectedWeapon] || 150;
@@ -324,7 +332,13 @@ export class DOMManager {
                 this.onBuyItem?.(this.selectedWeapon);
             };
             container.appendChild(buyContainer);
-            document.getElementById('heroPreviewName')!.innerText = `ОРУЖИЕ ЗАКРЫТО`;
+
+            // ИСПРАВЛЕНИЕ: Динамически создаем имя в ДОМе вместо попытки найти его
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'hero-name';
+            nameSpan.id = 'heroPreviewName';
+            nameSpan.innerText = `ОРУЖИЕ ЗАКРЫТО`;
+            container.appendChild(nameSpan);
 
         } else {
             const spriteDiv = document.createElement('div');
@@ -355,5 +369,12 @@ export class DOMManager {
         } else {
             modal.classList.add('hidden');
         }
+    }
+
+    // НОВЫЙ МЕТОД: Полный сброс состояния синглтона при логауте
+    public resetState(): void {
+        this.selectedArch = 'warrior';
+        this.selectedWeapon = '';
+        this.progress = undefined;
     }
 }

@@ -1,27 +1,17 @@
-import Pica from 'pica';
+// src/infrastructure/render/CanvasRendererAdapter.ts
+
+import Pica from 'pica'; // Импортируем установленный Pica
 import { VisualEntity } from '../../domain/entities/VisualEntity';
 import { RoomState, ChestState, BaseEntityState } from '@game/shared';
 import { TextureRenderer, EntityRenderer } from './SupportRenderer';
-
-import warriorImgUrl from './../../../assets/hero/warrior-sword-anim.png'; 
-import volhvImgUrl from './../../../assets/hero/volhv.png'; 
-import lizardAxeImgUrl from './../../../assets/enemy/lizard-axe.png';
-import lizardMageImgUrl from './../../../assets/enemy/lizard-mage.png';
-import coinImgUrl from './../../../assets/loot/coin.png';
-import potionRedImgUrl from './../../../assets/loot/potion_red.png';
-import battleAxeImgUrl from './../../../assets/weapon/axe.png';
-import ironSwordImgUrl from './../../../assets/weapon/sword.png';
-import fireStaffImgUrl from './../../../assets/weapon/fire_staff.png';
-import iceStaffImgUrl from './../../../assets/weapon/ice_staff.png';
-import chestImgUrl from '../../../assets/chest.png';
-import chestOpenImgUrl from '../../../assets/chest-open.png';
+import { ASSETS } from './../../../assets/index.ts';
 
 interface MapCell {
     state: 'unseen' | 'visible' | 'visited';
     type?: string;
 }
 
-const pica = Pica();
+const pica = Pica(); // Глобальный экземпляр ресайзера
 
 export class CanvasRendererAdapter {
     private context: CanvasRenderingContext2D;
@@ -33,10 +23,12 @@ export class CanvasRendererAdapter {
     private offscreenContext: CanvasRenderingContext2D;
     private currentRoomKey: string = '';
 
-    private playerRenderers: Record<string, EntityRenderer>;
+    private playerRenderers: Record<string, EntityRenderer[]>;
     private enemyRenderers: Record<string, EntityRenderer>;
     
+    // Поддержка хранения как Image (fallback), так и сжатых Canvas
     private textures: Record<string, HTMLImageElement | HTMLCanvasElement> = {};
+    private tileArr: Array<HTMLImageElement | HTMLCanvasElement> = [];
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -57,29 +49,51 @@ export class CanvasRendererAdapter {
         this.initVisitedMatrix();
 
         this.playerRenderers = {
-            'Warrior': new TextureRenderer(warriorImgUrl),
-            'Mage': new TextureRenderer(volhvImgUrl)
+            'Warrior': [new TextureRenderer(ASSETS.hero.warriorSword), new TextureRenderer(ASSETS.hero.warriorAxe)],
+            'Mage': [new TextureRenderer(ASSETS.hero.volhvFire), new TextureRenderer(ASSETS.hero.volhvIce)]
         };
 
         this.enemyRenderers = {
-            'red_box': new TextureRenderer(lizardAxeImgUrl),
-            'orange_box': new TextureRenderer(lizardMageImgUrl)
+            'red_box': new TextureRenderer(ASSETS.enemy.lizardAxe),
+            'orange_box': new TextureRenderer(ASSETS.enemy.lizardMage)
         };
 
-        this.loadAndScaleTexture('chest_wooden_closed', chestImgUrl, 28, 28);
-        this.loadAndScaleTexture('chest_wooden_opened', chestOpenImgUrl, 28, 28);
-        this.loadAndScaleTexture('chest_gold_closed', chestImgUrl, 36, 36);
-        this.loadAndScaleTexture('chest_gold_opened', chestOpenImgUrl, 36, 36);
-        
-        this.loadAndScaleTexture('iron_sword', ironSwordImgUrl, 24, 24);
-        this.loadAndScaleTexture('battle_axe', battleAxeImgUrl, 24, 24);
-        this.loadAndScaleTexture('staff', fireStaffImgUrl, 24, 24);
-        this.loadAndScaleTexture('ice_staff', iceStaffImgUrl, 24, 24);
-        
-        this.loadAndScaleTexture('gold_pile', coinImgUrl, 24, 24);
-        this.loadAndScaleTexture('potion_red', potionRedImgUrl, 24, 24);
+        // --- АСИНХРОННЫЙ РЕСАЙЗ СТАТИЧЕСКИХ ТЕКСТУР ЧЕРЕЗ PICA ---
+        // Закрытые состояния сундуков (размер 28х28 и 36х36)
+        this.loadAndScaleTexture('chest_closed', ASSETS.env.chest, 28, 28);
+        this.loadAndScaleTexture('chest_wooden_closed', ASSETS.env.chest, 28, 28);
+        this.loadAndScaleTexture('chest_gold_closed', ASSETS.env.chest, 36, 36);
+
+        // Открытые состояния сундуков
+        this.loadAndScaleTexture('chest_wooden_opened', ASSETS.env.chestOpen, 28, 28);
+        this.loadAndScaleTexture('chest_gold_opened', ASSETS.env.chestOpen, 36, 36);
+
+        // Препятствия
+        this.loadAndScaleTexture('stone', ASSETS.env.stone, 20, 20);
+
+        // Выпавшее оружие и монетки (размер 24х24)
+        this.loadAndScaleTexture('battle_axe', ASSETS.weapon.battleAxe, 24, 24);
+        this.loadAndScaleTexture('iron_sword', ASSETS.weapon.ironSword, 24, 24);
+        this.loadAndScaleTexture('fire_staff', ASSETS.weapon.fireStaff, 24, 24);
+        this.loadAndScaleTexture('ice_staff', ASSETS.weapon.iceStaff, 24, 24);
+        this.loadAndScaleTexture('gold', ASSETS.loot.coin, 24, 24);
+
+        // Асинхронно сжимаем плитки пола, чтобы они не рябили при рендере
+        this.loadAndScaleTile(0, ASSETS.env.caveTile1);
+        this.loadAndScaleTile(1, ASSETS.env.caveTile2);
+        this.loadAndScaleTile(2, ASSETS.env.caveTile3);
+        this.loadAndScaleTile(3, ASSETS.env.caveTile4);
     }
 
+    private preloadImage(src: string): HTMLImageElement {
+        const img = new Image();
+        img.src = src;
+        return img;
+    }
+
+    /**
+     * Асинхронный качественный ресайз текстур через Pica
+     */
     private loadAndScaleTexture(key: string, srcUrl: string, targetWidth: number, targetHeight: number): void {
         const img = new Image();
         img.src = srcUrl;
@@ -91,14 +105,39 @@ export class CanvasRendererAdapter {
             
             pica.resize(img, outCanvas, { filter: 'lanczos3' })
                 .then(() => {
-                    this.textures[key] = outCanvas;
+                    this.textures[key] = outCanvas; // Подменяем на сглаженный холст
                 })
                 .catch(() => {
-                    this.textures[key] = img;
+                    this.textures[key] = img; // Резервный фолбек
                 });
         };
 
+        // Заглушка: мгновенно кладем сырой Image, чтобы drawImage никогда не получил undefined
         this.textures[key] = img;
+    }
+
+    /**
+     * Асинхронный ресайз плиток пола
+     */
+    private loadAndScaleTile(index: number, srcUrl: string): void {
+        const img = new Image();
+        img.src = srcUrl;
+        
+        img.onload = () => {
+            const outCanvas = document.createElement('canvas');
+            outCanvas.width = 20;
+            outCanvas.height = 20;
+            
+            pica.resize(img, outCanvas, { filter: 'lanczos3' })
+                .then(() => {
+                    this.tileArr[index] = outCanvas;
+                })
+                .catch(() => {
+                    this.tileArr[index] = img;
+                });
+        };
+
+        this.tileArr[index] = img;
     }
 
     public render(
@@ -132,9 +171,6 @@ export class CanvasRendererAdapter {
         if (!room) return;
         this.updateVisitedRooms(room);
         this.drawGUI(players, myId);
-        this.drawPortal(room)
-
-        this.drawDebugHitboxes(entitiesMap, room, staticObstacles); 
     }
 
     public reset(): void {
@@ -144,24 +180,54 @@ export class CanvasRendererAdapter {
 
     private prerenderStaticScene(roomType: string, obstacles: BaseEntityState[]): void {
         this.offscreenContext.clearRect(0, 0, this.offscreenCanvas.width, this.offscreenCanvas.height);
+        const cellSize = 20;
+        
+        for (let x = 0; x < this.canvas.width; x += cellSize) {
+            for (let y = 0; y < this.canvas.width; y += cellSize) {
+                const tileNum = Math.floor(Math.random() * this.tileArr.length);
+                const tile = this.tileArr[tileNum];
+                if (tile) {
+                    this.offscreenContext.drawImage(tile, x, y, cellSize, cellSize);
+                }
+            }            
+        }
 
-        let floorColor = '#3c2415';
-        if (roomType === 'Start') floorColor = '#4a2f1b';
-        if (roomType === 'Boss') floorColor = '#3a0d0a';
-        if (roomType === 'Treasure') floorColor = '#5c4314';
-        if (roomType === 'Shop') floorColor = '#1e2b30';
-
-        this.offscreenContext.fillStyle = floorColor;
-        this.offscreenContext.fillRect(0, 0, this.offscreenCanvas.width, this.offscreenCanvas.height);
-
-        this.offscreenContext.fillStyle = 'black';
         for (const obstacle of obstacles) {
-            this.offscreenContext.fillRect(
-                obstacle.x - obstacle.width / 2, 
-                obstacle.y - obstacle.height / 2, 
-                obstacle.width, 
-                obstacle.height
-            );
+            const texture = this.textures[obstacle.visualId];
+            if (texture) {
+                const obtacleSize = 20;
+                let repitX = 0;
+                let repitY = 0;
+                switch (obstacle.visualId) {
+                    case 'stone':
+                        for (let startX = obstacle.x - obstacle.width / 2; repitX < obstacle.width / obtacleSize; startX += obtacleSize) {
+                            repitX++;
+                            for (let startY = obstacle.y - obstacle.height / 2; repitY < obstacle.height / obtacleSize; startY += obtacleSize) {
+                                repitY++;
+                                this.offscreenContext.drawImage(texture, startX, startY, obtacleSize, obtacleSize);
+                            }
+                            repitY = 0;
+                        }
+                        break;
+                    default:
+                        this.offscreenContext.fillStyle = '#d7009a';
+                        this.offscreenContext.fillRect(
+                            obstacle.x - obstacle.width / 2, 
+                            obstacle.y - obstacle.height / 2, 
+                            obstacle.width, 
+                            obstacle.height
+                        );
+                        break;
+                }
+            } else {
+                this.offscreenContext.fillStyle = '#d7009a';
+                this.offscreenContext.fillRect(
+                    obstacle.x - obstacle.width / 2, 
+                    obstacle.y - obstacle.height / 2, 
+                    obstacle.width, 
+                    obstacle.height
+                );
+            }
         }
     }
 
@@ -294,7 +360,7 @@ export class CanvasRendererAdapter {
     }
 
     private drawDoors(room: RoomState): void {
-        const doorColor = room.isClear ? '#b8860b' : '#5c120c'; 
+        const doorColor = room.isClear ? '#056111' : '#5c120c'; 
         this.context.fillStyle = doorColor;
 
         const doorWidth = 100;
@@ -357,6 +423,16 @@ export class CanvasRendererAdapter {
 
     private drawBullets(bulletsMap: Map<string, VisualEntity>): void {
         bulletsMap.forEach(bullet => {
+            if (bullet.visualId === 'axe_slash') {
+                this.drawAxeSlash(bullet, '#e67e22');
+                return;
+            }
+
+            if (bullet.visualId === 'slash_effect') {
+                this.drawSwordSlash(bullet, '#00d2d3');
+                return;
+            }
+
             let bulletColor = 'black';
             if (bullet.visualId === 'red_ball') bulletColor = 'red';
             else if (bullet.visualId === 'blue_ball') bulletColor = 'blue';
@@ -377,10 +453,97 @@ export class CanvasRendererAdapter {
         });
     }
 
+    private getBulletAngle(bullet: VisualEntity): number {
+        const b = bullet as any;
+
+        const prevX = b.prevX ?? bullet.renderX;
+        const prevY = b.prevY ?? bullet.renderY;
+
+        const dx = bullet.renderX - prevX;
+        const dy = bullet.renderY - prevY;
+
+        if (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01) {
+            b.currentAngle = Math.atan2(dy, dx);
+        }
+
+        b.prevX = bullet.renderX;
+        b.prevY = bullet.renderY;
+
+        return b.currentAngle || 0;
+    }
+
+    private drawAxeSlash(bullet: VisualEntity, color: string): void {
+        const bx = Math.round(bullet.renderX);
+        const by = Math.round(bullet.renderY);
+        const radius = Math.round(bullet.width);
+
+        const angle = this.getBulletAngle(bullet);
+
+        this.context.save();
+        this.context.translate(bx, by);
+        this.context.rotate(angle);
+        this.context.beginPath();
+        const arcAngle = Math.PI / 3; 
+        this.context.arc(0, 0, radius, -arcAngle, arcAngle, false);
+        this.context.arc(0, 0, radius * 0.35, arcAngle, -arcAngle, true);
+        this.context.closePath();
+
+        const gradient = this.context.createRadialGradient(0, 0, radius * 0.2, 0, 0, radius);
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+        gradient.addColorStop(0.5, color);
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+        this.context.fillStyle = gradient;
+        this.context.shadowBlur = 12;
+        this.context.shadowColor = color;
+        this.context.fill();
+
+        this.context.restore();
+    }
+
+    private drawSwordSlash(bullet: VisualEntity, color: string): void {
+        const bx = Math.round(bullet.renderX);
+        const by = Math.round(bullet.renderY);
+        const slashLength = Math.round(bullet.height || 45);
+        const slashWidth = Math.round(bullet.width || 20);
+
+        const angle = this.getBulletAngle(bullet);
+
+        this.context.save();
+        this.context.translate(bx, by);
+        this.context.rotate(angle);
+        this.context.beginPath();
+        this.context.moveTo(0, -slashLength / 2);
+        this.context.quadraticCurveTo(slashWidth, 0, 0, slashLength / 2);
+        this.context.quadraticCurveTo(slashWidth * 0.25, 0, 0, -slashLength / 2);
+        this.context.closePath();
+
+        this.context.fillStyle = '#ffffff';
+        this.context.shadowBlur = 15;
+        this.context.shadowColor = color;
+        this.context.fill();
+
+        this.context.strokeStyle = color;
+        this.context.lineWidth = 2;
+        this.context.stroke();
+
+        this.context.restore();
+    }
+
     private drawPlayers(playersMap: Map<string, VisualEntity>): void {
         playersMap.forEach(player => {
-            const renderer = this.playerRenderers[player.visualId];
-            if (renderer) renderer.draw(this.context, player);
+            const renders = this.playerRenderers[player.visualId];
+            let renderIndex = 0;
+            if (player.visualId === 'Warrior') {
+                if (player.activeWeaponVisualId === 'battle_axe') {
+                    renderIndex = 1;
+                }                
+            } else if (player.visualId === 'Mage'){
+                if (player.activeWeaponVisualId === 'ice_staff') {
+                    renderIndex = 1;
+                }
+            }
+            if (renders) renders[renderIndex].draw(this.context, player);
             else this.drawFallback(player);
         });
     }
@@ -399,17 +562,11 @@ export class CanvasRendererAdapter {
         for (const chest of chests) {
             const cx = Math.round(chest.x - chest.width / 2);
             const cy = Math.round(chest.y - chest.height / 2);
-
-            let textureKey = 'chest_wooden_closed';
-            if (chest.presetId === 'chest_gold_boss') {
-                textureKey = chest.isOpened ? 'chest_gold_opened' : 'chest_gold_closed';
-            } else {
-                textureKey = chest.isOpened ? 'chest_wooden_opened' : 'chest_wooden_closed';
-            }
-
-            const texture = this.textures[textureKey];
+            
+            // ИСПРАВЛЕНИЕ: Безопасно сопоставляем серверные visualId сундуков
+            const texture = this.textures[chest.visualId];
             if (texture) {
-                this.context.drawImage(texture, cx, cy);
+                this.context.drawImage(texture, cx, cy, chest.width, chest.height);
             }
         }
     }
@@ -420,19 +577,21 @@ export class CanvasRendererAdapter {
         for (const item of droppedItems) {
             const ix = Math.round(item.x - item.width / 2);
             const iy = Math.round(item.y - item.height / 2);
+            const iw = Math.round(item.width);
+            const ih = Math.round(item.height);
             
             this.context.save();
-            this.context.shadowColor = 'rgba(0, 0, 0, 0.3)';
-            this.context.shadowBlur = 4;
+            this.context.shadowColor = 'rgba(0, 0, 0, 0.2)';
+            this.context.shadowBlur = 5;
             this.context.shadowOffsetX = 1;
             this.context.shadowOffsetY = 2;
 
             const texture = this.textures[item.visualId];
             if (texture) {
-                this.context.drawImage(texture, ix, iy);
+                this.context.drawImage(texture, ix, iy, iw, ih);
             } else {
-                this.context.fillStyle = '#d4af37';
-                this.context.fillRect(ix, iy, item.width, item.height);
+                this.context.fillStyle = '#0c8a93a4';
+                this.context.fillRect(ix, iy, iw, ih);
             }
             this.context.restore();
         }
@@ -441,82 +600,5 @@ export class CanvasRendererAdapter {
     private drawFallback(entity: VisualEntity): void {
         this.context.fillStyle = '#ff00ff';
         this.context.fillRect(entity.renderX - entity.width / 2, entity.renderY - entity.height / 2, entity.width, entity.height);
-    }
-
-    private drawDebugHitboxes(
-        entitiesMap: Map<string, VisualEntity>, 
-        room: RoomState | null, 
-        staticObstacles: BaseEntityState[]
-    ): void {
-        this.context.save();
-        this.context.lineWidth = 1;
-
-        entitiesMap.forEach(entity => {
-            if (entity.isDying) return;
-
-            let color = '#00ff00'; 
-            if (entity.type === 'enemy') color = '#ff0000'; 
-            if (entity.type === 'bullet') color = '#ffff00'; 
-
-            this.context.strokeStyle = color;
-            this.context.strokeRect(
-                Math.round(entity.renderX - entity.width / 2),
-                Math.round(entity.renderY - entity.height / 2),
-                entity.width,
-                entity.height
-            );
-        });
-
-        if (staticObstacles) {
-            this.context.strokeStyle = '#0000ff';
-            staticObstacles.forEach(obs => {
-                this.context.strokeRect(
-                    Math.round(obs.x - obs.width / 2),
-                    Math.round(obs.y - obs.height / 2),
-                    obs.width,
-                    obs.height
-                );
-            });
-        }
-
-        if (room) {
-            if (room.chests) {
-                this.context.strokeStyle = '#ff00ff';
-                room.chests.forEach(chest => {
-                    this.context.strokeRect(
-                        Math.round(chest.x - chest.width / 2),
-                        Math.round(chest.y - chest.height / 2),
-                        chest.width,
-                        chest.height
-                    );
-                });
-            }
-
-            if (room.droppedItems) {
-                this.context.strokeStyle = '#00ffff';
-                room.droppedItems.forEach(item => {
-                    this.context.strokeRect(
-                        Math.round(item.x - item.width / 2),
-                        Math.round(item.y - item.height / 2),
-                        item.width,
-                        item.height
-                    );
-                });
-            }
-        }
-
-        this.context.restore();
-    }
-
-    private drawPortal(room: RoomState | null): void {
-        if (room?.portal?.isActive) {
-            this.context.fillStyle = '#681284';
-            this.context.fillRect(
-                room.portal.x - room.portal.width / 2,
-                room.portal.y - room.portal.height / 2,
-                room.portal.width,
-                room.portal.height
-            );
-        }
     }
 }

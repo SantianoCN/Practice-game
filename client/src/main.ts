@@ -183,17 +183,20 @@ class App {
 
             this.input.stopListening();
 
-            // 3. Закрываем модальное окно портала
+            // Закрываем модальное окно портала
             this.ui.showPortalModal(false);
 
-            // 4. Полностью очищаем ВСЕ ключи сессий из браузера (решаем главный баг)
+            // Сбрасываем кэш синглтона DOMManager, предотвращая падения при смене профилей
+            this.ui.resetState();
+
+            // Полностью очищаем все локальные ключи сессий из браузера
             localStorage.removeItem('game_session_id');
             localStorage.removeItem('session_token');
 
-            // 5. Разрываем сетевое соединение сокета
+            // Разрываем сетевое соединение сокета
             this.network.disconnect();
 
-            // 6. Возвращаем игрока на чистый экран авторизации
+            // Возвращаем игрока на чистый экран авторизации
             this.ui.showAuth();
         };
     }
@@ -248,33 +251,32 @@ class App {
     }
 
     private async connectToServer(token: string): Promise<void> {
+        let profile;
         try {
-            const profile = await this.network.connect(token);
-
-            if (profile.progress) {
-                this.metaProgress = profile.progress;
-            }
-
-            if (profile.currentSessionId) {
-                // Сервер подтвердил живую ОЗУ-сессию (мягкий реконнект в пределах
-                // grace period) — это авторитетный источник, а не localStorage.
-                this.isHost = profile.isHost === true;
-                this.ui.showStartMatchButton(this.isHost);
-                this.startGame(profile.currentSessionId, false, this.isHost);
-                return;
-            }
-
-            // Сервер не подтвердил активную сессию (grace period истек либо ее не
-            // было) — чистим потенциально устаревший кэш, чтобы не пытаться
-            // автоподключиться к уже мертвой сессии.
-            localStorage.removeItem('game_session_id');
-
-            this.ui.showLobby(profile.login);
-            this.ui.updatePresets(this.classPresets, this.metaProgress);
-            this.ui.showContinueButton(!!profile.activeSaveSessionId);
+            profile = await this.network.connect(token);
         } catch (e) {
+            console.error('[connectToServer] network.connect failed:', e);
             this.ui.showAuth('Ошибка подключения к игровому серверу');
+            return;
         }
+
+        // Всё, что ниже, — вне catch, чтобы баги рендера/презетов
+        // не маскировались под "ошибку авторизации"
+        if (profile.progress) {
+            this.metaProgress = profile.progress;
+        }
+
+        if (profile.currentSessionId) {
+            this.isHost = profile.isHost === true;
+            this.ui.showStartMatchButton(this.isHost);
+            this.startGame(profile.currentSessionId, false, this.isHost);
+            return;
+        }
+
+        localStorage.removeItem('game_session_id');
+        this.ui.showLobby(profile.login);
+        this.ui.updatePresets(this.classPresets, this.metaProgress);
+        this.ui.showContinueButton(!!profile.activeSaveSessionId);
     }
 
     private startGame(sessionId: string, isSingleplayer: boolean = false, isHost: boolean = false): void {

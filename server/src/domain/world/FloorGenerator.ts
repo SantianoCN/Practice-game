@@ -70,14 +70,14 @@ export class MapGenerator {
             this.roomsCreated = [];
             this.addRoom(startX, startY, 'Start');
 
-            const queue: Coords[] = [{ x: startX, y: startY }];
+            const continRoom: Coords[] = [{ x: startX, y: startY }];
             const targetCount = Math.floor(Math.random() * (maxRooms - minRooms + 1)) + minRooms;
 
-            while ((this.roomsCreated.length < targetCount) && (queue.length > 0)) {
-                const elementIndex = Math.floor(Math.random() * queue.length);
-                const lastIndex = queue.length - 1;
-                [queue[elementIndex], queue[lastIndex]] = [queue[lastIndex], queue[elementIndex]];
-                const currentCoord = queue.pop()!;
+            while ((this.roomsCreated.length < targetCount) && (continRoom.length > 0)) {
+                const elementIndex = Math.floor(Math.random() * continRoom.length);
+                const lastIndex = continRoom.length - 1;
+                [continRoom[elementIndex], continRoom[lastIndex]] = [continRoom[lastIndex], continRoom[elementIndex]];
+                const currentCoord = continRoom.pop()!;
 
                 let roomCreated = false;
 
@@ -92,14 +92,14 @@ export class MapGenerator {
 
                     if (this.canCreateRoom(nextX, nextY)) {
                         this.addRoom(nextX, nextY, 'Normal');
-                        queue.push({ x: nextX, y: nextY });
+                        continRoom.push({ x: nextX, y: nextY });
                         roomCreated = true;
                         break;
                     }
                 }
 
                 if (roomCreated && this.countNeighbors(currentCoord.x, currentCoord.y) < 3) {
-                    queue.push(currentCoord);
+                    continRoom.push(currentCoord);
                 }
             }
         }
@@ -195,7 +195,7 @@ export class MapGenerator {
             const x = obs.startX * this.CELL_SIZE + width / 2;
             const y = obs.startY * this.CELL_SIZE + height / 2;
 
-            const obstacle = new Obstacle(this.generateId('obs'), x, y, width, height, 'stone_block');
+            const obstacle = new Obstacle(this.generateId('obs'), x, y, width, height, obs.obj);
             room.obstacles.push(obstacle);
         }
 

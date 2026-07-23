@@ -267,7 +267,6 @@ input.text-center {
     margin-top: 15px;
     font-family: 'Press Start 2P', monospace;
     font-size: 10px;
-    display: none;
     font-weight: bold;
     text-shadow: 1px 1px 0px #000;
 }

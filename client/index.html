@@ -20,7 +20,7 @@
             </div>
             <button type="button" id="loginBtn" class="button button-primary">Войти в игру</button>
             <button type="button" id="registerBtn" class="button button-alt" style="margin-top: 10px;">Зарегистрироваться</button>
-            <div id="errorText" class="error-message">Неверный логин или пароль</div>
+            <div id="errorText" class="error-message hidden">Неверный логин или пароль</div>
         </form>
     </div>
     <div id="lobby-screen" class="lobby-container hidden">
@@ -74,7 +74,7 @@
                     <label for="sessionIdInput">ВСТУПИТЬ В ОТРЯД</label>
                     <input type="text" id="sessionIdInput" class="text-center" placeholder="ВСТАВЬТЕ ID СЕССИИ">
                     <button id="joinRoomBtn" class="button button-success">В БОЙ!</button>
-                    <div id="lobbyError" class="error-message"></div>
+                    <div id="lobbyError" class="error-message hidden"></div>
                 </div>
             </aside>
         </div>

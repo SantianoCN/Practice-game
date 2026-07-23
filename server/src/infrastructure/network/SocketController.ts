@@ -77,6 +77,9 @@ export class SocketController {
                     isHost
                 });
             } catch (err) {
+                // ДОБАВЛЯЕМ ЛОГ: Выводим реальную ошибку в терминал сервера!
+                console.error('[REQUEST_PROFILE] Ошибка на сервере:', err);
+                
                 callback({ success: false, message: 'Ошибка загрузки профиля' });
             }
         });
