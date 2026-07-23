@@ -3,6 +3,12 @@
     src: url('/fonts/PressStart2P-Regular.ttf') format('truetype');
 }
 
+img {
+    image-rendering: auto; 
+    image-rendering: smooth; 
+    image-rendering: pixelated; 
+}
+
 .hidden { 
     display: none !important; 
 }
@@ -126,6 +132,28 @@ input.text-center {
     text-transform: uppercase;
     transition: none;
     image-rendering: pixelated;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.coin-icon {
+    width: 24px;
+    height: 24px;
+    display: inline-block;
+    image-rendering: pixelated;
+    object-fit: contain;
+    box-sizing: border-box;
+    position: relative;
+    top: -1px;
+}
+
+.gold-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    vertical-align: middle;
 }
 
 .button:active {

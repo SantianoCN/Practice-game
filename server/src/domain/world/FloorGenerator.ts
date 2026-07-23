@@ -151,40 +151,40 @@ export class MapGenerator {
     }
 
     private populateRooms(): void {
-    for (const room of this.roomsCreated) {
-        if (room.type === 'Start' || room.type === 'Shop') {
-            room.isClear = true;
-            continue;
-        }
-
-        const matchingTemplates = ROOM_TEMPLATES.filter(t => t.type === room.type);
-        
-        if (matchingTemplates.length > 0) {
-            const template = matchingTemplates[Math.floor(Math.random() * matchingTemplates.length)];
-            this.applyTemplate(room, template);
-        }
-
-        if (room.type === 'Boss') {
-            this.spawnBoss(room);
-
-            room.portal = new Portal(
-                this.generateId('portal'),
-                this.roomWidth / 2,
-                this.roomHeight / 2,
-                48,
-                48,
-                'portal_closed'
-            );
-        } else if (room.type === 'Normal') {
-            const enemyCount = Math.floor(Math.random() * 3) + 2; 
-            for (let i = 0; i < enemyCount; i++) {
-                this.spawnEnemy(room);
+        for (const room of this.roomsCreated) {
+            if (room.type === 'Start' || room.type === 'Shop') {
+                room.isClear = true;
+                continue;
             }
-        } else if (room.type === 'Treasure') {
-            room.isClear = true;
+
+            const matchingTemplates = ROOM_TEMPLATES.filter(t => t.type === room.type);
+            
+            if (matchingTemplates.length > 0) {
+                const template = matchingTemplates[Math.floor(Math.random() * matchingTemplates.length)];
+                this.applyTemplate(room, template);
+            }
+
+            if (room.type === 'Boss') {
+                this.spawnBoss(room);
+
+                room.portal = new Portal(
+                    this.generateId('portal'),
+                    this.roomWidth / 2,
+                    this.roomHeight / 2,
+                    48,
+                    48,
+                    'portal_closed'
+                );
+            } else if (room.type === 'Normal') {
+                const enemyCount = Math.floor(Math.random() * 3) + 2; 
+                for (let i = 0; i < enemyCount; i++) {
+                    this.spawnEnemy(room);
+                }
+            } else if (room.type === 'Treasure') {
+                room.isClear = true;
+            }
         }
     }
-}
 
 
     private applyTemplate(room: Room, template: RoomTemplate): void {

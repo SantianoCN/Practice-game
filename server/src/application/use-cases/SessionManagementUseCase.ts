@@ -3,26 +3,43 @@ import { IIdGenerator } from '../interfaces/IIdGenerator';
 import { GameSession } from '../../domain/entities/GameSession';
 import { EntityFactory } from '../../domain/factories/EntityFactory';
 import { MapGenerator } from '../../domain/world/FloorGenerator';
-import { Room } from '../../domain/entities/Room';
-import { GAME_CONFIG } from '@game/shared';
-import { IPresetProvider } from '../interfaces/IPresetProvider'; 
-import { GAME_DIFFICULTY } from '@game/shared/';
+import { GAME_CONFIG, GAME_DIFFICULTY } from '@game/shared';
+import { IPresetProvider } from '../interfaces/IPresetProvider';
 import { ISaveRepository } from '../interfaces/ISaveRepository';
+
+export interface HostMigrationResult {
+    migrated: boolean;
+    newHostId?: string;
+    newHostLogin?: string;
+    remainingOnlineIds: string[];
+}
 
 export class SessionManagementUseCase {
     private deleteTimers = new Map<string, ReturnType<typeof setTimeout>>();
     private reconnectTimers = new Map<string, ReturnType<typeof setTimeout>>();
+    private loginSessionMap = new Map<string, string>();
 
     constructor(
         private repo: IGameRepository,
         private idGen: IIdGenerator,
         private presetProvider: IPresetProvider,
         private roomWidth: number,
-        private roomHeight: number,        private saveRepo: ISaveRepository
+        private roomHeight: number,
+        private saveRepo: ISaveRepository
     ) {}
 
     public getSession(sessionId: string): GameSession | undefined {
         return this.repo.get(sessionId);
+    }
+
+    public findActiveSessionByLogin(login: string): string | undefined {
+        const sessionId = this.loginSessionMap.get(login);
+        if (!sessionId) return undefined;
+        if (!this.repo.get(sessionId)) {
+            this.loginSessionMap.delete(login);
+            return undefined;
+        }
+        return sessionId;
     }
 
     public terminateSession(sessionId: string): void {
@@ -31,6 +48,24 @@ export class SessionManagementUseCase {
             clearTimeout(pendingTimer);
             this.deleteTimers.delete(sessionId);
         }
+
+        const session = this.repo.get(sessionId);
+        if (session) {
+            for (const login of session.allowedLogins) {
+                if (this.loginSessionMap.get(login) === sessionId) {
+                    this.loginSessionMap.delete(login);
+                }
+            }
+        }
+
+        const reconnectPrefix = `${sessionId}:`;
+        for (const key of Array.from(this.reconnectTimers.keys())) {
+            if (key.startsWith(reconnectPrefix)) {
+                clearTimeout(this.reconnectTimers.get(key)!);
+                this.reconnectTimers.delete(key);
+            }
+        }
+
         this.repo.delete(sessionId);
     }
 
@@ -54,31 +89,32 @@ export class SessionManagementUseCase {
         }
 
         const player = EntityFactory.createPlayer(
-            userId, login, archetype, weaponId, 
-            session.roomWidth / 2, session.roomHeight / 2, 
+            userId, login, archetype, weaponId,
+            session.roomWidth / 2, session.roomHeight / 2,
             (prefix) => this.idGen.generateId(prefix)
         );
-        
+
         player.roomX = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
         player.roomY = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
 
         session.addPlayer(player);
+        session.allowedLogins.add(login);
+        this.loginSessionMap.set(login, session.sessionId);
     }
 
     public createSession(userId: string, login: string, archetype: string, weaponId: string): string {
         const sessionId = this.idGen.generateUUID('session');
-        const difficulty = GAME_DIFFICULTY.LVL1;
-        const session = new GameSession(sessionId, this.roomWidth, this.roomHeight, difficulty);
-        
+        const session = new GameSession(sessionId, this.roomWidth, this.roomHeight, GAME_DIFFICULTY.LVL1);
+
         session.isLobby = false;
         session.hostId = userId;
         session.hostLogin = login;
 
         const mapGenerator = new MapGenerator(
             GAME_CONFIG.MAP_SIZE,
-            difficulty,
-            this.roomWidth,
-            this.roomHeight,
+            session.difficulty,
+            session.roomWidth,
+            session.roomHeight,
             (prefix) => this.idGen.generateId(prefix),
             (id) => this.presetProvider.getChestPreset(id)
         );
@@ -92,48 +128,68 @@ export class SessionManagementUseCase {
 
     public createLobby(userId: string, login: string, archetype: string, weaponId: string): string {
         const sessionId = this.idGen.generateUUID('session');
-        const difficulty = GAME_DIFFICULTY.LVL1;
-        const session = new GameSession(sessionId, this.roomWidth, this.roomHeight, difficulty);
-        
+        const session = new GameSession(sessionId, this.roomWidth, this.roomHeight, GAME_DIFFICULTY.LVL1);
+
         session.isLobby = true;
         session.hostId = userId;
         session.hostLogin = login;
 
-        session.floorMap = Array(GAME_CONFIG.MAP_SIZE).fill(null).map(() => Array(GAME_CONFIG.MAP_SIZE).fill(null));
+        const mapGenerator = new MapGenerator(
+            GAME_CONFIG.MAP_SIZE,
+            session.difficulty,
+            session.roomWidth,
+            session.roomHeight,
+            (prefix) => this.idGen.generateId(prefix),
+            (id) => this.presetProvider.getChestPreset(id)
+        );
 
-        const startX = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
-        const startY = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
-
-        const lobbyRoom = new Room(startX, startY, 'Start', 0);
-        lobbyRoom.isClear = true;
-        lobbyRoom.hasDoors = { Top: false, Bottom: false, Left: false, Right: false };
-
-        session.floorMap[startY][startX] = lobbyRoom;
-        
+        session.floorMap = mapGenerator.generateLobby();
         this.repo.save(session);
         this.addPlayerToSession(session, userId, login, archetype, weaponId);
 
         return sessionId;
     }
 
-    public async loadRestoredLobby(sessionId: string): Promise<string | null> {
+    public async loadRestoredLobby(sessionId: string, requestingUserId: string, requestingLogin: string): Promise<string | null> {
         const session = await this.saveRepo.loadRun(sessionId);
         if (!session) return null;
+        session.isLobby = true;
 
-        session.isLobby = true; // Загруженный сейв принудительно разворачиваем как лобби
+        const mapGenerator = new MapGenerator(
+            GAME_CONFIG.MAP_SIZE,
+            GAME_DIFFICULTY.LVL1,
+            this.roomWidth,
+            this.roomHeight,
+            (prefix) => this.idGen.generateId(prefix),
+            (id) => this.presetProvider.getChestPreset(id)
+        );
 
-        // Генерируем временную пустую сетку комнат для лобби ожидания в ОЗУ
-        session.floorMap = Array(GAME_CONFIG.MAP_SIZE).fill(null).map(() => Array(GAME_CONFIG.MAP_SIZE).fill(null));
+        session.floorMap = mapGenerator.generateLobby();
 
-        const startX = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
-        const startY = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
+        for (const login of session.allowedLogins) {
+            this.loginSessionMap.set(login, session.sessionId);
+        }
 
-        // Создаем временную безопасную комнату лобби, чтобы игроки могли ходить и видеть друг друга до старта
-        const lobbyRoom = new Room(startX, startY, 'Start', 0);
-        lobbyRoom.isClear = true;
-        lobbyRoom.hasDoors = { Top: false, Bottom: false, Left: false, Right: false };
+        const hostPlayer = Array.from(session.players.values()).find(p => p.name === requestingLogin);
+        if (hostPlayer) {
+            session.removePlayer(hostPlayer.id);
 
-        session.floorMap[startY][startX] = lobbyRoom;
+            hostPlayer.id = requestingUserId;
+            hostPlayer.isOnline = true;
+            hostPlayer.roomX = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
+            hostPlayer.roomY = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
+            hostPlayer.x = session.roomWidth / 2;
+            hostPlayer.y = session.roomHeight / 2;
+            hostPlayer.vx = 0;
+            hostPlayer.vy = 0;
+            hostPlayer.lastBroadcastedRoomX = null;
+            hostPlayer.lastBroadcastedRoomY = null;
+
+            session.addPlayer(hostPlayer);
+
+            session.hostId = requestingUserId;
+            session.hostLogin = requestingLogin;
+        }
 
         this.repo.save(session);
         return session.sessionId;
@@ -142,28 +198,23 @@ export class SessionManagementUseCase {
     public joinLobby(sessionId: string, userId: string, login: string, archetype: string, weaponId: string): boolean {
         const session = this.repo.get(sessionId);
         if (!session) return false;
-        
+
         if (!session.isLobby) {
             console.log(`[Security Action] Попытка несанкционированного входа в уже активный бой: ${sessionId}`);
             return false;
         }
 
-        // Если это восстановленная сессия по белому списку
         if (session.allowedLogins.size > 0) {
             if (!session.allowedLogins.has(login)) {
                 console.log(`[Security Action] Игрок ${login} не имеет прав доступа к сессии ${sessionId}`);
                 return false;
             }
 
-            // Находим уже воссозданный оффлайн-персонаж в сессии
             const existingPlayer = Array.from(session.players.values()).find(p => p.name === login);
             if (existingPlayer) {
-                // Перенаправляем оффлайн-id на активный сокет зашедшего друга
                 session.removePlayer(existingPlayer.id);
                 existingPlayer.id = userId;
                 existingPlayer.isOnline = true;
-
-                // Сбрасываем его координаты строго на центр лобби ожидания
                 existingPlayer.roomX = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
                 existingPlayer.roomY = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
                 existingPlayer.x = this.roomWidth / 2;
@@ -174,25 +225,25 @@ export class SessionManagementUseCase {
                 existingPlayer.lastBroadcastedRoomY = null;
 
                 session.addPlayer(existingPlayer);
+                this.loginSessionMap.set(login, sessionId);
                 console.log(`[Restore Join] Игрок ${login} вернулся на свое сохраненное место в лобби.`);
                 return true;
             }
             return false;
         }
 
-        // Обычное новое подключение
         this.addPlayerToSession(session, userId, login, archetype, weaponId);
         return true;
     }
-    
+
     public startMatch(sessionId: string, userId: string): boolean {
         const session = this.repo.get(sessionId);
         if (!session || !session.isLobby) return false;
-        if (session.hostId !== userId) return false; 
+        if (session.hostId !== userId) return false;
 
         const mapGenerator = new MapGenerator(
             GAME_CONFIG.MAP_SIZE,
-            session.difficulty, 
+            session.difficulty,
             session.roomWidth,
             session.roomHeight,
             (prefix) => this.idGen.generateId(prefix),
@@ -205,10 +256,8 @@ export class SessionManagementUseCase {
         const startX = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
         const startY = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
 
-        // Инициализируем только тех, кто реально пришел в лобби
         for (const player of session.players.values()) {
             if (!player.isOnline) {
-                // Если кто-то из слотов сейва не пришел, убираем их ХП-модель из текущего уровня ОЗУ
                 continue;
             }
             player.roomX = startX;
@@ -222,37 +271,57 @@ export class SessionManagementUseCase {
         return true;
     }
 
-    public handlePlayerDisconnect(sessionId: string, userId: string, login: string): void {
+    private migrateHostIfNeeded(session: GameSession, departingUserId: string): HostMigrationResult {
+        const remainingOnlineIds = Array.from(session.players.values())
+            .filter(p => p.id !== departingUserId && p.isOnline)
+            .map(p => p.id);
+
+        if (session.hostId !== departingUserId) {
+            return { migrated: false, remainingOnlineIds };
+        }
+
+        const candidate = Array.from(session.players.values())
+            .find(p => p.id !== departingUserId && p.isOnline);
+
+        if (!candidate) {
+            return { migrated: false, remainingOnlineIds };
+        }
+
+        session.hostId = candidate.id;
+        session.hostLogin = candidate.name;
+
+        return {
+            migrated: true,
+            newHostId: session.hostId,
+            newHostLogin: session.hostLogin,
+            remainingOnlineIds
+        };
+    }
+
+    public handlePlayerDisconnect(sessionId: string, userId: string, login: string): HostMigrationResult | null {
         const session = this.repo.get(sessionId);
-        if (!session) return;
+        if (!session) return null;
 
         const player = session.getPlayer(userId);
-        if (!player) return;
+        if (!player) return null;
 
         player.isOnline = false;
         console.log(`[Disconnect Tracking] Игрок ${login} потерял связь. Запуск таймера...`);
 
-        // Производим мягкую миграцию лидера, если отключился текущий Хост
-        if (session.hostId === userId) {
-            const activeOnlinePlayers = Array.from(session.players.values())
-                .filter(p => p.id !== userId && p.isOnline);
-
-            if (activeOnlinePlayers.length > 0) {
-                session.hostId = activeOnlinePlayers[0].id;
-                session.hostLogin = activeOnlinePlayers[0].name;
-                console.log(`[Host Migration] Новым воеводой назначен: ${activeOnlinePlayers[0].name}`);
-            }
+        const migrationResult = this.migrateHostIfNeeded(session, userId);
+        if (migrationResult.migrated) {
+            console.log(`[Host Migration] Новым воеводой назначен: ${migrationResult.newHostLogin}`);
         }
 
         const reconnectKey = `${sessionId}:${login}`;
         const timer = setTimeout(() => {
             console.log(`[Timeout Expired] Время возвращения ${login} истекло.`);
             this.reconnectTimers.delete(reconnectKey);
-            // Персонаж остается в ОЗУ в офлайн режиме (isOnline = false),
-            // чтобы завтра записаться в сейв на портале, но сегодня играть он уже не сможет.
-        }, 120000); // 120 секунд
+        }, 120000);
 
         this.reconnectTimers.set(reconnectKey, timer);
+
+        return migrationResult;
     }
 
     public tryReconnectPlayer(sessionId: string, newUserId: string, login: string): boolean {
@@ -275,7 +344,7 @@ export class SessionManagementUseCase {
 
                 player.lastBroadcastedRoomX = null;
                 player.lastBroadcastedRoomY = null;
-                
+
                 console.log(`[Reconnect Success] Игрок ${login} успешно вернулся в строй!`);
                 return true;
             }
@@ -283,22 +352,28 @@ export class SessionManagementUseCase {
         return false;
     }
 
-    public leaveSession(sessionId: string, userId: string): void {
+    public leaveSession(sessionId: string, userId: string, login: string): HostMigrationResult | null {
         const session = this.repo.get(sessionId);
-        if (!session) return;
+        if (!session) return null;
 
         session.removePlayer(userId);
+        session.allowedLogins.delete(login);
+        this.loginSessionMap.delete(login);
+
+        const migrationResult = this.migrateHostIfNeeded(session, userId);
+
         if (session.isEmpty()) {
             if (!this.deleteTimers.has(sessionId)) {
                 const GRACE_PERIOD_MS = 15000;
 
                 const timer = setTimeout(() => {
-                    this.repo.delete(sessionId);
-                    this.deleteTimers.delete(sessionId);
+                    this.terminateSession(sessionId);
                 }, GRACE_PERIOD_MS);
 
                 this.deleteTimers.set(sessionId, timer);
             }
         }
+
+        return migrationResult;
     }
 }

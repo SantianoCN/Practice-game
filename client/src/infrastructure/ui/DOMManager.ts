@@ -8,19 +8,16 @@ export class DOMManager {
     public onCreateLobby?: (arch: Archetype, weapon: string) => void;
     public onJoinRoom?: (sid: string, arch: Archetype, weapon: string) => void;
     public onStartMatch?: () => void;
-    
     public onLeaveRoom?: () => void;
     public onLogout?: () => void;
-    public onBuyItem?: (presetId: string) => void;         
-    public onCompleteSession?: () => void;                 
-    
+    public onBuyItem?: (presetId: string) => void;
+    public onCompleteSession?: () => void;
     public onRestoreSave?: () => void;
-
-    private selectedArch: Archetype = 'warrior'; 
+    private selectedArch: Archetype = 'warrior';
     private selectedWeapon = '';
-    private progress?: PlayerProgressDTO;  
+    private progress?: PlayerProgressDTO;
     public onPortalNextFloor?: () => void;
-    public onPortalSaveAndExit?: () => void;                
+    public onPortalSaveAndExit?: () => void;
 
     constructor() {
         this.bindEvents();
@@ -47,7 +44,6 @@ export class DOMManager {
             this.onCreateLobby?.(this.selectedArch, this.selectedWeapon);
         });
 
-        // Подписываемся на клик по кнопке продолжения
         document.getElementById('restoreSaveBtn')?.addEventListener('click', () => {
             this.onRestoreSave?.();
         });
@@ -67,7 +63,7 @@ export class DOMManager {
 
         document.getElementById('logoutBtn')?.addEventListener('click', () => this.onLogout?.());
         document.getElementById('disconnectBtn')?.addEventListener('click', () => this.onLeaveRoom?.());
-        
+
         document.getElementById('copySessionBtn')?.addEventListener('click', () => {
             const btn = document.getElementById('copySessionBtn')!;
             const text = document.getElementById('sessionDisplay')?.innerText || '';
@@ -90,10 +86,13 @@ export class DOMManager {
         document.getElementById('auth-screen')!.classList.remove('hidden');
         document.getElementById('lobby-screen')!.classList.add('hidden');
         document.getElementById('game-screen')!.classList.add('hidden');
+
+        const errEl = document.getElementById('errorText')!;
         if (error) {
-            const errEl = document.getElementById('errorText')!;
             errEl.innerText = error;
-            errEl.style.display = 'block';
+            errEl.classList.remove('hidden');
+        } else {
+            errEl.classList.add('hidden');
         }
     }
 
@@ -102,9 +101,9 @@ export class DOMManager {
         document.getElementById('lobby-screen')!.classList.remove('hidden');
         document.getElementById('game-screen')!.classList.add('hidden');
         document.getElementById('welcomeText')!.innerText = `РУС: ${login}`;
+        document.getElementById('lobbyError')?.classList.add('hidden');
     }
 
-    // Показ/скрытие кнопки продолжения похода
     public showContinueButton(show: boolean): void {
         const sec = document.getElementById('continueSection');
         if (!sec) return;
@@ -133,7 +132,7 @@ export class DOMManager {
             sessionContainer.classList.remove('hidden');
             copyBtn.classList.remove('hidden');
             sessionDisplay.innerText = sessionId;
-            
+
             if (isHost) {
                 completeBtn.classList.remove('hidden');
             } else {
@@ -154,20 +153,20 @@ export class DOMManager {
     public showErrorLobby(msg: string): void {
         const err = document.getElementById('lobbyError')!;
         err.innerText = msg;
-        err.style.display = 'block';
+        err.classList.remove('hidden');
     }
 
     public updatePresets(presets: Record<string, PlayerClassPresetDTO>, progress?: PlayerProgressDTO): void {
         if (progress) {
             this.progress = progress;
             const goldEl = document.getElementById('lobbyGold');
-            if (goldEl) goldEl.innerText = `${progress.metaGold}G`;
+            if (goldEl) goldEl.innerText = `${progress.metaGold}`;
         }
 
         const heroList = document.getElementById('heroCardList')!;
         heroList.innerHTML = '';
-        const presetKeys = Object.keys(presets) as Archetype[]; 
-        
+        const presetKeys = Object.keys(presets) as Archetype[];
+
         if (presetKeys.length === 0) return;
 
         if (!this.selectedArch || !presets[this.selectedArch]) {
@@ -178,7 +177,7 @@ export class DOMManager {
             const preset = presets[key];
             const el = document.createElement('div');
             el.className = 'hero-card';
-            
+
             const isUnlocked = this.progress ? this.progress.unlockedClasses.includes(key) : true;
             if (!isUnlocked) {
                 el.classList.add('locked');
@@ -210,10 +209,10 @@ export class DOMManager {
             el.onclick = () => {
                 Array.from(heroList.children).forEach(c => c.classList.remove('active'));
                 el.classList.add('active');
-                
+
                 this.selectedArch = key;
                 this.updateWeapons(preset.startingWeapons);
-                this.updatePreview(presets); 
+                this.updatePreview(presets);
             };
 
             heroList.appendChild(el);
@@ -234,7 +233,7 @@ export class DOMManager {
         weapons.forEach(w => {
             const el = document.createElement('div');
             el.className = 'weapon-card';
-            
+
             const isUnlocked = this.progress ? this.progress.unlockedWeapons.includes(w.key) : true;
             if (!isUnlocked) {
                 el.classList.add('locked');
@@ -263,7 +262,7 @@ export class DOMManager {
             }
 
             el.innerHTML = `
-                <div class="weapon-card-img">${iconHtml}</div>
+                <div>${iconHtml}</div>
                 <div class="weapon-name">${w.name} ${!isUnlocked ? '(ЗАКРЫТО)' : ''}</div>
                 <div class="weapon-desc">${w.description || 'Базовое оружие'}</div>
             `;
@@ -272,7 +271,7 @@ export class DOMManager {
                 Array.from(wList.children).forEach(c => c.classList.remove('active'));
                 el.classList.add('active');
                 this.selectedWeapon = w.key;
-                
+
                 const presetsElement = document.getElementById('heroCardList')!;
                 if (presetsElement) {
                     const presets = (window as any).__classPresets;
@@ -285,7 +284,7 @@ export class DOMManager {
     }
 
     private updatePreview(presets: Record<string, PlayerClassPresetDTO>): void {
-        (window as any).__classPresets = presets; 
+        (window as any).__classPresets = presets;
         const preset = presets[this.selectedArch];
         if (!preset) return;
 
@@ -299,51 +298,51 @@ export class DOMManager {
             const price = SHOP_PRICES[this.selectedArch] || 300;
             const buyContainer = document.createElement('div');
             buyContainer.className = 'buy-button-container';
-            
+
             buyContainer.innerHTML = `
                 <div class="buy-title">ЭТОТ КЛАСС ЕЩЕ ЗАПЕРТ!</div>
-                <button class="button button-success" style="width: 240px;">КУПИТЬ ЗА ${price}G</button>
+                <button class="button button-success" style="width: 240px;">КУПИТЬ ЗА ${price}<img src="./assets/loot/coin.png" class="coin-icon" /></button>
             `;
-            
+
             buyContainer.querySelector('button')!.onclick = () => {
                 this.onBuyItem?.(this.selectedArch);
             };
             container.appendChild(buyContainer);
             document.getElementById('heroPreviewName')!.innerText = `${preset.name} (КУПИТЬ)`;
-            
+
         } else if (!isWeaponUnlocked) {
             const price = SHOP_PRICES[this.selectedWeapon] || 150;
             const buyContainer = document.createElement('div');
             buyContainer.className = 'buy-button-container';
-            
+
             buyContainer.innerHTML = `
                 <div class="buy-title">ОРУЖИЕ ЕЩЕ ЗАПЕРТО!</div>
-                <button class="button button-success" style="width: 240px;">КУПИТЬ ЗА ${price}G</button>
+                <button class="button button-success" style="width: 240px;">КУПИТЬ ЗА ${price}<img src="./assets/loot/coin.png" class="coin-icon" /></button>
             `;
-            
+
             buyContainer.querySelector('button')!.onclick = () => {
                 this.onBuyItem?.(this.selectedWeapon);
             };
             container.appendChild(buyContainer);
             document.getElementById('heroPreviewName')!.innerText = `ОРУЖИЕ ЗАКРЫТО`;
-            
+
         } else {
             const spriteDiv = document.createElement('div');
             spriteDiv.className = 'hero-sprite';
-            
+
             const img = document.createElement('img');
             img.className = 'hero-sprite-img';
             img.src = this.selectedArch === 'mage' ? mageImgUrl : warriorImgUrl;
             img.alt = 'Спрайт героя';
-            
+
             spriteDiv.appendChild(img);
             container.appendChild(spriteDiv);
-            
+
             const nameSpan = document.createElement('span');
             nameSpan.className = 'hero-name';
             nameSpan.id = 'heroPreviewName';
             nameSpan.innerText = preset.name;
-            
+
             container.appendChild(nameSpan);
         }
     }

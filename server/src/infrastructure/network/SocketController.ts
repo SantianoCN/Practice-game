@@ -1,7 +1,7 @@
 import { Socket, Server } from 'socket.io';
 import {
     ClientEvent, ServerEvent, PLAYER_CLASSES, PlayerProgressDTO, BuyItemRequestSchema,
-    PlayerActionSchema, SessionCreateRequestSchema, SessionJoinRequestSchema, GAME_CONFIG
+    PlayerActionSchema, SessionCreateRequestSchema, SessionJoinRequestSchema
 } from '@game/shared';
 import { SessionManagementUseCase } from '../../application/use-cases/SessionManagementUseCase';
 import { ProcessInputUseCase } from '../../application/use-cases/ProcessInputUseCase';
@@ -22,7 +22,7 @@ export class SocketController {
         private buyItemUseCase: BuyItemUseCase,
         private completeSessionUseCase: CompleteSessionUseCase,
         private saveSessionUseCase: SaveSessionUseCase,
-        private nextFloorUseCase: NextFloorUseCase, 
+        private nextFloorUseCase: NextFloorUseCase,
         private saveRepo: ISaveRepository,
         private login: string
     ) {
@@ -49,41 +49,35 @@ export class SocketController {
     private async init(): Promise<void> {
         const userId = this.socket.id;
 
-        this.socket.emit(ServerEvent.PLAYER_ID, userId);
-        this.socket.emit(ServerEvent.CLASS_PRESETS, PLAYER_CLASSES);
-
-        this.syncProgress();
-
-        const activeSaves = await this.saveRepo.getRunSaveByHost(this.login);
-        if (activeSaves) {
-            const wasRestored = this.sessionUseCase.tryReconnectPlayer(activeSaves.sessionId, userId, this.login);
-            if (wasRestored) {
-                this.socket.data.sessionId = activeSaves.sessionId;
-            }
-        }
-
         this.socket.on(ClientEvent.REQUEST_PROFILE, async (callback) => {
-            if (typeof callback === 'function') {
-                try {
-                    const account = await this.accountRepo.getByLogin(this.login);
-                    const progressDTO: PlayerProgressDTO | undefined = account?.progress ? {
-                        metaGold: account.progress.metaGold,
-                        unlockedClasses: account.progress.unlockedClasses,
-                        unlockedWeapons: account.progress.unlockedWeapons
-                    } : undefined;
+            if (typeof callback !== 'function') return;
+            try {
+                const account = await this.accountRepo.getByLogin(this.login);
+                const progressDTO: PlayerProgressDTO | undefined = account?.progress ? {
+                    metaGold: account.progress.metaGold,
+                    unlockedClasses: account.progress.unlockedClasses,
+                    unlockedWeapons: account.progress.unlockedWeapons
+                } : undefined;
 
-                    // Возвращаем также информацию об активном сохранении, если оно есть
-                    const save = await this.saveRepo.getRunSaveByHost(this.login);
+                const save = await this.saveRepo.getRunSaveByHost(this.login);
 
-                    callback({ 
-                        success: true, 
-                        login: this.login,
-                        progress: progressDTO,
-                        activeSaveSessionId: save?.sessionId || null
-                    });
-                } catch (err) {
-                    callback({ success: false, message: 'Ошибка загрузки профиля' });
+                const currentSessionId: string | null = this.socket.data.sessionId || null;
+                let isHost = false;
+                if (currentSessionId) {
+                    const currentSession = this.sessionUseCase.getSession(currentSessionId);
+                    if (currentSession) isHost = currentSession.hostId === userId;
                 }
+
+                callback({
+                    success: true,
+                    login: this.login,
+                    progress: progressDTO,
+                    activeSaveSessionId: save?.sessionId || null,
+                    currentSessionId,
+                    isHost
+                });
+            } catch (err) {
+                callback({ success: false, message: 'Ошибка загрузки профиля' });
             }
         });
 
@@ -95,41 +89,8 @@ export class SocketController {
             }
 
             try {
-                const sessionId = await this.sessionUseCase.loadRestoredLobby(save.sessionId);
+                const sessionId = await this.sessionUseCase.loadRestoredLobby(save.sessionId, userId, this.login);
                 if (sessionId) {
-                    const session = this.sessionUseCase.getSession(sessionId);
-                    
-                    if (session) {
-                        // Находим персонаж хоста по его логину
-                        const hostPlayer = Array.from(session.players.values()).find(p => p.name === this.login);
-                        
-                        if (hostPlayer) {
-                            // Удаляем старый оффлайн-id из мапы сессии
-                            session.removePlayer(hostPlayer.id);
-                            
-                            // Связываем с актуальным Socket ID хоста и переводим в онлайн
-                            hostPlayer.id = userId;
-                            hostPlayer.isOnline = true;
-
-                            // Сбрасываем координаты хоста строго на центр временной комнаты лобби
-                            hostPlayer.roomX = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
-                            hostPlayer.roomY = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
-                            hostPlayer.x = session.roomWidth / 2;
-                            hostPlayer.y = session.roomHeight / 2;
-                            hostPlayer.vx = 0;
-                            hostPlayer.vy = 0;
-                            hostPlayer.lastBroadcastedRoomX = null;
-                            hostPlayer.lastBroadcastedRoomY = null;
-
-                            // Добавляем обновленного хоста обратно в сессию
-                            session.addPlayer(hostPlayer);
-
-                            // Назначаем права лидера на активный сокет хоста
-                            session.hostId = userId;
-                            session.hostLogin = this.login;
-                        }
-                    }
-
                     this.socket.data.sessionId = sessionId;
                     callback({ success: true, sessionId });
                 } else {
@@ -150,7 +111,7 @@ export class SocketController {
 
             try {
                 const updatedProgress = await this.buyItemUseCase.execute(this.login, parsed.data.itemPresetId);
-                
+
                 if (updatedProgress) {
                     callback({
                         success: true,
@@ -183,8 +144,8 @@ export class SocketController {
             try {
                 await this.saveSessionUseCase.execute(sessionId);
                 this.sessionUseCase.terminateSessionWithNotification(
-                    sessionId, 
-                    'Поход сохранен воеводой. Возврат в избу.', 
+                    sessionId,
+                    'Поход сохранен воеводой. Возврат в избу.',
                     this.io
                 );
                 callback({ success: true });
@@ -203,7 +164,6 @@ export class SocketController {
             const hostPlayer = session.getPlayer(userId);
             if (!hostPlayer) return;
 
-            // Валидируем на сервере, что хост действительно стоит у активного портала
             const room = session.getRoom(hostPlayer.roomX, hostPlayer.roomY);
             if (room && room.type === 'Boss' && room.portal && room.portal.isActive) {
                 this.nextFloorUseCase.execute(sessionId);
@@ -231,7 +191,7 @@ export class SocketController {
 
                     for (const p of players) {
                         const updatedProgress = await this.completeSessionUseCase.execute(sessionId, p.id, p.name);
-                        
+
                         if (updatedProgress) {
                             const progressDTO: PlayerProgressDTO = {
                                 metaGold: updatedProgress.metaGold,
@@ -246,7 +206,6 @@ export class SocketController {
                         }
                     }
 
-                    // При успешном завершении забега стираем старые сохранения
                     await this.saveRepo.deleteRun(sessionId);
                     this.sessionUseCase.terminateSession(sessionId);
                     callback({ success: true });
@@ -257,7 +216,6 @@ export class SocketController {
                 callback({ success: false, message: 'Ошибка при завершении забега' });
             }
         });
-
 
         this.socket.on(ClientEvent.CREATE_SESSION, async (rawData, callback) => {
             if (typeof callback !== 'function') return;
@@ -366,32 +324,49 @@ export class SocketController {
             this.inputUseCase.execute(sessionId, userId, parsed.data);
         });
 
-        // --- ДОБРОВОЛЬНЫЙ ВЫХОД / АГРЕССИВНОЕ ЗАКРЫТИЕ СЕССИИ ---
-        const handleLeave = () => {
+        this.socket.on(ClientEvent.LEAVE_SESSION, () => {
             const sessionId = this.socket.data.sessionId;
-            if (sessionId) {
-                const session = this.sessionUseCase.getSession(sessionId);
-                if (session) {
-                    // Жесткое правило нашей игры: если кто-то сознательно жмет "Выйти", 
-                    // сессия прекращается у всей группы
-                    this.sessionUseCase.terminateSessionWithNotification(
-                        sessionId, 
-                        `Игрок ${this.login} покинул отряд. Сессия закрыта. Накопленное за уровень золото сгорело.`, 
-                        this.io
-                    );
-                }
-                this.socket.data.sessionId = null;
-            }
-        };
+            if (!sessionId) return;
 
-        this.socket.on(ClientEvent.LEAVE_SESSION, handleLeave);
-        
-        // Потеря связи — запускаем таймер на 120 секунд в SessionManagement
-        this.socket.on('disconnect', () => {
-            const sessionId = this.socket.data.sessionId;
-            if (sessionId) {
-                this.sessionUseCase.handlePlayerDisconnect(sessionId, userId, this.login);
+            console.log(`[Leave Game] Игрок ${this.login} добровольно покинул отряд.`);
+            const result = this.sessionUseCase.leaveSession(sessionId, userId, this.login);
+            this.socket.data.sessionId = null;
+
+            if (!result) return;
+
+            if (result.migrated) {
+                for (const id of result.remainingOnlineIds) {
+                    this.io.to(id).emit(ServerEvent.ERROR, `Воевода ${this.login} покинул отряд. Новым лидером назначен ${result.newHostLogin}`);
+                }
+            } else {
+                for (const id of result.remainingOnlineIds) {
+                    this.io.to(id).emit(ServerEvent.ERROR, `Игрок ${this.login} покинул отряд.`);
+                }
             }
         });
+
+        this.socket.on('disconnect', () => {
+            const sessionId = this.socket.data.sessionId;
+            if (!sessionId) return;
+
+            const result = this.sessionUseCase.handlePlayerDisconnect(sessionId, userId, this.login);
+            if (result?.migrated) {
+                for (const id of result.remainingOnlineIds) {
+                    this.io.to(id).emit(ServerEvent.ERROR, `Связь с воеводой ${this.login} потеряна. Новым лидером назначен ${result.newHostLogin}`);
+                }
+            }
+        });
+
+        this.socket.emit(ServerEvent.PLAYER_ID, userId);
+        this.socket.emit(ServerEvent.CLASS_PRESETS, PLAYER_CLASSES);
+        this.syncProgress();
+
+        const cachedSessionId = this.sessionUseCase.findActiveSessionByLogin(this.login);
+        if (cachedSessionId) {
+            const wasRestored = this.sessionUseCase.tryReconnectPlayer(cachedSessionId, userId, this.login);
+            if (wasRestored) {
+                this.socket.data.sessionId = cachedSessionId;
+            }
+        }
     }
 }

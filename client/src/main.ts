@@ -22,7 +22,7 @@ class App {
     constructor() {
         const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
         this.renderer = new CanvasRendererAdapter(canvas);
-        
+
         this.bindUiToNetwork();
         this.bindNetworkToApp();
         this.init();
@@ -41,13 +41,10 @@ class App {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ login, password })
-                }).then(r => r.json() as Promise<BaseResponseDTO & { refreshToken?: string; progress?: PlayerProgressDTO }>);
+                }).then(r => r.json() as Promise<BaseResponseDTO & { refreshToken?: string }>);
 
                 if (res.success && res.refreshToken) {
                     localStorage.setItem('session_token', res.refreshToken);
-                    if (res.progress) {
-                        this.metaProgress = res.progress;
-                    }
                     this.connectToServer(res.refreshToken);
                 } else {
                     this.ui.showAuth(res.message);
@@ -62,13 +59,13 @@ class App {
             if (!token) return;
             this.isHost = false;
             this.ui.showStartMatchButton(false);
-            
+
             this.stateSync.clear();
             this.renderer.reset();
-            
+
             const res = await this.network.createSession({ token, archetype: arch, weaponId: weapon });
             if (res.success && res.sessionId) {
-                this.startGame(res.sessionId, true, false); 
+                this.startGame(res.sessionId, true, false);
             } else {
                 this.ui.showErrorLobby(res.message || 'Ошибка создания одиночной игры');
             }
@@ -78,10 +75,10 @@ class App {
             const token = localStorage.getItem('session_token');
             if (!token) return;
             this.isHost = true;
-            
+
             this.stateSync.clear();
             this.renderer.reset();
-            
+
             const res = await this.network.createLobby({ token, archetype: arch, weaponId: weapon });
             if (res.success && res.sessionId) {
                 this.ui.showStartMatchButton(true);
@@ -136,10 +133,10 @@ class App {
             if (!token) return;
             this.isHost = false;
             this.ui.showStartMatchButton(false);
-            
+
             this.stateSync.clear();
             this.renderer.reset();
-            
+
             const res = await this.network.joinLobby({ sessionId: sid, token, archetype: arch, weaponId: weapon });
             if (res.success) {
                 this.startGame(sid, false, false);
@@ -179,20 +176,36 @@ class App {
         };
 
         this.ui.onLogout = () => {
-            this.network.disconnect();
+            if (this.gameLoopId) {
+                cancelAnimationFrame(this.gameLoopId);
+                this.gameLoopId = undefined;
+            }
+
+            this.input.stopListening();
+
+            // 3. Закрываем модальное окно портала
+            this.ui.showPortalModal(false);
+
+            // 4. Полностью очищаем ВСЕ ключи сессий из браузера (решаем главный баг)
+            localStorage.removeItem('game_session_id');
             localStorage.removeItem('session_token');
+
+            // 5. Разрываем сетевое соединение сокета
+            this.network.disconnect();
+
+            // 6. Возвращаем игрока на чистый экран авторизации
             this.ui.showAuth();
         };
     }
 
     private bindNetworkToApp(): void {
         this.network.onPlayerId(id => this.myId = id);
-        
+
         this.network.onClassPresets(presets => {
             this.classPresets = presets;
             this.ui.updatePresets(presets, this.metaProgress);
         });
-        
+
         this.network.onSnapshot(snap => {
             this.stateSync.processSnapshot(snap);
         });
@@ -201,7 +214,7 @@ class App {
             alert(`Сервер сообщает: ${msg}`);
             if (msg.includes('другого устройства')) this.ui.onLogout?.();
         });
- 
+
         this.network.onSyncProgress(progress => {
             this.metaProgress = progress;
             this.ui.updatePresets(this.classPresets, progress);
@@ -237,21 +250,28 @@ class App {
     private async connectToServer(token: string): Promise<void> {
         try {
             const profile = await this.network.connect(token);
-            
+
             if (profile.progress) {
                 this.metaProgress = profile.progress;
             }
 
-            const savedSession = localStorage.getItem('game_session_id');
-            if (savedSession) {
-                this.startGame(savedSession, false, false);
-            } else {
-                this.ui.showLobby(profile.login);
-                this.ui.updatePresets(this.classPresets, this.metaProgress);
-                
-                // Переключаем видимость секции "Продолжить поход"
-                this.ui.showContinueButton(!!profile.activeSaveSessionId);
+            if (profile.currentSessionId) {
+                // Сервер подтвердил живую ОЗУ-сессию (мягкий реконнект в пределах
+                // grace period) — это авторитетный источник, а не localStorage.
+                this.isHost = profile.isHost === true;
+                this.ui.showStartMatchButton(this.isHost);
+                this.startGame(profile.currentSessionId, false, this.isHost);
+                return;
             }
+
+            // Сервер не подтвердил активную сессию (grace period истек либо ее не
+            // было) — чистим потенциально устаревший кэш, чтобы не пытаться
+            // автоподключиться к уже мертвой сессии.
+            localStorage.removeItem('game_session_id');
+
+            this.ui.showLobby(profile.login);
+            this.ui.updatePresets(this.classPresets, this.metaProgress);
+            this.ui.showContinueButton(!!profile.activeSaveSessionId);
         } catch (e) {
             this.ui.showAuth('Ошибка подключения к игровому серверу');
         }
@@ -259,8 +279,8 @@ class App {
 
     private startGame(sessionId: string, isSingleplayer: boolean = false, isHost: boolean = false): void {
         localStorage.setItem('game_session_id', sessionId);
-        this.ui.showGame(sessionId, isSingleplayer, isHost); 
-        
+        this.ui.showGame(sessionId, isSingleplayer, isHost);
+
         this.input.startListening();
         this.input.onInputChanged(action => this.network.sendPlayerAction(action));
 
@@ -273,7 +293,7 @@ class App {
         this.input.stopListening();
         this.ui.showPortalModal(false);
         if (this.gameLoopId) cancelAnimationFrame(this.gameLoopId);
-        
+
         this.network.requestProfile()
             .then(profile => {
                 if (profile.progress) {
@@ -281,7 +301,7 @@ class App {
                 }
                 this.ui.showLobby(profile.login);
                 this.ui.updatePresets(this.classPresets, this.metaProgress);
-                
+
                 // Перепроверяем, осталось ли сохранение после выхода в главное меню
                 this.ui.showContinueButton(!!profile.activeSaveSessionId);
             })
@@ -294,10 +314,10 @@ class App {
         this.lastTime = startTime;
 
         this.stateSync.tickInterpolation(deltaTime);
-        
+
         this.renderer.render(
-            this.stateSync.entities, 
-            this.stateSync.currentRoomState, 
+            this.stateSync.entities,
+            this.stateSync.currentRoomState,
             this.stateSync.staticObstacles,
             this.myId
         );

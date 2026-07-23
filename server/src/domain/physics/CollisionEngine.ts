@@ -202,19 +202,18 @@ export class CollisionEngine {
                 droppedItems.splice(i, 1);
             }
         }
-
         return collected;
     }
 
     public static checkPortalInteraction(player: Player, portal: Portal | null): boolean {
-    if (!portal || !portal.isActive) return false;
+        if (!portal || !portal.isActive) return false;
 
-    if (this.isOverlapping(player.getBounds(), portal.getBounds())) {
-        if (player.isInteracting) {
-            player.isInteracting = false;
-            return true;
+        if (this.isOverlapping(player.getBounds(), portal.getBounds())) {
+            if (player.isInteracting) {
+                player.isInteracting = false;
+                return true;
+            }
         }
+        return false;
     }
-    return false;
-}
 }

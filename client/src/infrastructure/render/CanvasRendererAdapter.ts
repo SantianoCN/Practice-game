@@ -1,3 +1,4 @@
+import Pica from 'pica';
 import { VisualEntity } from '../../domain/entities/VisualEntity';
 import { RoomState, ChestState, BaseEntityState } from '@game/shared';
 import { TextureRenderer, EntityRenderer } from './SupportRenderer';
@@ -20,6 +21,8 @@ interface MapCell {
     type?: string;
 }
 
+const pica = Pica();
+
 export class CanvasRendererAdapter {
     private context: CanvasRenderingContext2D;
     private canvas: HTMLCanvasElement;
@@ -32,7 +35,8 @@ export class CanvasRendererAdapter {
 
     private playerRenderers: Record<string, EntityRenderer>;
     private enemyRenderers: Record<string, EntityRenderer>;
-    private textures: Record<string, HTMLImageElement> = {};
+    
+    private textures: Record<string, HTMLImageElement | HTMLCanvasElement> = {};
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -62,26 +66,39 @@ export class CanvasRendererAdapter {
             'orange_box': new TextureRenderer(lizardMageImgUrl)
         };
 
-        this.textures = {
-            'chest_wooden_closed': this.preloadImage(chestImgUrl),
-            'chest_wooden_opened': this.preloadImage(chestOpenImgUrl),
-            'chest_gold_closed': this.preloadImage(chestImgUrl),
-            'chest_gold_opened': this.preloadImage(chestOpenImgUrl),
-            
-            'iron_sword': this.preloadImage(ironSwordImgUrl),
-            'battle_axe': this.preloadImage(battleAxeImgUrl),
-            'staff': this.preloadImage(fireStaffImgUrl),
-            'ice_staff': this.preloadImage(iceStaffImgUrl),
-            
-            'gold_pile': this.preloadImage(coinImgUrl),
-            'potion_red': this.preloadImage(potionRedImgUrl)
-        };
+        this.loadAndScaleTexture('chest_wooden_closed', chestImgUrl, 28, 28);
+        this.loadAndScaleTexture('chest_wooden_opened', chestOpenImgUrl, 28, 28);
+        this.loadAndScaleTexture('chest_gold_closed', chestImgUrl, 36, 36);
+        this.loadAndScaleTexture('chest_gold_opened', chestOpenImgUrl, 36, 36);
+        
+        this.loadAndScaleTexture('iron_sword', ironSwordImgUrl, 24, 24);
+        this.loadAndScaleTexture('battle_axe', battleAxeImgUrl, 24, 24);
+        this.loadAndScaleTexture('staff', fireStaffImgUrl, 24, 24);
+        this.loadAndScaleTexture('ice_staff', iceStaffImgUrl, 24, 24);
+        
+        this.loadAndScaleTexture('gold_pile', coinImgUrl, 24, 24);
+        this.loadAndScaleTexture('potion_red', potionRedImgUrl, 24, 24);
     }
 
-    private preloadImage(src: string): HTMLImageElement {
+    private loadAndScaleTexture(key: string, srcUrl: string, targetWidth: number, targetHeight: number): void {
         const img = new Image();
-        img.src = src;
-        return img;
+        img.src = srcUrl;
+        
+        img.onload = () => {
+            const outCanvas = document.createElement('canvas');
+            outCanvas.width = targetWidth;
+            outCanvas.height = targetHeight;
+            
+            pica.resize(img, outCanvas, { filter: 'lanczos3' })
+                .then(() => {
+                    this.textures[key] = outCanvas;
+                })
+                .catch(() => {
+                    this.textures[key] = img;
+                });
+        };
+
+        this.textures[key] = img;
     }
 
     public render(
@@ -382,11 +399,8 @@ export class CanvasRendererAdapter {
         for (const chest of chests) {
             const cx = Math.round(chest.x - chest.width / 2);
             const cy = Math.round(chest.y - chest.height / 2);
-            const cw = Math.round(chest.width);
-            const ch = Math.round(chest.height);
-            
+
             let textureKey = 'chest_wooden_closed';
-            
             if (chest.presetId === 'chest_gold_boss') {
                 textureKey = chest.isOpened ? 'chest_gold_opened' : 'chest_gold_closed';
             } else {
@@ -395,7 +409,7 @@ export class CanvasRendererAdapter {
 
             const texture = this.textures[textureKey];
             if (texture) {
-                this.context.drawImage(texture, cx, cy, cw, ch);
+                this.context.drawImage(texture, cx, cy);
             }
         }
     }
@@ -406,8 +420,6 @@ export class CanvasRendererAdapter {
         for (const item of droppedItems) {
             const ix = Math.round(item.x - item.width / 2);
             const iy = Math.round(item.y - item.height / 2);
-            const iw = Math.round(item.width);
-            const ih = Math.round(item.height);
             
             this.context.save();
             this.context.shadowColor = 'rgba(0, 0, 0, 0.3)';
@@ -416,12 +428,11 @@ export class CanvasRendererAdapter {
             this.context.shadowOffsetY = 2;
 
             const texture = this.textures[item.visualId];
-
             if (texture) {
-                this.context.drawImage(texture, ix, iy, iw, ih);
+                this.context.drawImage(texture, ix, iy);
             } else {
                 this.context.fillStyle = '#d4af37';
-                this.context.fillRect(ix, iy, iw, ih);
+                this.context.fillRect(ix, iy, item.width, item.height);
             }
             this.context.restore();
         }

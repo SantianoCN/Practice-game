@@ -23,13 +23,15 @@
             <div id="errorText" class="error-message">Неверный логин или пароль</div>
         </form>
     </div>
-
     <div id="lobby-screen" class="lobby-container hidden">
         <header class="lobby-header">
             <h1 class="logo"> РУСЫ ПРОТИВ ЯЩЕРОВ: Roguelike</h1>
             <div class="header-stats">
                 <button id="logoutBtn" class="button-logout" style="margin-bottom: 0;">ВЫЙТИ ИЗ ИЗБЫ</button>
-                <span>МЕТА-ЗОЛОТО: <span id="lobbyGold" class="highlight">0G</span></span>
+                <span class="gold-container">
+                    <span>ЗОЛОТО: <span id="lobbyGold" class="highlight">0</span></span>
+                    <img src="./assets/loot/coin.png" class="coin-icon" />
+                </span>
             </div>
         </header>
         <div class="lobby-grid">
@@ -52,7 +54,7 @@
                 </section>
                 <div class="stage-scene">
                     <div id="heroPreviewSprite" class="hero-sprite-container">
-                        <!-- Генерируется через TS (Сюда встанет КНОПКА КУПИТЬ вместо силуэта!) -->
+                        <!-- Генерируется через TS -->
                     </div>
                 </div>
             </main>

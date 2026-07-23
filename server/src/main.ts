@@ -60,8 +60,7 @@ async function bootstrap() {
         broadcaster, 
         idGen, 
         openChestUseCase, 
-        presetProvider,
-        nextFloorUseCase
+        presetProvider
     );
 
     app.post('/register', async (req, res) => {
@@ -94,9 +93,7 @@ async function bootstrap() {
 
         res.send({ 
             success: true, 
-            refreshToken: result.token, 
-            login: req.body.login,
-            progress: progressDTO
+            refreshToken: result.token
         });
     });
 

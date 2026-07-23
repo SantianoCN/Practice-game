@@ -1,19 +1,58 @@
+import Pica from 'pica';
 import { VisualEntity } from '../../domain/entities/VisualEntity';
 
 export interface EntityRenderer {
     draw(context: CanvasRenderingContext2D, entity: VisualEntity): void;
 }
 
+const pica = Pica();
+
 export class TextureRenderer implements EntityRenderer {
-    private texture: HTMLImageElement;
+    private texture: HTMLImageElement | HTMLCanvasElement;
     private isLoaded: boolean = false;
-    private frameWidth: number = 280;
-    private frameHeight: number = 300;
+    
+    private readonly originalFrameWidth: number = 280;
+    private readonly originalFrameHeight: number = 300;
+
+    private frameWidth: number = 40;
+    private frameHeight: number = 40;
 
     constructor(imagePath: string) {
-        this.texture = new Image();
-        this.texture.onload = () => { this.isLoaded = true; };
-        this.texture.src = imagePath;
+        const img = new Image();
+        img.src = imagePath;
+        this.texture = img;
+
+        this.frameWidth = this.originalFrameWidth;
+        this.frameHeight = this.originalFrameHeight;
+        
+        img.onload = () => {
+            const origW = img.width;
+            const origH = img.height;
+
+            const targetFrameHeight = 40; 
+            const scale = targetFrameHeight / this.originalFrameHeight;
+            
+            const targetW = Math.round(origW * scale);
+            const targetH = Math.round(origH * scale);
+
+            const outCanvas = document.createElement('canvas');
+            outCanvas.width = targetW;
+            outCanvas.height = targetH;
+
+            pica.resize(img, outCanvas, { filter: 'lanczos3' })
+                .then(() => {
+                    this.frameWidth = Math.round(this.originalFrameWidth * scale);
+                    this.frameHeight = targetFrameHeight;
+                    this.texture = outCanvas;
+                    this.isLoaded = true;
+                })
+                .catch(() => {
+                    this.frameWidth = this.originalFrameWidth;
+                    this.frameHeight = this.originalFrameHeight;
+                    this.texture = img;
+                    this.isLoaded = true;
+                });
+        };
     }
 
     public draw(context: CanvasRenderingContext2D, entity: VisualEntity): void {
@@ -25,41 +64,35 @@ export class TextureRenderer implements EntityRenderer {
         const rw = Math.round(entity.width);
         const rh = Math.round(entity.height);
 
-        if (this.isLoaded && this.frameWidth > 0) {
-            context.save();
+        context.save();
 
-            let startY = 0; // idle
-            
-            if (animation === 'move') {
-                startY = this.frameHeight; // walk
-            } else if (animation === 'attack') {
-                startY = this.frameHeight * 2; // attack
-            }
-
-            const currentFrame = (entity.currentFrame || 0) % 3;
-            const startX = currentFrame * this.frameWidth;
-
-            if (facing === 'left') {
-                context.translate(rx, ry);
-                context.scale(-1, 1);
-                context.drawImage(
-                    this.texture, 
-                    startX, startY, this.frameWidth, this.frameHeight,
-                    -Math.round(rw / 2), -Math.round(rh / 2), rw, rh
-                );
-            } else {
-                context.drawImage(
-                    this.texture, 
-                    startX, startY, this.frameWidth, this.frameHeight,
-                    rx - Math.round(rw / 2), ry - Math.round(rh / 2), rw, rh
-                );
-            }
-            
-            context.restore();
-        } else {
-            context.fillStyle = '#ff00ff';
-            context.fillRect(rx - Math.round(rw / 2), ry - Math.round(rh / 2), rw, rh);
+        let startY = 0;
+        
+        if (animation === 'move') {
+            startY = this.frameHeight;
+        } else if (animation === 'attack') {
+            startY = this.frameHeight * 2;
         }
+
+        const currentFrame = (entity.currentFrame || 0) % 3;
+        const startX = currentFrame * this.frameWidth;
+        if (facing === 'left') {
+            context.translate(rx, ry);
+            context.scale(-1, 1);
+            context.drawImage(
+                this.texture, 
+                startX, startY, this.frameWidth, this.frameHeight,
+                -Math.round(rw / 2), -Math.round(rh / 2), rw, rh
+            );
+        } else {
+            context.drawImage(
+                this.texture, 
+                startX, startY, this.frameWidth, this.frameHeight,
+                rx - Math.round(rw / 2), ry - Math.round(rh / 2), rw, rh
+            );
+        }
+        
+        context.restore();
 
         if (entity.hp !== undefined && entity.maxHp !== undefined && entity.type !== 'player') {
             this.drawHpBar(context, entity);

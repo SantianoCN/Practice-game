@@ -12,7 +12,6 @@ import { DroppedItem } from '../../domain/entities/Chest';
 import { OpenChestUseCase } from './OpenChestUseCase';
 import { IPresetProvider } from '../interfaces/IPresetProvider';
 import { EffectApplier } from '../../domain/services/EffectApplier';
-import { NextFloorUseCase } from './NextFloorUseCase';
 
 export class GameTickUseCase {
     constructor(
@@ -20,8 +19,7 @@ export class GameTickUseCase {
         private broadcaster: IClientBroadcaster,
         private idGen: IIdGenerator,
         private openChestUseCase: OpenChestUseCase,
-        private presetProvider: IPresetProvider,
-        private nextFloorUseCase: NextFloorUseCase
+        private presetProvider: IPresetProvider
     ) {}
 
     public execute(deltaTime: number, currentTime: number): void {
@@ -108,8 +106,6 @@ export class GameTickUseCase {
                     );
                 }
 
-                let floorTransitionTriggered = false;
-
                 for (const player of playersInRoom) {
                     CollisionEngine.resolveWallBounds(player, session.roomWidth, session.roomHeight, room, true);
                     CollisionEngine.resolveObstacles(player, room.getObstacleGrid());
@@ -118,10 +114,8 @@ export class GameTickUseCase {
                         const wantsToTransition = CollisionEngine.checkPortalInteraction(player, room.portal);
                         if (wantsToTransition) {
                             if (session.hostId === player.id) {
-                                // Вместо моментального вызова nextFloorUseCase шлем хосту запрос выбора!
                                 this.broadcaster.broadcastPortalInteract(player.id);
                             } else {
-                                // Обычным игрокам пишем вежливое предупреждение
                                 this.broadcaster.broadcastError(player.id, 'Только воевода (хост) решает, куда вести дружину!');
                             }
                         }
@@ -157,10 +151,6 @@ export class GameTickUseCase {
                             }
                         }
                     }
-                }
-
-                if (floorTransitionTriggered) {
-                    break; 
                 }
 
                 for (const bullet of room.bullets) {

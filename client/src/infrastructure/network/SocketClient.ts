@@ -1,47 +1,61 @@
 import { io, Socket } from 'socket.io-client';
 import { INetworkClient } from '../../application/interfaces/INetworkClient';
-import { 
-    PlayerActionDTO, GameSnapshotDTO, SessionCreateRequestDTO, 
-    SessionCreateResponseDTO, SessionJoinRequestDTO, SessionJoinResponseDTO, 
+import {
+    PlayerActionDTO, GameSnapshotDTO, SessionCreateRequestDTO,
+    SessionCreateResponseDTO, SessionJoinRequestDTO, SessionJoinResponseDTO,
     PlayerClassPresetDTO, ClientEvent, ServerEvent, RoomInitDTO,
     BuyItemResponseDTO, PlayerProgressDTO
 } from '@game/shared';
 
+interface ProfileResult {
+    login: string;
+    progress?: PlayerProgressDTO;
+    activeSaveSessionId?: string | null;
+    currentSessionId?: string | null;
+    isHost?: boolean;
+}
+
 export class SocketClient implements INetworkClient {
     private socket: Socket;
-    
+
     constructor(private serverUrl: string) {
-        this.socket = io(this.serverUrl, { 
-            autoConnect: false, 
-            transports: ['websocket'] 
+        this.socket = io(this.serverUrl, {
+            autoConnect: false,
+            transports: ['websocket']
         });
     }
 
-    public connect(token: string): Promise<{ login: string, progress?: PlayerProgressDTO, activeSaveSessionId?: string | null }> {
+    public connect(token: string): Promise<ProfileResult> {
         return new Promise((resolve, reject) => {
-            if (this.socket.connected) return resolve({ login: '', activeSaveSessionId: null });
-            
+            this.socket.disconnect();
+            this.socket.off('connect');
+            this.socket.off('connect_error');
+            this.socket.off('disconnect');
             this.socket.auth = { token };
-            this.socket.connect();
-            
             this.socket.once('connect', () => {
                 this.requestProfile()
                     .then(res => resolve(res))
                     .catch(err => reject(err));
             });
-            this.socket.once('connect_error', (err) => reject(err));
+
+            this.socket.once('connect_error', (err) => {
+                reject(err);
+            });
+
+            this.socket.connect();
         });
     }
 
-    public requestProfile(): Promise<{ login: string, progress?: PlayerProgressDTO, activeSaveSessionId?: string | null }> {
+    public requestProfile(): Promise<ProfileResult> {
         return new Promise((resolve, reject) => {
             this.socket.emit(ClientEvent.REQUEST_PROFILE, (res: any) => {
                 if (res?.success && res.login) {
-                    resolve({ 
-                        login: res.login, 
-                        progress: res.progress, 
-                        // Считываем ID сессии сохранения из ответа сервера
-                        activeSaveSessionId: res.activeSaveSessionId || null 
+                    resolve({
+                        login: res.login,
+                        progress: res.progress,
+                        activeSaveSessionId: res.activeSaveSessionId || null,
+                        currentSessionId: res.currentSessionId || null,
+                        isHost: res.isHost === true
                     });
                 } else {
                     reject(res?.message || 'Ошибка профиля');
@@ -90,7 +104,6 @@ export class SocketClient implements INetworkClient {
         });
     }
 
-    // Запрос к серверу на воссоздание лобби из файла сохранения
     public restoreSave(): Promise<{ success: boolean; sessionId?: string; message?: string }> {
         return new Promise(resolve => {
             this.socket.emit(ClientEvent.RESTORE_SAVE, {}, (res: any) => {
@@ -131,24 +144,24 @@ export class SocketClient implements INetworkClient {
         this.socket.disconnect();
     }
 
-    public onSnapshot(cb: (snapshot: GameSnapshotDTO) => void): void { 
-        this.socket.on(ServerEvent.SNAPSHOT, cb); 
-    }
-    
-    public onPlayerId(cb: (id: string) => void): void { 
-        this.socket.on(ServerEvent.PLAYER_ID, cb); 
-    }
-    
-    public onClassPresets(cb: (presets: Record<string, PlayerClassPresetDTO>) => void): void { 
-        this.socket.on(ServerEvent.CLASS_PRESETS, cb); 
-    }
-    
-    public onError(cb: (msg: string) => void): void { 
-        this.socket.on(ServerEvent.ERROR, cb); 
+    public onSnapshot(cb: (snapshot: GameSnapshotDTO) => void): void {
+        this.socket.on(ServerEvent.SNAPSHOT, cb);
     }
 
-    public onRoomInit(cb: (data: RoomInitDTO) => void) { 
-        this.socket.on(ServerEvent.ROOM_INIT, cb); 
+    public onPlayerId(cb: (id: string) => void): void {
+        this.socket.on(ServerEvent.PLAYER_ID, cb);
+    }
+
+    public onClassPresets(cb: (presets: Record<string, PlayerClassPresetDTO>) => void): void {
+        this.socket.on(ServerEvent.CLASS_PRESETS, cb);
+    }
+
+    public onError(cb: (msg: string) => void): void {
+        this.socket.on(ServerEvent.ERROR, cb);
+    }
+
+    public onRoomInit(cb: (data: RoomInitDTO) => void) {
+        this.socket.on(ServerEvent.ROOM_INIT, cb);
     }
 
     public onSyncProgress(cb: (progress: PlayerProgressDTO) => void): void {

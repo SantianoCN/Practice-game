@@ -9,7 +9,14 @@ export class PrismaSaveRepo implements ISaveRepository {
     constructor(private prisma: PrismaClient) {}
 
     public async saveRun(session: GameSession): Promise<void> {
-        await this.deleteRun(session.sessionId);
+        await this.prisma.runSave.deleteMany({
+            where: {
+                OR: [
+                    { sessionId: session.sessionId },
+                    { hostLogin: session.hostLogin }
+                ]
+            }
+        });
 
         const playersData = Array.from(session.players.values()).map(p => {
             const inventoryPresets = p.inventory.map(w => w.presetId).join(',');
@@ -66,14 +73,13 @@ export class PrismaSaveRepo implements ISaveRepository {
                 const item = ITEMS_DATABASE[presetId];
                 const config = (item && item.type === 'weapon' && item.stats) ? item.stats : SWORD;
                 const name = item ? item.name : 'Стальной Меч';
-                
+
                 weapons.push(new Weapon(`wpn_restored_${dbPlayer.login}_${i}`, presetId, name, config));
             }
 
             const classPreset = PLAYER_CLASSES[dbPlayer.archetype] || PLAYER_CLASSES['warrior'];
             const stats = classPreset.stats;
 
-            // Инициализируем персонаж как оффлайн с фейковым id
             const player = new Player(
                 `restored_offline_${dbPlayer.login}`,
                 dbPlayer.login,
@@ -90,7 +96,7 @@ export class PrismaSaveRepo implements ISaveRepository {
             player.maxHp = dbPlayer.maxHp;
             player.gold = dbPlayer.gold;
             player.inventory = weapons;
-            player.isOnline = false; // Ждет входа игрока из лобби в ОЗУ
+            player.isOnline = false;
 
             const activeIndex = weapons.findIndex(w => w.presetId === dbPlayer.weaponPresetId);
             if (activeIndex !== -1) {
@@ -105,18 +111,17 @@ export class PrismaSaveRepo implements ISaveRepository {
 
     public async deleteRun(sessionId: string): Promise<void> {
         try {
-            await this.prisma.runSave.delete({
-                where: { sessionId }
-            });
+            await this.prisma.runSave.delete({ where: { sessionId } });
         } catch (err) {
-            // Игнорируем отсутствие записи
+            
         }
     }
 
     public async getRunSaveByHost(hostLogin: string): Promise<any | null> {
         return this.prisma.runSave.findFirst({
             where: { hostLogin },
-            include: { players: true }
+            include: { players: true },
+            orderBy: { createdAt: 'desc' }
         });
     }
 }
