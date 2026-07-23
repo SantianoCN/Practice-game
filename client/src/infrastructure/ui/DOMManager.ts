@@ -1,5 +1,3 @@
-// src/infrastructure/ui/DOMManager.ts
-
 import { Archetype, PlayerClassPresetDTO, StartingWeaponStats, PlayerProgressDTO, SHOP_PRICES } from '@game/shared';
 import warriorImgUrl from '../../../assets/hero/warrior-sword.png';
 import mageImgUrl from '../../../assets/hero/volhv.png';
@@ -311,7 +309,6 @@ export class DOMManager {
             };
             container.appendChild(buyContainer);
 
-            // ИСПРАВЛЕНИЕ: Динамически создаем имя в ДОМе вместо попытки найти его
             const nameSpan = document.createElement('span');
             nameSpan.className = 'hero-name';
             nameSpan.id = 'heroPreviewName';
@@ -333,7 +330,6 @@ export class DOMManager {
             };
             container.appendChild(buyContainer);
 
-            // ИСПРАВЛЕНИЕ: Динамически создаем имя в ДОМе вместо попытки найти его
             const nameSpan = document.createElement('span');
             nameSpan.className = 'hero-name';
             nameSpan.id = 'heroPreviewName';
@@ -371,7 +367,6 @@ export class DOMManager {
         }
     }
 
-    // НОВЫЙ МЕТОД: Полный сброс состояния синглтона при логауте
     public resetState(): void {
         this.selectedArch = 'warrior';
         this.selectedWeapon = '';

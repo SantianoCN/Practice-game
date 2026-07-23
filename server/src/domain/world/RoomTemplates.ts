@@ -106,7 +106,6 @@ export const ROOM_TEMPLATES: RoomTemplate[] = [
             { startX: 26, startY: 14, endX: 31, endY: 15, obj: 'stone' }
         ],
         chests: [
-            // ИСПРАВЛЕНИЕ: привели к единому формату пресетов сундуков
             { gridX: 19, gridY: 14, presetId: "chest_wooden" }
         ]
     },

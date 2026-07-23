@@ -1,6 +1,4 @@
-// src/infrastructure/render/CanvasRendererAdapter.ts
-
-import Pica from 'pica'; // Импортируем установленный Pica
+import Pica from 'pica';
 import { VisualEntity } from '../../domain/entities/VisualEntity';
 import { RoomState, ChestState, BaseEntityState } from '@game/shared';
 import { TextureRenderer, EntityRenderer } from './SupportRenderer';
@@ -11,7 +9,7 @@ interface MapCell {
     type?: string;
 }
 
-const pica = Pica(); // Глобальный экземпляр ресайзера
+const pica = Pica();
 
 export class CanvasRendererAdapter {
     private context: CanvasRenderingContext2D;
@@ -26,7 +24,6 @@ export class CanvasRendererAdapter {
     private playerRenderers: Record<string, EntityRenderer[]>;
     private enemyRenderers: Record<string, EntityRenderer>;
     
-    // Поддержка хранения как Image (fallback), так и сжатых Canvas
     private textures: Record<string, HTMLImageElement | HTMLCanvasElement> = {};
     private tileArr: Array<HTMLImageElement | HTMLCanvasElement> = [];
 
@@ -58,27 +55,17 @@ export class CanvasRendererAdapter {
             'orange_box': new TextureRenderer(ASSETS.enemy.lizardMage)
         };
 
-        // --- АСИНХРОННЫЙ РЕСАЙЗ СТАТИЧЕСКИХ ТЕКСТУР ЧЕРЕЗ PICA ---
-        // Закрытые состояния сундуков (размер 28х28 и 36х36)
         this.loadAndScaleTexture('chest_closed', ASSETS.env.chest, 28, 28);
         this.loadAndScaleTexture('chest_wooden_closed', ASSETS.env.chest, 28, 28);
         this.loadAndScaleTexture('chest_gold_closed', ASSETS.env.chest, 36, 36);
-
-        // Открытые состояния сундуков
         this.loadAndScaleTexture('chest_wooden_opened', ASSETS.env.chestOpen, 28, 28);
         this.loadAndScaleTexture('chest_gold_opened', ASSETS.env.chestOpen, 36, 36);
-
-        // Препятствия
         this.loadAndScaleTexture('stone', ASSETS.env.stone, 20, 20);
-
-        // Выпавшее оружие и монетки (размер 24х24)
         this.loadAndScaleTexture('battle_axe', ASSETS.weapon.battleAxe, 24, 24);
         this.loadAndScaleTexture('iron_sword', ASSETS.weapon.ironSword, 24, 24);
         this.loadAndScaleTexture('fire_staff', ASSETS.weapon.fireStaff, 24, 24);
         this.loadAndScaleTexture('ice_staff', ASSETS.weapon.iceStaff, 24, 24);
         this.loadAndScaleTexture('gold', ASSETS.loot.coin, 24, 24);
-
-        // Асинхронно сжимаем плитки пола, чтобы они не рябили при рендере
         this.loadAndScaleTile(0, ASSETS.env.caveTile1);
         this.loadAndScaleTile(1, ASSETS.env.caveTile2);
         this.loadAndScaleTile(2, ASSETS.env.caveTile3);
@@ -91,9 +78,6 @@ export class CanvasRendererAdapter {
         return img;
     }
 
-    /**
-     * Асинхронный качественный ресайз текстур через Pica
-     */
     private loadAndScaleTexture(key: string, srcUrl: string, targetWidth: number, targetHeight: number): void {
         const img = new Image();
         img.src = srcUrl;
@@ -105,20 +89,16 @@ export class CanvasRendererAdapter {
             
             pica.resize(img, outCanvas, { filter: 'lanczos3' })
                 .then(() => {
-                    this.textures[key] = outCanvas; // Подменяем на сглаженный холст
+                    this.textures[key] = outCanvas;
                 })
                 .catch(() => {
-                    this.textures[key] = img; // Резервный фолбек
+                    this.textures[key] = img;
                 });
         };
 
-        // Заглушка: мгновенно кладем сырой Image, чтобы drawImage никогда не получил undefined
         this.textures[key] = img;
     }
 
-    /**
-     * Асинхронный ресайз плиток пола
-     */
     private loadAndScaleTile(index: number, srcUrl: string): void {
         const img = new Image();
         img.src = srcUrl;
@@ -563,7 +543,6 @@ export class CanvasRendererAdapter {
             const cx = Math.round(chest.x - chest.width / 2);
             const cy = Math.round(chest.y - chest.height / 2);
             
-            // ИСПРАВЛЕНИЕ: Безопасно сопоставляем серверные visualId сундуков
             const texture = this.textures[chest.visualId];
             if (texture) {
                 this.context.drawImage(texture, cx, cy, chest.width, chest.height);

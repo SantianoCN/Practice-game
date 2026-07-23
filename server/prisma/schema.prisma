@@ -12,16 +12,32 @@ model Account {
   login        String          @unique
   passwordHash String
   refreshToken String          @default("")
-  progress     PlayerProgress? 
+  progress     PlayerProgress?
 }
 
 model PlayerProgress {
-  id              String  @id @default(uuid())
-  accountId       String  @unique
-  account         Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  metaGold        Int     @default(0)
-  unlockedClasses String  @default("warrior")
-  unlockedWeapons String  @default("wpn_iron_sword")
+  id              String           @id @default(uuid())
+  accountId       String           @unique
+  account         Account          @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  gold            Int              @default(0)
+  unlockedClasses UnlockedClass[]
+  unlockedWeapons UnlockedWeapon[]
+}
+
+model UnlockedClass {
+  id               String         @id @default(uuid())
+  playerProgressId String
+  playerProgress   PlayerProgress @relation(fields: [playerProgressId], references: [id], onDelete: Cascade)
+  classId          String
+  @@unique([playerProgressId, classId])
+}
+
+model UnlockedWeapon {
+  id               String         @id @default(uuid())
+  playerProgressId String
+  playerProgress   PlayerProgress @relation(fields: [playerProgressId], references: [id], onDelete: Cascade)
+  weaponId         String
+  @@unique([playerProgressId, weaponId])
 }
 
 model RunSave {
@@ -36,9 +52,9 @@ model RunSave {
 }
 
 model PlayerSaveState {
-  id             String  @id @default(uuid())
+  id             String          @id @default(uuid())
   runSaveId      String
-  runSave        RunSave @relation(fields: [runSaveId], references: [id], onDelete: Cascade)
+  runSave        RunSave         @relation(fields: [runSaveId], references: [id], onDelete: Cascade)
   login          String
   archetype      String
   hp             Int
@@ -47,5 +63,13 @@ model PlayerSaveState {
   maxMana        Int
   gold           Int
   weaponPresetId String
-  inventory      String  @default("")
+  inventory      InventoryItem[]
+}
+
+model InventoryItem {
+  id                String          @id @default(uuid())
+  playerSaveStateId String
+  playerSaveState   PlayerSaveState @relation(fields: [playerSaveStateId], references: [id], onDelete: Cascade)
+  itemId            String
+  quantity          Int             @default(1)
 }

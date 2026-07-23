@@ -8,6 +8,14 @@ import { ITEMS_DATABASE, SWORD, PLAYER_CLASSES, GAME_DIFFICULTY } from '@game/sh
 export class PrismaSaveRepo implements ISaveRepository {
     constructor(private prisma: PrismaClient) {}
 
+    private readonly includeConfig = {
+        players: {
+            include: {
+                inventory: true
+            }
+        }
+    };
+
     public async saveRun(session: GameSession): Promise<void> {
         await this.prisma.runSave.deleteMany({
             where: {
@@ -19,8 +27,13 @@ export class PrismaSaveRepo implements ISaveRepository {
         });
 
         const playersData = Array.from(session.players.values()).map(p => {
-            const inventoryPresets = p.inventory.map(w => w.presetId).join(',');
             const activeWeapon = p.getActiveWeapon();
+            
+            const inventoryItems = p.inventory.map(w => ({
+                itemId: w.presetId,
+                quantity: 1
+            }));
+
             return {
                 login: p.name,
                 archetype: p.archetype,
@@ -30,7 +43,9 @@ export class PrismaSaveRepo implements ISaveRepository {
                 maxMana: p.maxMana,
                 gold: p.gold,
                 weaponPresetId: activeWeapon.presetId,
-                inventory: inventoryPresets
+                inventory: {
+                    create: inventoryItems
+                }
             };
         });
 
@@ -51,7 +66,7 @@ export class PrismaSaveRepo implements ISaveRepository {
     public async loadRun(sessionId: string): Promise<GameSession | null> {
         const dbSave = await this.prisma.runSave.findUnique({
             where: { sessionId },
-            include: { players: true }
+            include: this.includeConfig
         });
 
         if (!dbSave) return null;
@@ -65,7 +80,10 @@ export class PrismaSaveRepo implements ISaveRepository {
         for (const dbPlayer of dbSave.players) {
             session.allowedLogins.add(dbPlayer.login);
 
-            const weaponPresets = dbPlayer.inventory ? dbPlayer.inventory.split(',') : ['wpn_iron_sword'];
+            const weaponPresets = dbPlayer.inventory.length > 0
+                ? dbPlayer.inventory.map((item: any) => item.itemId)
+                : ['wpn_iron_sword'];
+                
             const weapons: Weapon[] = [];
 
             for (let i = 0; i < weaponPresets.length; i++) {
@@ -120,7 +138,7 @@ export class PrismaSaveRepo implements ISaveRepository {
     public async getRunSaveByHost(hostLogin: string): Promise<any | null> {
         return this.prisma.runSave.findFirst({
             where: { hostLogin },
-            include: { players: true },
+            include: this.includeConfig,
             orderBy: { createdAt: 'desc' }
         });
     }

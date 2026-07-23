@@ -28,7 +28,7 @@ export class TextureRenderer implements EntityRenderer {
         if (this.isLoaded && this.frameWidth > 0) {
             context.save();
 
-            let startY = 0; // idle
+            let startY = 0;
             
             if (animation === 'move') {
                 startY = this.frameHeight
@@ -82,16 +82,3 @@ export class TextureRenderer implements EntityRenderer {
         context.fillRect(barX, barY, Math.round(barWidth * hpPercentage), barHeight);
     }
 }
-
-// import { stoneWallPattern } from "./../../../assets/environment/patrn";
-
-// export class DrawRenderer implements EntityRenderer {
-//     private drawTexture = {
-//         'stone_wall': stoneWallPattern
-//     }
-//     constructor(private color: string) {}
-
-//     public draw(context: CanvasRenderingContext2D, obj: string): void {
-
-//     }
-// }

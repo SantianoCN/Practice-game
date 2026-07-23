@@ -6,14 +6,31 @@ import { PlayerProgress } from '../../domain/entities/PlayerProgress';
 export class PrismaAccountRepo implements IAccountRepository {
     constructor(private prisma: PrismaClient) {}
 
+    private readonly includeConfig = {
+        progress: {
+            include: {
+                unlockedClasses: true,
+                unlockedWeapons: true
+            }
+        }
+    };
+
     private mapToDomain(dbAccount: any): Account {
         let domainProgress: PlayerProgress | undefined;
 
         if (dbAccount.progress) {
+            const classes = dbAccount.progress.unlockedClasses
+                ? dbAccount.progress.unlockedClasses.map((c: any) => c.classId)
+                : ['warrior'];
+
+            const weapons = dbAccount.progress.unlockedWeapons
+                ? dbAccount.progress.unlockedWeapons.map((w: any) => w.weaponId)
+                : ['wpn_iron_sword'];
+
             domainProgress = new PlayerProgress(
-                dbAccount.progress.metaGold,
-                dbAccount.progress.unlockedClasses ? dbAccount.progress.unlockedClasses.split(',') : ['warrior'],
-                dbAccount.progress.unlockedWeapons ? dbAccount.progress.unlockedWeapons.split(',') : ['wpn_iron_sword']
+                dbAccount.progress.gold,
+                classes,
+                weapons
             );
         }
 
@@ -29,7 +46,7 @@ export class PrismaAccountRepo implements IAccountRepository {
     async getByLogin(login: string): Promise<Account | null> {
         const dbAccount = await this.prisma.account.findFirst({ 
             where: { login },
-            include: { progress: true }
+            include: this.includeConfig
         });
         if (!dbAccount) return null;
         return this.mapToDomain(dbAccount);
@@ -38,7 +55,7 @@ export class PrismaAccountRepo implements IAccountRepository {
     async getByToken(token: string): Promise<Account | null> {
         const dbAccount = await this.prisma.account.findFirst({ 
             where: { refreshToken: token },
-            include: { progress: true }
+            include: this.includeConfig
         });
         if (!dbAccount) return null;
         return this.mapToDomain(dbAccount);
@@ -52,13 +69,17 @@ export class PrismaAccountRepo implements IAccountRepository {
                 refreshToken: token,
                 progress: {
                     create: {
-                        metaGold: 0,
-                        unlockedClasses: "warrior",
-                        unlockedWeapons: "wpn_iron_sword"
+                        gold: 0,
+                        unlockedClasses: {
+                            create: { classId: "warrior" }
+                        },
+                        unlockedWeapons: {
+                            create: { weaponId: "wpn_iron_sword" }
+                        }
                     }
                 }
             },
-            include: { progress: true }
+            include: this.includeConfig
         });
         return this.mapToDomain(dbAccount);
     }
@@ -67,30 +88,54 @@ export class PrismaAccountRepo implements IAccountRepository {
         const dbAccount = await this.prisma.account.update({
             where: { id },
             data: { refreshToken: token },
-            include: { progress: true }
+            include: this.includeConfig
         });
         return this.mapToDomain(dbAccount);
     }
 
     async updateProgress(
         accountId: string, 
-        metaGold: number, 
+        gold: number, 
         unlockedClasses: string[], 
         unlockedWeapons: string[]
     ): Promise<Account> {
-        const dbAccount = await this.prisma.account.update({
+        const account = await this.prisma.account.findUnique({
             where: { id: accountId },
-            data: {
-                progress: {
-                    update: {
-                        metaGold,
-                        unlockedClasses: unlockedClasses.join(','),
-                        unlockedWeapons: unlockedWeapons.join(',')
-                    }
-                }
-            },
             include: { progress: true }
         });
-        return this.mapToDomain(dbAccount);
+
+        if (!account || !account.progress) {
+            throw new Error("Прогресс аккаунта не найден в базе данных");
+        }
+
+        const progressId = account.progress.id;
+
+        await this.prisma.$transaction([
+            this.prisma.unlockedClass.deleteMany({ where: { playerProgressId: progressId } }),
+            this.prisma.unlockedWeapon.deleteMany({ where: { playerProgressId: progressId } }),
+            this.prisma.playerProgress.update({
+                where: { id: progressId },
+                data: {
+                    gold,
+                    unlockedClasses: {
+                        create: unlockedClasses.map(c => ({ classId: c }))
+                    },
+                    unlockedWeapons: {
+                        create: unlockedWeapons.map(w => ({ weaponId: w }))
+                    }
+                }
+            })
+        ]);
+
+        const updatedAccount = await this.prisma.account.findUnique({
+            where: { id: accountId },
+            include: this.includeConfig
+        });
+
+        if (!updatedAccount) {
+            throw new Error("Не удалось получить обновленный аккаунт");
+        }
+
+        return this.mapToDomain(updatedAccount);
     }
 }

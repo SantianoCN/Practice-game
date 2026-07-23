@@ -95,7 +95,7 @@ class App {
             try {
                 const res = await this.network.restoreSave();
                 if (res.success && res.sessionId) {
-                    this.isHost = true; // Тот, кто нажал продолжить, становится воеводой восстановленного лобби
+                    this.isHost = true;
                     this.ui.showStartMatchButton(true);
                     this.startGame(res.sessionId, false, true);
                 } else {
@@ -108,7 +108,7 @@ class App {
 
         this.ui.onPortalNextFloor = () => {
             this.network.sendNextFloor();
-            this.ui.showPortalModal(false); // Прячем модалку после выбора
+            this.ui.showPortalModal(false);
             this.renderer.reset();
             this.stateSync.clear();
         };
@@ -118,7 +118,6 @@ class App {
                 const res = await this.network.saveAndExit();
                 if (res.success) {
                     this.ui.showPortalModal(false);
-                    // Сессия закроется на сервере, клиент вернется в лобби через onSessionTerminated / stopGame
                 } else {
                     alert(res.message || 'Не удалось сохранить поход');
                 }
@@ -180,23 +179,12 @@ class App {
                 cancelAnimationFrame(this.gameLoopId);
                 this.gameLoopId = undefined;
             }
-
             this.input.stopListening();
-
-            // Закрываем модальное окно портала
             this.ui.showPortalModal(false);
-
-            // Сбрасываем кэш синглтона DOMManager, предотвращая падения при смене профилей
             this.ui.resetState();
-
-            // Полностью очищаем все локальные ключи сессий из браузера
             localStorage.removeItem('game_session_id');
             localStorage.removeItem('session_token');
-
-            // Разрываем сетевое соединение сокета
             this.network.disconnect();
-
-            // Возвращаем игрока на чистый экран авторизации
             this.ui.showAuth();
         };
     }
@@ -241,7 +229,7 @@ class App {
         };
 
         this.network.onPortalInteract(() => {
-            this.ui.showPortalModal(true); // Показываем модалку хосту при касании портала
+            this.ui.showPortalModal(true);
         });
 
         this.network.onSessionTerminated(data => {
@@ -260,8 +248,6 @@ class App {
             return;
         }
 
-        // Всё, что ниже, — вне catch, чтобы баги рендера/презетов
-        // не маскировались под "ошибку авторизации"
         if (profile.progress) {
             this.metaProgress = profile.progress;
         }
@@ -304,7 +290,6 @@ class App {
                 this.ui.showLobby(profile.login);
                 this.ui.updatePresets(this.classPresets, this.metaProgress);
 
-                // Перепроверяем, осталось ли сохранение после выхода в главное меню
                 this.ui.showContinueButton(!!profile.activeSaveSessionId);
             })
             .catch(() => this.ui.showAuth());

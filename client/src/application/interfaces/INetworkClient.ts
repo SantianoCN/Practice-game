@@ -31,7 +31,7 @@ export interface INetworkClient {
     onSyncProgress(cb: (progress: PlayerProgressDTO) => void): void;
     onSessionCompleted(cb: (data: { message: string, progress: PlayerProgressDTO }) => void): void;
     onSessionTerminated(cb: (data: { message: string }) => void): void;
-    saveAndExit(): Promise<{ success: boolean; message?: string }>; // Перевод "client:save-and-exit" в типизированный метод
+    saveAndExit(): Promise<{ success: boolean; message?: string }>;
     sendNextFloor(): void;
     onPortalInteract(cb: () => void): void;
 }
