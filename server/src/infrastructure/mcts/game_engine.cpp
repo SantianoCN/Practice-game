@@ -21,7 +21,7 @@ void GameEngine::integrate_movement(GameState& state, bool npc_turn, int player_
     for (int i = 0; i < MOVE_STEP_SIZE; ++i) {
         int nx = cx + vx, ny = cy + vy;
         if (map.is_wall(nx, ny)) {
-            //if (npc_turn) state.npc_hp = 0;   
+            //if (npc_turn) state.npc_hp = 0;
             return;
         }
         cx = nx; cy = ny;
@@ -54,44 +54,70 @@ double GameEngine::heuristic_eval(const GameState& state) const {
     double reward = 0.0;
     double players_hp_sum = 0;
     int min_distance = std::numeric_limits<int>::max();
-    bool player_alive = false;
+    bool nearest_has_los = false;
+    int nearest_player_index = -1;
 
-    for (const Player& p : state.players) {
-        if (p.hp <= 0) continue;
-        player_alive = true;
-        players_hp_sum += p.hp;
+    for (int i = 0; i < state.players_count; i++) {
+        if (state.players[i].hp <= 0) continue;
+        players_hp_sum += state.players[i].hp;
 
-        int dx = p.x - state.npc_x;
-        int dy = p.y - state.npc_y;
-        int distance = (int)sqrt(dx * dx + dy * dy);
-        if (distance < min_distance) min_distance = distance;
+        int dx = state.players[i].x - state.npc_x;
+        int dy = state.players[i].y - state.npc_y;
+        int distance = (int)std::sqrt((double)(dx * dx + dy * dy));
+
+        if (distance < min_distance) {
+            min_distance = distance;
+            nearest_player_index = i;
+            nearest_has_los = map.has_line_of_sight(
+                state.npc_x, state.npc_y, state.players[i].x, state.players[i].y);
+        }
     }
 
-    /*if (!player_alive) return 1000.0;
-    if (state.npc_hp <= 0) return -1000.0;*/
+    if (!nearest_has_los && nearest_player_index != -1) {
+        reward -= 1000.0;
+        
+        if (min_distance > state.npc_range) {
+            reward -= 500.0;  
+        }
+    }
 
     double damage = 150.0 - players_hp_sum;
-    reward += damage * 0.5;  
-
-    reward += state.npc_hp * 0.2;  
+    reward += damage * 0.5;
+    reward += state.npc_hp * 0.2;
 
     double ideal_min = state.npc_range * 0.8;
     double ideal_max = state.npc_range * 1.0;
 
-    if (min_distance >= ideal_min && min_distance <= ideal_max) {
-        reward += 30.0;
-    }
-    else if (min_distance < ideal_min) {
-        double deviation = (ideal_min - min_distance) / ideal_min;
-        reward -= deviation * 40.0;
-    }
-    else {
-        double deviation = (min_distance - ideal_max) / ideal_max;
-        reward -= deviation * 60.0;
+    if (nearest_has_los) {
+        if (min_distance >= ideal_min && min_distance <= ideal_max) {
+            reward += 30.0;
+        } else if (min_distance < ideal_min) {
+            double deviation = (ideal_min - min_distance) / ideal_min;
+            reward -= deviation * 40.0;
+        } else {
+            double deviation = (min_distance - ideal_max) / ideal_max;
+            reward -= deviation * 60.0;
+        }
+        if (min_distance <= state.npc_range) reward += 5.0;
+    } else {
+        reward -= 200.0;
     }
 
-    if (min_distance <= state.npc_range) {
-        reward += 5.0;
+    for (const Obstacle& ob : map.obstacles) {
+        double dist_to_wall_x = std::min(
+            std::abs(state.npc_x - ob.x), 
+            std::abs(state.npc_x - (ob.x + ob.width))
+        );
+        double dist_to_wall_y = std::min(
+            std::abs(state.npc_y - ob.y), 
+            std::abs(state.npc_y - (ob.y + ob.height))
+        );
+        double dist_to_wall = std::min(dist_to_wall_x, dist_to_wall_y);
+        if (dist_to_wall < 20) reward -= (20 - dist_to_wall) * 0.5;
+        
+        if (dist_to_wall < 5) {
+            reward -= 100.0;  
+        }
     }
 
     return reward;

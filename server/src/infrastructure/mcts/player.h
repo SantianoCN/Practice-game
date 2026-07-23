@@ -8,4 +8,5 @@ struct Player {
     int vy;
     int damage;
     int range;
+    int speed;
 };

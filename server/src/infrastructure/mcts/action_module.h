@@ -24,27 +24,27 @@ inline const Player* find_closest_player(const GameState& state, int& out_dist_s
 
 inline void move_up(GameState& s, const RoomMap&, bool npc_turn, int player_idx) {
     if (npc_turn) { s.npc_vx = 0; s.npc_vy = -1; }
-    else if (s.players_count != 0) { s.players[0].vx = 0; s.players[0].vy = -1; }
+    else if (s.players_count != 0) { s.players[player_idx].vx = 0; s.players[player_idx].vy = -1; }
 }
 
 inline void move_down(GameState& s, const RoomMap&, bool npc_turn, int player_idx) {
     if (npc_turn) { s.npc_vx = 0; s.npc_vy = 1; }
-    else if (s.players_count != 0) { s.players[0].vx = 0; s.players[0].vy = 1; }
+    else if (s.players_count != 0) { s.players[player_idx].vx = 0; s.players[player_idx].vy = 1; }
 }
 
  inline void move_left(GameState& s, const RoomMap&, bool npc_turn, int player_idx) {
     if (npc_turn) { s.npc_vx = -1; s.npc_vy = 0; }
-    else if (s.players_count != 0) { s.players[0].vx = -1; s.players[0].vy = 0; }
+    else if (s.players_count != 0) { s.players[player_idx].vx = -1; s.players[player_idx].vy = 0; }
 }
 
 inline void move_right(GameState& s, const RoomMap&, bool npc_turn, int player_idx) {
     if (npc_turn) { s.npc_vx = 1; s.npc_vy = 0; }
-    else if (s.players_count != 0) { s.players[0].vx = 1; s.players[0].vy = 0; }
+    else if (s.players_count != 0) { s.players[player_idx].vx = 1; s.players[player_idx].vy = 0; }
 }
 
 inline void wait(GameState& s, const RoomMap&, bool npc_turn, int player_idx) {
     if (npc_turn) { s.npc_vx = 0; s.npc_vy = 0; }
-    else if (s.players_count != 0) { s.players[0].vx = 0; s.players[0].vy = 0; }
+    else if (s.players_count != 0) { s.players[player_idx].vx = 0; s.players[player_idx].vy = 0; }
 }
 
 inline void approach(GameState& s, const RoomMap&, bool npc_turn, int player_idx) {
@@ -54,8 +54,8 @@ inline void approach(GameState& s, const RoomMap&, bool npc_turn, int player_idx
         s.npc_vy = t ? sign(t->y - s.npc_y) : 0;
     }
     else if (s.players_count != 0) {
-        s.players[0].vx = sign(s.npc_x - s.players[0].x);
-        s.players[0].vy = sign(s.npc_y - s.players[0].y);
+        s.players[player_idx].vx = sign(s.npc_x - s.players[player_idx].x);
+        s.players[player_idx].vy = sign(s.npc_y - s.players[player_idx].y);
     }
 }
 inline void retreat(GameState& s, const RoomMap&, bool npc_turn, int player_idx) {
@@ -65,8 +65,8 @@ inline void retreat(GameState& s, const RoomMap&, bool npc_turn, int player_idx)
         s.npc_vy = t ? -sign(t->y - s.npc_y) : 0;
     }
     else if (s.players_count != 0) {
-        s.players[0].vx = -sign(s.npc_x - s.players[0].x);
-        s.players[0].vy = -sign(s.npc_y - s.players[0].y);
+        s.players[player_idx].vx = -sign(s.npc_x - s.players[player_idx].x);
+        s.players[player_idx].vy = -sign(s.npc_y - s.players[player_idx].y);
     }
 }
 
@@ -88,7 +88,7 @@ inline void attack(GameState& s, const RoomMap& map, bool npc_turn, int player_i
         for (Player& p : s.players) if (&p == target) { p.hp -= s.npc_damage; break; }
     }
     else if (s.players_count != 0) {
-        Player& p = s.players[0];
+        Player& p = s.players[player_idx];
         p.vx = 0; p.vy = 0;
         int dx = s.npc_x - p.x, dy = s.npc_y - p.y;
         if (dx * dx + dy * dy > p.range * p.range) return;
