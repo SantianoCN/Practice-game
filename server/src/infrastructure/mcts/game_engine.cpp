@@ -103,14 +103,14 @@ double GameEngine::heuristic_eval(const GameState& state) const {
         reward -= extra * 100.0;
     }
 
-    for (const Obstacle& ob : map.obstacles) {
-        double dist_to_wall_x = std::min(std::abs(state.npc_x - ob.x), std::abs(state.npc_x - (ob.x + ob.width)));
-        double dist_to_wall_y = std::min(std::abs(state.npc_y - ob.y), std::abs(state.npc_y - (ob.y + ob.height)));
-        double dist_to_wall = std::min(dist_to_wall_x, dist_to_wall_y);
-        if (dist_to_wall < 20) {
-            reward -= (20 - dist_to_wall) * 0.5;
-        }
-    }
+    // for (const Obstacle& ob : map.obstacles) {
+    //     double dist_to_wall_x = std::min(std::abs(state.npc_x - ob.x), std::abs(state.npc_x - (ob.x + ob.width)));
+    //     double dist_to_wall_y = std::min(std::abs(state.npc_y - ob.y), std::abs(state.npc_y - (ob.y + ob.height)));
+    //     double dist_to_wall = std::min(dist_to_wall_x, dist_to_wall_y);
+    //     if (dist_to_wall < 20) {
+    //         reward -= (20 - dist_to_wall) * 0.5;
+    //     }
+    // }
 
     return reward;
 }
