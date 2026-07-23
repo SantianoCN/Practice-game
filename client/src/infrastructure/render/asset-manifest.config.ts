@@ -14,7 +14,7 @@ import {
     SLASH,
     AXE_SLASH,
 } from '@game/shared';
-import { ASSETS } from './../../../assets/index.ts';
+import { ASSETS } from './../../../assets';
 
 export const DEFAULT_SIZES = {
     droppedItem: 24,
@@ -51,7 +51,12 @@ const ITEM_ASSETS: StaticAssetEntry[] = Object.values(ITEMS_DATABASE)
             console.warn(`[asset-manifest] Нет ассета для предмета "${item.id}" (visualId: ${item.visualId})`);
             return null;
         }
-        return { visualId: item.visualId, src, width: DEFAULT_SIZES.droppedItem, height: DEFAULT_SIZES.droppedItem };
+        return { 
+            visualId: item.visualId, 
+            src, 
+            width: item.dropWidth ?? DEFAULT_SIZES.droppedItem, 
+            height: item.dropHeight ?? DEFAULT_SIZES.droppedItem 
+        };
     })
     .filter((entry): entry is StaticAssetEntry => entry !== null);
 

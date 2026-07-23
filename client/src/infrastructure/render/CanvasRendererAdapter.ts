@@ -2,7 +2,15 @@ import Pica from 'pica';
 import { VisualEntity } from '../../domain/entities/VisualEntity';
 import { RoomState, ChestState, BaseEntityState } from '@game/shared';
 import { TextureRenderer, EntityRenderer } from './SupportRenderer';
-import { ASSETS } from './../../../assets';
+import {
+    STATIC_ASSET_MANIFEST,
+    FLOOR_TILE_ASSETS,
+    PLAYER_VISUAL_MANIFEST,
+    ENEMY_VISUAL_MANIFEST,
+    PROJECTILE_VISUAL_MANIFEST,
+    DEFAULT_PROJECTILE_VISUAL,
+    StaticAssetEntry,
+} from './asset-manifest.config';
 import { GAME_CONFIG } from '@game/shared';
 
 interface MapCell {
@@ -23,10 +31,14 @@ export class CanvasRendererAdapter {
     private offscreenContext: CanvasRenderingContext2D;
     private currentRoomKey: string = '';
 
-    private playerRenderers: Record<string, EntityRenderer[]>;
-    private enemyRenderers: Record<string, EntityRenderer>;
-    
+    private playerRenderers: Record<string, EntityRenderer[]> = {};
+    private playerVariantWeapons: Record<string, string[]> = {};
+
+    private enemyRenderers: Record<string, EntityRenderer> = {};
+    private assetSrcMap: Map<string, string> = new Map();
     private textures: Record<string, HTMLImageElement | HTMLCanvasElement> = {};
+    private assetMeta: Record<string, { mode: 'stretch' | 'tiled'; width: number; height: number }> = {};
+
     private tileArr: Array<HTMLImageElement | HTMLCanvasElement> = [];
 
     constructor(canvas: HTMLCanvasElement) {
@@ -46,43 +58,45 @@ export class CanvasRendererAdapter {
         this.offscreenContext.imageSmoothingEnabled = false;
 
         this.initVisitedMatrix();
+        this.registerFromManifest();
+    }
 
-        this.playerRenderers = {
-            'Warrior': [new TextureRenderer(ASSETS.hero.warriorSword), new TextureRenderer(ASSETS.hero.warriorAxe)],
-            'Mage': [new TextureRenderer(ASSETS.hero.volhvFire), new TextureRenderer(ASSETS.hero.volhvIce)]
+    private registerFromManifest(): void {
+        for (const entry of PLAYER_VISUAL_MANIFEST) {
+            this.playerRenderers[entry.visualId] = entry.variants.map(v => new TextureRenderer(v.src));
+            this.playerVariantWeapons[entry.visualId] = entry.variants.map(v => v.weaponVisualId);
+        }
+
+        for (const entry of ENEMY_VISUAL_MANIFEST) {
+            this.enemyRenderers[entry.visualId] = new TextureRenderer(entry.src);
+        }
+
+        for (const entry of STATIC_ASSET_MANIFEST) {
+            this.registerStaticAsset(entry);
+            this.assetSrcMap.set(entry.visualId, entry.src);
+        }
+
+        FLOOR_TILE_ASSETS.forEach((src, index) => this.loadAndScaleTile(index, src));
+    }
+
+    private registerStaticAsset(entry: StaticAssetEntry): void {
+        this.assetMeta[entry.visualId] = {
+            mode: entry.mode ?? 'stretch',
+            width: entry.width,
+            height: entry.height,
         };
-
-        this.enemyRenderers = {
-            'red_box': new TextureRenderer(ASSETS.enemy.lizardAxe),
-            'orange_box': new TextureRenderer(ASSETS.enemy.lizardMage)
-        };
-
-        this.loadAndScaleTexture('chest_closed', ASSETS.env.chest, 28, 28);
-        this.loadAndScaleTexture('chest_wooden_closed', ASSETS.env.chest, 28, 28);
-        this.loadAndScaleTexture('chest_gold_closed', ASSETS.env.chest, 36, 36);
-        this.loadAndScaleTexture('chest_wooden_opened', ASSETS.env.chestOpen, 28, 28);
-        this.loadAndScaleTexture('chest_gold_opened', ASSETS.env.chestOpen, 36, 36);
-        this.loadAndScaleTexture('stone', ASSETS.env.stone, 20, 20);
-        this.loadAndScaleTexture('battle_axe', ASSETS.weapon.battleAxe, 24, 24);
-        this.loadAndScaleTexture('iron_sword', ASSETS.weapon.ironSword, 24, 24);
-        this.loadAndScaleTexture('fire_staff', ASSETS.weapon.fireStaff, 24, 24);
-        this.loadAndScaleTexture('ice_staff', ASSETS.weapon.iceStaff, 24, 24);
-        this.loadAndScaleTexture('gold', ASSETS.loot.coin, 24, 24);
-        this.loadAndScaleTile(0, ASSETS.env.caveTile1);
-        this.loadAndScaleTile(1, ASSETS.env.caveTile2);
-        this.loadAndScaleTile(2, ASSETS.env.caveTile3);
-        this.loadAndScaleTile(3, ASSETS.env.caveTile4);
+        this.loadAndScaleTexture(entry.visualId, entry.src, entry.width, entry.height);
     }
 
     private loadAndScaleTexture(key: string, srcUrl: string, targetWidth: number, targetHeight: number): void {
         const img = new Image();
         img.src = srcUrl;
-        
+
         img.onload = () => {
             const outCanvas = document.createElement('canvas');
             outCanvas.width = targetWidth;
             outCanvas.height = targetHeight;
-            
+
             pica.resize(img, outCanvas, { filter: 'lanczos3' })
                 .then(() => {
                     this.textures[key] = outCanvas;
@@ -98,7 +112,7 @@ export class CanvasRendererAdapter {
     private loadAndScaleTile(index: number, srcUrl: string): void {
         const img = new Image();
         img.src = srcUrl;
-        
+
         img.onload = () => {
             const outCanvas = document.createElement('canvas');
             outCanvas.width = GAME_CONFIG.CELL_SIZE;
@@ -117,18 +131,18 @@ export class CanvasRendererAdapter {
     }
 
     public render(
-        entitiesMap: Map<string, VisualEntity>, 
-        room: RoomState | null, 
-        staticObstacles: BaseEntityState[], 
+        entitiesMap: Map<string, VisualEntity>,
+        room: RoomState | null,
+        staticObstacles: BaseEntityState[],
         myId: string
     ): void {
         this.clear();
-        
+
         if (room) {
             const roomKey = `${room.gridX}:${room.gridY}`;
             if (this.currentRoomKey !== roomKey) {
                 this.currentRoomKey = roomKey;
-                this.prerenderStaticScene(room.type, staticObstacles);
+                this.prerenderStaticScene(staticObstacles);
             }
         }
 
@@ -143,7 +157,7 @@ export class CanvasRendererAdapter {
         });
 
         this.drawScreen(players, enemies, bullets, room);
-        
+
         if (!room) return;
         this.updateVisitedRooms(room);
         this.drawGUI(players, myId);
@@ -154,10 +168,10 @@ export class CanvasRendererAdapter {
         this.currentRoomKey = '';
     }
 
-    private prerenderStaticScene(roomType: string, obstacles: BaseEntityState[]): void {
+    private prerenderStaticScene(obstacles: BaseEntityState[]): void {
         this.offscreenContext.clearRect(0, 0, this.offscreenCanvas.width, this.offscreenCanvas.height);
         const cellSize = GAME_CONFIG.CELL_SIZE;
-        
+
         for (let x = 0; x < this.canvas.width; x += cellSize) {
             for (let y = 0; y < this.canvas.width; y += cellSize) {
                 const tileNum = Math.floor(Math.random() * this.tileArr.length);
@@ -165,46 +179,39 @@ export class CanvasRendererAdapter {
                 if (tile) {
                     this.offscreenContext.drawImage(tile, x, y, cellSize, cellSize);
                 }
-            }            
+            }
         }
 
         for (const obstacle of obstacles) {
-            const texture = this.textures[obstacle.visualId];
-            if (texture) {
-                const obtacleSize = GAME_CONFIG.CELL_SIZE;
-                let repitX = 0;
-                let repitY = 0;
-                switch (obstacle.visualId) {
-                    case 'stone':
-                        for (let startX = obstacle.x - obstacle.width / 2; repitX < obstacle.width / obtacleSize; startX += obtacleSize) {
-                            repitX++;
-                            for (let startY = obstacle.y - obstacle.height / 2; repitY < obstacle.height / obtacleSize; startY += obtacleSize) {
-                                repitY++;
-                                this.offscreenContext.drawImage(texture, startX, startY, obtacleSize, obtacleSize);
-                            }
-                            repitY = 0;
-                        }
-                        break;
-                    default:
-                        this.offscreenContext.fillStyle = '#d7009a';
-                        this.offscreenContext.fillRect(
-                            obstacle.x - obstacle.width / 2, 
-                            obstacle.y - obstacle.height / 2, 
-                            obstacle.width, 
-                            obstacle.height
-                        );
-                        break;
-                }
-            } else {
-                this.offscreenContext.fillStyle = '#d7009a';
-                this.offscreenContext.fillRect(
-                    obstacle.x - obstacle.width / 2, 
-                    obstacle.y - obstacle.height / 2, 
-                    obstacle.width, 
-                    obstacle.height
-                );
-            }
+            this.drawStaticEntity(this.offscreenContext, obstacle);
         }
+    }
+
+    private drawStaticEntity(ctx: CanvasRenderingContext2D, entity: BaseEntityState): void {
+        const texture = this.textures[entity.visualId];
+        if (!texture) {
+            ctx.fillStyle = '#d7009a';
+            ctx.fillRect(entity.x - entity.width / 2, entity.y - entity.height / 2, entity.width, entity.height);
+            return;
+        }
+
+        const meta = this.assetMeta[entity.visualId];
+        if (meta?.mode === 'tiled') {
+            const tileW = meta.width;
+            const tileH = meta.height;
+            const startX = entity.x - entity.width / 2;
+            const startY = entity.y - entity.height / 2;
+            const cols = Math.ceil(entity.width / tileW);
+            const rows = Math.ceil(entity.height / tileH);
+            for (let col = 0; col < cols; col++) {
+                for (let row = 0; row < rows; row++) {
+                    ctx.drawImage(texture, startX + col * tileW, startY + row * tileH, tileW, tileH);
+                }
+            }
+            return;
+        }
+
+        ctx.drawImage(texture, entity.x - entity.width / 2, entity.y - entity.height / 2, entity.width, entity.height);
     }
 
     private initVisitedMatrix(): void {
@@ -334,14 +341,6 @@ export class CanvasRendererAdapter {
 
         hotbarEl.innerHTML = '';
 
-        const weaponIcons: Record<string, string> = {
-            'iron_sword': ASSETS.weapon.ironSword,
-            'battle_axe': ASSETS.weapon.battleAxe,
-            'staff': ASSETS.weapon.fireStaff,
-            'fire_staff': ASSETS.weapon.fireStaff,
-            'ice_staff': ASSETS.weapon.iceStaff
-        };
-
         for (let i = 0; i < maxSlots; i++) {
             const slot = document.createElement('div');
             slot.className = 'hud-slot';
@@ -360,7 +359,8 @@ export class CanvasRendererAdapter {
                     ? item 
                     : (item.visualId || item.presetId || '');
 
-                const imgSrc = weaponIcons[textureId];
+                const imgSrc = this.assetSrcMap.get(textureId);
+
                 if (imgSrc) {
                     const img = document.createElement('img');
                     img.className = 'hud-slot-icon';
@@ -397,7 +397,7 @@ export class CanvasRendererAdapter {
     }
 
     private drawDoors(room: RoomState): void {
-        const doorColor = room.isClear ? '#056111' : '#5c120c'; 
+        const doorColor = room.isClear ? '#056111' : '#5c120c';
         this.context.fillStyle = doorColor;
 
         const doorWidth = GAME_CONFIG.DOOR_SIZE;
@@ -460,34 +460,55 @@ export class CanvasRendererAdapter {
 
     private drawBullets(bulletsMap: Map<string, VisualEntity>): void {
         bulletsMap.forEach(bullet => {
-            if (bullet.visualId === 'axe_slash') {
-                this.drawAxeSlash(bullet, '#e67e22');
-                return;
+            const visual = PROJECTILE_VISUAL_MANIFEST[bullet.visualId] ?? DEFAULT_PROJECTILE_VISUAL;
+
+            switch (visual.kind) {
+                case 'axe-arc':
+                    this.drawAxeSlash(bullet, visual.color);
+                    return;
+                case 'sword-slash':
+                    this.drawSwordSlash(bullet, visual.color);
+                    return;
+                case 'orb':
+                    this.drawOrb(bullet, visual.color);
+                    return;
             }
-
-            if (bullet.visualId === 'slash_effect') {
-                this.drawSwordSlash(bullet, '#00d2d3');
-                return;
-            }
-
-            let bulletColor = 'black';
-            if (bullet.visualId === 'red_ball') bulletColor = 'red';
-            else if (bullet.visualId === 'blue_ball') bulletColor = 'blue';
-
-            this.context.save();
-            this.context.beginPath();
-            
-            const radius = Math.round(bullet.width / 2);
-            const bx = Math.round(bullet.renderX);
-            const by = Math.round(bullet.renderY);
-            
-            this.context.arc(bx, by, radius, 0, Math.PI * 2);
-            this.context.shadowBlur = 8;
-            this.context.shadowColor = bulletColor;
-            this.context.fillStyle = bulletColor;
-            this.context.fill();
-            this.context.restore(); 
         });
+    }
+
+    private drawOrb(bullet: VisualEntity, color: string): void {
+        this.context.save();
+        this.context.beginPath();
+
+        const radius = Math.round(bullet.width / 2);
+        const bx = Math.round(bullet.renderX);
+        const by = Math.round(bullet.renderY);
+
+        this.context.arc(bx, by, radius, 0, Math.PI * 2);
+        this.context.shadowBlur = 8;
+        this.context.shadowColor = color;
+        this.context.fillStyle = color;
+        this.context.fill();
+        this.context.restore();
+    }
+
+    private getBulletAngle(bullet: VisualEntity): number {
+        const b = bullet as any;
+
+        const prevX = b.prevX ?? bullet.renderX;
+        const prevY = b.prevY ?? bullet.renderY;
+
+        const dx = bullet.renderX - prevX;
+        const dy = bullet.renderY - prevY;
+
+        if (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01) {
+            b.currentAngle = Math.atan2(dy, dx);
+        }
+
+        b.prevX = bullet.renderX;
+        b.prevY = bullet.renderY;
+
+        return b.currentAngle || 0;
     }
 
     private drawAxeSlash(bullet: VisualEntity, color: string): void {
@@ -495,13 +516,13 @@ export class CanvasRendererAdapter {
         const by = Math.round(bullet.renderY);
         const radius = Math.round(bullet.width);
 
-        const angle = bullet.angle;
+        const angle = this.getBulletAngle(bullet);
 
         this.context.save();
         this.context.translate(bx, by);
         this.context.rotate(angle);
         this.context.beginPath();
-        const arcAngle = Math.PI / 3; 
+        const arcAngle = Math.PI / 3;
         this.context.arc(0, 0, radius, -arcAngle, arcAngle, false);
         this.context.arc(0, 0, radius * 0.35, arcAngle, -arcAngle, true);
         this.context.closePath();
@@ -525,7 +546,7 @@ export class CanvasRendererAdapter {
         const slashLength = Math.round(bullet.height || 45);
         const slashWidth = Math.round(bullet.width || 20);
 
-        const angle = bullet.angle;
+        const angle = this.getBulletAngle(bullet);
 
         this.context.save();
         this.context.translate(bx, by);
@@ -551,18 +572,16 @@ export class CanvasRendererAdapter {
     private drawPlayers(playersMap: Map<string, VisualEntity>): void {
         playersMap.forEach(player => {
             const renders = this.playerRenderers[player.visualId];
-            let renderIndex = 0;
-            if (player.visualId === 'Warrior') {
-                if (player.activeWeaponVisualId === 'battle_axe') {
-                    renderIndex = 1;
-                }                
-            } else if (player.visualId === 'Mage'){
-                if (player.activeWeaponVisualId === 'ice_staff') {
-                    renderIndex = 1;
-                }
+            if (!renders) {
+                this.drawFallback(player);
+                return;
             }
-            if (renders) renders[renderIndex].draw(this.context, player);
-            else this.drawFallback(player);
+
+            const variantWeapons = this.playerVariantWeapons[player.visualId] ?? [];
+            const matchedIndex = variantWeapons.indexOf(player.activeWeaponVisualId);
+            const renderIndex = matchedIndex !== -1 ? matchedIndex : 0;
+
+            renders[renderIndex].draw(this.context, player);
         });
     }
 
@@ -576,15 +595,8 @@ export class CanvasRendererAdapter {
 
     private drawChests(chests: ChestState[]): void {
         if (!chests || chests.length === 0) return;
-
         for (const chest of chests) {
-            const cx = Math.round(chest.x - chest.width / 2);
-            const cy = Math.round(chest.y - chest.height / 2);
-            
-            const texture = this.textures[chest.visualId];
-            if (texture) {
-                this.context.drawImage(texture, cx, cy, chest.width, chest.height);
-            }
+            this.drawStaticEntity(this.context, chest);
         }
     }
 
@@ -592,11 +604,6 @@ export class CanvasRendererAdapter {
         if (!droppedItems || droppedItems.length === 0) return;
 
         for (const item of droppedItems) {
-            const ix = Math.round(item.x - item.width / 2);
-            const iy = Math.round(item.y - item.height / 2);
-            const iw = Math.round(item.width);
-            const ih = Math.round(item.height);
-            
             this.context.save();
             this.context.shadowColor = 'rgba(0, 0, 0, 0.2)';
             this.context.shadowBlur = 5;
@@ -605,10 +612,12 @@ export class CanvasRendererAdapter {
 
             const texture = this.textures[item.visualId];
             if (texture) {
-                this.context.drawImage(texture, ix, iy, iw, ih);
+                this.drawStaticEntity(this.context, item);
             } else {
+                const ix = Math.round(item.x - item.width / 2);
+                const iy = Math.round(item.y - item.height / 2);
                 this.context.fillStyle = '#0c8a93a4';
-                this.context.fillRect(ix, iy, iw, ih);
+                this.context.fillRect(ix, iy, Math.round(item.width), Math.round(item.height));
             }
             this.context.restore();
         }
