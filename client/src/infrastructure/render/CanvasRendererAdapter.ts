@@ -311,7 +311,7 @@ export class CanvasRendererAdapter {
     }
 
     private drawDoors(room: RoomState): void {
-        const doorColor = room.isClear ? '#b8860b' : '#5c120c'; 
+        const doorColor = room.isClear ? '#056111' : '#5c120c'; 
         this.context.fillStyle = doorColor;
 
         const doorWidth = 100;
@@ -374,7 +374,6 @@ export class CanvasRendererAdapter {
 
     private drawBullets(bulletsMap: Map<string, VisualEntity>): void {
         bulletsMap.forEach(bullet => {
-            console.log(bullet.visualId)
             if (bullet.visualId === 'axe_slash') {
                 this.drawAxeSlash(bullet, '#e67e22');
                 return;

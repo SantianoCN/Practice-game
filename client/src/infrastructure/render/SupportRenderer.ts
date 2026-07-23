@@ -31,10 +31,13 @@ export class TextureRenderer implements EntityRenderer {
             let startY = 0; // idle
             
             if (animation === 'move') {
-                startY = this.frameHeight; // walk
+                startY = this.frameHeight
             } else if (animation === 'attack') {
-                startY = this.frameHeight * 2; // attack
-            }
+                startY = this.frameHeight * 2
+            } else if (entity.hp <= 0) {
+                startY = this.frameHeight * 3
+            };
+            console.log(animation);
 
             const currentFrame = (entity.currentFrame || 0) % 3;
             const startX = currentFrame * this.frameWidth;

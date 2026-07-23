@@ -19,7 +19,7 @@ export class VisualEntity {
 
     public isDying: boolean = false;
     public lastFacing: 'left' | 'Top' | 'right' = 'right';
-    public currentAnimation: 'move' | 'attack' | 'idle' = 'idle';
+    public currentAnimation: 'move' | 'attack' | 'die' | 'idle' = 'idle';
     public currentFrame: number = 0;
     public type: EntityType = 'player';
     public speed: number = 0;
