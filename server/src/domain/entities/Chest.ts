@@ -12,9 +12,10 @@ export class Chest extends StaticEntity {
         height: number,
         public readonly gridX: number,
         public readonly gridY: number,
-        public readonly presetId: string
+        public readonly presetId: string,
+        visualIdClosed: string = 'chest_closed'
     ) {
-        super(id, x, y, width, height, 'chest_closed'); 
+        super(id, x, y, width, height, visualIdClosed); 
     }
 
     public open(visualIdOpened: string): void {
@@ -33,9 +34,13 @@ export class DroppedItem extends StaticEntity {
         x: number,
         y: number,
         visualId: string,
+        width: number | undefined,
+        height: number | undefined,
         public readonly presetId: string,
         public readonly onPickup: GameEffect[]
     ) {
-        super(id, x, y, DroppedItem.PICKUP_WIDTH, DroppedItem.PICKUP_HEIGHT, visualId);
+        const visualWidth = width ? width : DroppedItem.PICKUP_WIDTH;
+        const visualHeight= height ? height : DroppedItem.PICKUP_HEIGHT;
+        super(id, x, y, visualWidth, visualHeight, visualId);
     }
 }

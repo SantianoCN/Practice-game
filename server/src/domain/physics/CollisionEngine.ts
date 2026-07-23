@@ -6,7 +6,7 @@ import { Chest, DroppedItem } from '../entities/Chest';
 import { Player } from '../entities/Player';
 import { BoundingBox, GAME_CONFIG } from '@game/shared';
 import { SpatialGrid } from './SpatialGrid';
-import { Portal } from '../entities/Portal'; 
+import { Portal } from '../entities/Portal';
 
 export class CollisionEngine {
     
@@ -111,7 +111,7 @@ export class CollisionEngine {
     public static resolveBullets(bullets: Bullet[], targets: LivingEntity[]): void {
         if (bullets.length === 0 || targets.length === 0) return;
 
-        const targetGrid = new SpatialGrid<LivingEntity>(100);
+        const targetGrid = new SpatialGrid<LivingEntity>(GAME_CONFIG.GRID_SIZE);
         for (const target of targets) {
             if (!target.isDead()) {
                 targetGrid.insert(target);

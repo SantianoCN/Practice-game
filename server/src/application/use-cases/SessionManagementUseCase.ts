@@ -315,13 +315,29 @@ export class SessionManagementUseCase {
 
         const reconnectKey = `${sessionId}:${login}`;
         const timer = setTimeout(() => {
-            console.log(`[Timeout Expired] Время возвращения ${login} истекло.`);
             this.reconnectTimers.delete(reconnectKey);
+            this.finalizePlayerDeparture(sessionId, userId, login);
         }, 120000);
 
         this.reconnectTimers.set(reconnectKey, timer);
 
         return migrationResult;
+    }
+
+    private finalizePlayerDeparture(sessionId: string, userId: string, login: string): void {
+        const session = this.repo.get(sessionId);
+        if (!session) return;
+
+        session.removePlayer(userId);
+        session.allowedLogins.delete(login);
+        if (this.loginSessionMap.get(login) === sessionId) {
+            this.loginSessionMap.delete(login);
+        }
+
+        if (session.isEmpty() && !this.deleteTimers.has(sessionId)) {
+            const timer = setTimeout(() => this.terminateSession(sessionId), 15000);
+            this.deleteTimers.set(sessionId, timer);
+        }
     }
 
     public tryReconnectPlayer(sessionId: string, newUserId: string, login: string): boolean {

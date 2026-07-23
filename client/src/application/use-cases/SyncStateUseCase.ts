@@ -23,9 +23,48 @@ export class SyncStateUseCase {
         const activeIds = new Set<string>();
         this.currentRoomState = snapshot.room;
 
-        snapshot.players.forEach(p => {
-            activeIds.add(p.id);
-            this.updateOrCreate(p.id, p, p.hp, p.maxHp, p.mana, p.maxMana, p.gold, p.activeWeaponVisualId, 'player', 0);
+        snapshot.players.forEach(serverPlayer => {
+            activeIds.add(serverPlayer.id);
+
+            let visualPlayer = this.entities.get(serverPlayer.id);
+
+            if (!visualPlayer) {
+                visualPlayer = new VisualEntity(
+                    serverPlayer.id,
+                    serverPlayer.x,
+                    serverPlayer.y,
+                    serverPlayer.width,
+                    serverPlayer.height,
+                    serverPlayer.maxInventoryLength,
+                    serverPlayer.visualId,
+                    'player'
+                );
+                this.entities.set(serverPlayer.id, visualPlayer);
+            } else {
+                if (serverPlayer.x < visualPlayer.targetX) {
+                    visualPlayer.lastFacing = 'left';
+                } else if (serverPlayer.x > visualPlayer.targetX) {
+                    visualPlayer.lastFacing = 'right';
+                }
+
+                if (serverPlayer.x !== visualPlayer.targetX || serverPlayer.y !== visualPlayer.targetY) {
+                    visualPlayer.currentAnimation = 'move';
+                } else {
+                    visualPlayer.currentAnimation = 'idle';
+                }
+            }
+
+            visualPlayer.targetX = serverPlayer.x;
+            visualPlayer.targetY = serverPlayer.y;
+            visualPlayer.hp = serverPlayer.hp;
+            visualPlayer.maxHp = serverPlayer.maxHp;
+            visualPlayer.mana = serverPlayer.mana;
+            visualPlayer.maxMana = serverPlayer.maxMana;
+            visualPlayer.gold = serverPlayer.gold;
+            visualPlayer.inventory = serverPlayer.inventory || [];
+            visualPlayer.currentWeaponIndex = serverPlayer.currentWeaponIndex ?? 0;
+            visualPlayer.maxInventoryLength = serverPlayer.maxInventoryLength ?? (serverPlayer as any).maxInventoryLength ?? 3;
+            visualPlayer.activeWeaponVisualId = serverPlayer.activeWeaponVisualId || 'iron_sword';
         });
 
         snapshot.enemies.forEach(e => {
@@ -36,6 +75,8 @@ export class SyncStateUseCase {
         snapshot.bullets.forEach(b => {
             activeIds.add(b.id);
             this.updateOrCreate(b.id, b, 0, 0, 0, 0, 0, '', 'bullet', b.speed);
+            const entity = this.entities.get(b.id)!;
+            entity.angle = b.angle;
         });
 
         for (const [id, entity] of this.entities.entries()) {
@@ -57,7 +98,7 @@ export class SyncStateUseCase {
     ): void {
         let entity = this.entities.get(id);
         if (!entity) {
-            entity = new VisualEntity(id, data.x, data.y, data.width, data.height, data.visualId, type, speed);
+            entity = new VisualEntity(id, data.x, data.y, data.width, data.height, 1, data.visualId, type, speed);
             this.entities.set(id, entity);
         } else {
             if (data.x < entity.targetX) {

@@ -3,9 +3,14 @@ import { Obstacle } from '../entities/Obstacle';
 import { Player } from '../entities/Player';
 import { Room } from '../entities/Room';
 import { CollisionEngine } from '../physics/CollisionEngine';
-import { IDGenerator } from '@game/shared';
+import { IDGenerator, GAME_CONFIG } from '@game/shared';
 
-const mctsModule = require('../../../build/Release/mcts.node');
+let mctsModule: any = null;
+try {
+    mctsModule = require('../../../build/Release/mcts.node');
+} catch (e) {
+    console.warn('[EnemyAIService] C++ MCTS модуль не найден, используется базовый ИИ');
+}
 
 interface MCTSState {
     npc_hp: number;
@@ -40,7 +45,7 @@ interface MCTSResult {
 }
 
 class Pathfinder {
-    private static readonly CELL_SIZE = 20;
+    private static readonly CELL_SIZE = GAME_CONFIG.CELL_SIZE;
 
     static isWalkable(
         x: number, y: number,
@@ -168,6 +173,8 @@ export class EnemyAIService {
 
         for (const enemy of enemies) {
             if (enemy.isDead()) {
+                this.mctsInstances.delete(enemy.id);
+                this.lastUpdateTime.delete(enemy.id);
                 enemy.vx = 0;
                 enemy.vy = 0;
                 continue;
@@ -273,7 +280,7 @@ export class EnemyAIService {
             npc_y: Math.floor(enemy.y),
             npc_vx: Math.floor(enemy.vx),
             npc_vy: Math.floor(enemy.vy),
-            npc_damage: 10,
+            npc_damage: enemy.currentWeapon.config.projectile.damage,
             npc_speed: Math.floor(enemy.speed),
             npc_range: Math.floor(attackRange),
             players: players.map(p => ({
@@ -282,7 +289,7 @@ export class EnemyAIService {
                 y: Math.floor(p.y),
                 vx: Math.floor(p.vx),
                 vy: Math.floor(p.vy),
-                damage: 10,
+                damage: p.getActiveWeapon().config.projectile.damage,
                 range: Math.floor(p.inventory[p.currentWeaponIndex] ? p.inventory[p.currentWeaponIndex].config.projectile.range : 50),
                 speed: Math.floor(p.speed)
             })),

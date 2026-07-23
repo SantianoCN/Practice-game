@@ -40,12 +40,15 @@ export class OpenChestUseCase {
             const itemId = this.idGen.generateId('item');
             const offsetX = (Math.random() - 0.5) * 30;
             const offsetY = (Math.random() - 0.5) * 30;
+            const preset = this.presetProvider.getItemPreset(rolled.presetId)
 
             const droppedItem = new DroppedItem(
                 itemId,
                 chest.x + offsetX,
                 chest.y + offsetY,
                 rolled.visualId,
+                preset?.dropWidth,
+                preset?.dropHeight,
                 rolled.presetId,
                 rolled.onPickup
             );

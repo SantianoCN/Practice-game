@@ -95,7 +95,13 @@
         </div>
         <canvas id="gameCanvas" width="800" height="600"></canvas>
         <div id="gameHUD">
-            <span>ЗОЛОТО: <span id="hudGold">0</span></span>
+            <span class="gold-container">
+                <span>ЗОЛОТО: <span id="hudGold" class="highlight">0</span></span>
+                <img src="./assets/loot/coin.png" class="coin-icon" />
+            </span>
+            <div id="hudHotbar" class="hud-hotbar">
+                <!-- Ячейки будут динамически генерироваться через TS -->
+            </div>
             <span>ОРУЖИЕ: <span id="hudWeapon">ЗАГРУЗКА...</span></span>
         </div>
     </div>

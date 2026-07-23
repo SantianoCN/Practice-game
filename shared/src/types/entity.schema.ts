@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { GameEffectSchema } from './loot.schema';
+import { WeaponStatsSchema } from './weapon.schema';
 
 export const BaseEntityStateSchema = z.object({
     id: z.string(),
@@ -17,6 +18,9 @@ export const PlayerStateSchema = BaseEntityStateSchema.extend({
     mana: z.number(),
     maxMana: z.number(),
     gold: z.number(),
+    maxInventoryLength: z.number(),
+    inventory: z.array(WeaponStatsSchema),
+    currentWeaponIndex: z.number(),
     activeWeaponVisualId: z.string()
 });
 export type PlayerState = z.infer<typeof PlayerStateSchema>;
@@ -28,7 +32,8 @@ export const EnemyStateSchema = BaseEntityStateSchema.extend({
 export type EnemyState = z.infer<typeof EnemyStateSchema>;
 
 export const BulletStateSchema = BaseEntityStateSchema.extend({
-    speed: z.number()
+    speed: z.number(),
+    angle: z.number()
 });
 export type BulletState = z.infer<typeof BulletStateSchema>;
 

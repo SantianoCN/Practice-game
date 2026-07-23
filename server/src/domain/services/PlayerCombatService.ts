@@ -14,8 +14,11 @@ export class PlayerCombatService {
         const weapon = player.getActiveWeapon();
         if (!weapon.canFire(currentTime, player.mana)) return null;
 
-        let dirX = 1;
-        let dirY = 0;
+        let dirX = player.vx;
+        let dirY = player.vy;
+        if (dirX === 0 && dirY === 0) {
+            dirX = 1;
+        }
         const aliveEnemies = room.enemies.filter(e => !e.isDead());
 
         if (aliveEnemies.length > 0) {

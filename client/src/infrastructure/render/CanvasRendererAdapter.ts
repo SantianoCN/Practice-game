@@ -2,7 +2,8 @@ import Pica from 'pica';
 import { VisualEntity } from '../../domain/entities/VisualEntity';
 import { RoomState, ChestState, BaseEntityState } from '@game/shared';
 import { TextureRenderer, EntityRenderer } from './SupportRenderer';
-import { ASSETS } from './../../../assets/index.ts';
+import { ASSETS } from './../../../assets';
+import { GAME_CONFIG } from '@game/shared';
 
 interface MapCell {
     state: 'unseen' | 'visible' | 'visited';
@@ -15,7 +16,8 @@ export class CanvasRendererAdapter {
     private context: CanvasRenderingContext2D;
     private canvas: HTMLCanvasElement;
     private visitedMatrix: MapCell[][] = [];
-    private readonly matrixSize = 10;
+    private readonly matrixSize = GAME_CONFIG.MAP_SIZE;
+    private lastHotbarState: string = '';
 
     private offscreenCanvas: HTMLCanvasElement;
     private offscreenContext: CanvasRenderingContext2D;
@@ -72,12 +74,6 @@ export class CanvasRendererAdapter {
         this.loadAndScaleTile(3, ASSETS.env.caveTile4);
     }
 
-    private preloadImage(src: string): HTMLImageElement {
-        const img = new Image();
-        img.src = src;
-        return img;
-    }
-
     private loadAndScaleTexture(key: string, srcUrl: string, targetWidth: number, targetHeight: number): void {
         const img = new Image();
         img.src = srcUrl;
@@ -105,8 +101,8 @@ export class CanvasRendererAdapter {
         
         img.onload = () => {
             const outCanvas = document.createElement('canvas');
-            outCanvas.width = 20;
-            outCanvas.height = 20;
+            outCanvas.width = GAME_CONFIG.CELL_SIZE;
+            outCanvas.height = GAME_CONFIG.CELL_SIZE;
             
             pica.resize(img, outCanvas, { filter: 'lanczos3' })
                 .then(() => {
@@ -160,7 +156,7 @@ export class CanvasRendererAdapter {
 
     private prerenderStaticScene(roomType: string, obstacles: BaseEntityState[]): void {
         this.offscreenContext.clearRect(0, 0, this.offscreenCanvas.width, this.offscreenCanvas.height);
-        const cellSize = 20;
+        const cellSize = GAME_CONFIG.CELL_SIZE;
         
         for (let x = 0; x < this.canvas.width; x += cellSize) {
             for (let y = 0; y < this.canvas.width; y += cellSize) {
@@ -175,7 +171,7 @@ export class CanvasRendererAdapter {
         for (const obstacle of obstacles) {
             const texture = this.textures[obstacle.visualId];
             if (texture) {
-                const obtacleSize = 20;
+                const obtacleSize = GAME_CONFIG.CELL_SIZE;
                 let repitX = 0;
                 let repitY = 0;
                 switch (obstacle.visualId) {
@@ -298,7 +294,22 @@ export class CanvasRendererAdapter {
         this.context.fillStyle = '#8ad5f0';
         this.context.font = '7px "Press Start 2P", monospace';
         this.context.fillText(`БАЙКАЛ: ${Math.floor(mana)}/${maxMana}`, barX + 6, manaY + 9);
+        this.context.restore();
+
+        const maxSlots = me.maxInventoryLength ?? (me as any).maxInventoryLenght ?? 3;
+        const currentActiveIdx = me.currentWeaponIndex ?? 0;
         
+        const inventoryIds = me.inventory 
+            ? me.inventory.map((item: any) => typeof item === 'string' ? item : (item.visualId || item.presetId || '')).join(',') 
+            : '';
+
+        const currentStateKey = `${maxSlots}_${currentActiveIdx}_${inventoryIds}`;
+
+        if (this.lastHotbarState !== currentStateKey) {
+            this.lastHotbarState = currentStateKey;
+            this.updateHtmlHotbar(me, maxSlots, currentActiveIdx);
+        }
+
         const goldEl = document.getElementById('hudGold');
         if (goldEl) {
             goldEl.innerText = `${me.gold}`;
@@ -310,9 +321,55 @@ export class CanvasRendererAdapter {
                 'iron_sword': 'МЕЧ-КЛАДЕНЕЦ',
                 'battle_axe': 'СЕКИРА ПЕРУНА',
                 'staff': 'ПОСОХ ОГНЯ',
+                'fire_staff': 'ПОСОХ ОГНЯ',
                 'ice_staff': 'ПОСОХ ХЛАДА'
             };
             weaponEl.innerText = weaponNames[me.activeWeaponVisualId] || me.activeWeaponVisualId.toUpperCase();
+        }
+    }
+
+    private updateHtmlHotbar(me: any, maxSlots: number, activeIdx: number): void {
+        const hotbarEl = document.getElementById('hudHotbar');
+        if (!hotbarEl) return;
+
+        hotbarEl.innerHTML = '';
+
+        const weaponIcons: Record<string, string> = {
+            'iron_sword': ASSETS.weapon.ironSword,
+            'battle_axe': ASSETS.weapon.battleAxe,
+            'staff': ASSETS.weapon.fireStaff,
+            'fire_staff': ASSETS.weapon.fireStaff,
+            'ice_staff': ASSETS.weapon.iceStaff
+        };
+
+        for (let i = 0; i < maxSlots; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'hud-slot';
+            if (i === activeIdx) {
+                slot.classList.add('active');
+            }
+
+            const num = document.createElement('span');
+            num.className = 'hud-slot-num';
+            num.innerText = `${i + 1}`;
+            slot.appendChild(num);
+
+            if (me.inventory && me.inventory[i]) {
+                const item = me.inventory[i];
+                const textureId = typeof item === 'string' 
+                    ? item 
+                    : (item.visualId || item.presetId || '');
+
+                const imgSrc = weaponIcons[textureId];
+                if (imgSrc) {
+                    const img = document.createElement('img');
+                    img.className = 'hud-slot-icon';
+                    img.src = imgSrc;
+                    slot.appendChild(img);
+                }
+            }
+
+            hotbarEl.appendChild(slot);
         }
     }
 
@@ -343,8 +400,8 @@ export class CanvasRendererAdapter {
         const doorColor = room.isClear ? '#056111' : '#5c120c'; 
         this.context.fillStyle = doorColor;
 
-        const doorWidth = 100;
-        const doorThickness = 15;
+        const doorWidth = GAME_CONFIG.DOOR_SIZE;
+        const doorThickness = GAME_CONFIG.DOOR_PADDING;
 
         if (room.hasDoors.Top) this.context.fillRect(this.canvas.width / 2 - doorWidth / 2, 0, doorWidth, doorThickness);
         if (room.hasDoors.Bottom) this.context.fillRect(this.canvas.width / 2 - doorWidth / 2, this.canvas.height - doorThickness, doorWidth, doorThickness);
@@ -433,31 +490,12 @@ export class CanvasRendererAdapter {
         });
     }
 
-    private getBulletAngle(bullet: VisualEntity): number {
-        const b = bullet as any;
-
-        const prevX = b.prevX ?? bullet.renderX;
-        const prevY = b.prevY ?? bullet.renderY;
-
-        const dx = bullet.renderX - prevX;
-        const dy = bullet.renderY - prevY;
-
-        if (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01) {
-            b.currentAngle = Math.atan2(dy, dx);
-        }
-
-        b.prevX = bullet.renderX;
-        b.prevY = bullet.renderY;
-
-        return b.currentAngle || 0;
-    }
-
     private drawAxeSlash(bullet: VisualEntity, color: string): void {
         const bx = Math.round(bullet.renderX);
         const by = Math.round(bullet.renderY);
         const radius = Math.round(bullet.width);
 
-        const angle = this.getBulletAngle(bullet);
+        const angle = bullet.angle;
 
         this.context.save();
         this.context.translate(bx, by);
@@ -487,7 +525,7 @@ export class CanvasRendererAdapter {
         const slashLength = Math.round(bullet.height || 45);
         const slashWidth = Math.round(bullet.width || 20);
 
-        const angle = this.getBulletAngle(bullet);
+        const angle = bullet.angle;
 
         this.context.save();
         this.context.translate(bx, by);

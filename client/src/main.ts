@@ -5,9 +5,15 @@ import { CanvasRendererAdapter } from './infrastructure/render/CanvasRendererAda
 import { SyncStateUseCase } from './application/use-cases/SyncStateUseCase';
 import { BaseResponseDTO, PlayerClassPresetDTO, PlayerProgressDTO } from '@game/shared';
 
+const SERVER_URL = (import.meta.env?.VITE_API_URL as string) || (
+    window.location.hostname === 'localhost' && window.location.port !== '3000'
+        ? 'http://localhost:3000'
+        : window.location.origin
+);
+
 class App {
     private ui = new DOMManager();
-    private network = new SocketClient('http://localhost:3000');
+    private network = new SocketClient(SERVER_URL);
     private input = new KeyboardAdapter();
     private renderer: CanvasRendererAdapter;
     private stateSync = new SyncStateUseCase();
@@ -35,7 +41,8 @@ class App {
     }
 
     private bindUiToNetwork(): void {
-        this.ui.onAuthReq = async (url, login, password) => {
+        this.ui.onAuthReq = async (action, login, password) => {
+            const url = `${SERVER_URL}/${action}`;
             try {
                 const res = await fetch(url, {
                     method: 'POST',
@@ -126,7 +133,6 @@ class App {
             }
         };
 
-
         this.ui.onJoinRoom = async (sid, arch, weapon) => {
             const token = localStorage.getItem('session_token');
             if (!token) return;
@@ -182,6 +188,8 @@ class App {
             this.input.stopListening();
             this.ui.showPortalModal(false);
             this.ui.resetState();
+            this.stateSync.clear();
+            this.renderer.reset();
             localStorage.removeItem('game_session_id');
             localStorage.removeItem('session_token');
             this.network.disconnect();
@@ -281,6 +289,8 @@ class App {
         this.input.stopListening();
         this.ui.showPortalModal(false);
         if (this.gameLoopId) cancelAnimationFrame(this.gameLoopId);
+        this.stateSync.clear();
+        this.renderer.reset();
 
         this.network.requestProfile()
             .then(profile => {

@@ -1,6 +1,5 @@
 import { Archetype, PlayerClassPresetDTO, StartingWeaponStats, PlayerProgressDTO, SHOP_PRICES } from '@game/shared';
-import warriorImgUrl from '../../../assets/hero/warrior-sword.png';
-import mageImgUrl from '../../../assets/hero/volhv.png';
+import { ASSETS } from '../../../assets';
 
 export class DOMManager {
     public onAuthReq?: (url: string, l: string, p: string) => void;
@@ -27,13 +26,13 @@ export class DOMManager {
         document.getElementById('loginBtn')?.addEventListener('click', () => {
             const l = (document.getElementById('username') as HTMLInputElement).value;
             const p = (document.getElementById('password') as HTMLInputElement).value;
-            this.onAuthReq?.('http://localhost:3000/login', l, p);
+            this.onAuthReq?.('login', l, p);
         });
 
         document.getElementById('registerBtn')?.addEventListener('click', () => {
             const l = (document.getElementById('username') as HTMLInputElement).value;
             const p = (document.getElementById('password') as HTMLInputElement).value;
-            this.onAuthReq?.('http://localhost:3000/register', l, p);
+            this.onAuthReq?.('register', l, p);
         });
 
         document.getElementById('createRoomBtn')?.addEventListener('click', () => {
@@ -190,10 +189,10 @@ export class DOMManager {
             let iconAlt = '';
             switch(key) {
                 case 'mage':
-                    iconAlt = mageImgUrl;
+                    iconAlt = ASSETS.hero.volhvPrev;
                     break;
                 case 'warrior':
-                    iconAlt = warriorImgUrl;
+                    iconAlt = ASSETS.hero.warriorPrev;
                     break;
             }
             const iconHtml = `<img src="${iconAlt}" alt="${key}" class="hero-card-img" />`;
@@ -243,23 +242,12 @@ export class DOMManager {
                 el.classList.add('active');
             }
 
-            let weaponAlt = 'Меч';
-            if (w.key === 'wpn_heavy_axe') weaponAlt = 'Секира Перуна';
-            if (w.key === 'wpn_fire_staff') weaponAlt = 'Посох Огня';
-            if (w.key === 'wpn_ice_staff') weaponAlt = 'Посох Хлада';
+            let imgSrc = ASSETS.weapon.ironSword;
+            if (w.key === 'wpn_heavy_axe') imgSrc = ASSETS.weapon.battleAxe;
+            if (w.key === 'wpn_fire_staff') imgSrc = ASSETS.weapon.fireStaff;
+            if (w.key === 'wpn_ice_staff') imgSrc = ASSETS.weapon.iceStaff;
 
-            let iconHtml = `<img src="../../../assets/sword.png" alt="${weaponAlt}" class="weapon-card-img" />`;
-            switch (weaponAlt) {
-                case 'Секира Перуна':
-                    iconHtml = `<img src="../../../assets/axe.png" alt="${weaponAlt}" class="weapon-card-img" />`;
-                    break;
-                case 'Посох Огня':
-                    iconHtml = `<img src="../../../assets/fireball.png" alt="${weaponAlt}" class="weapon-card-img" />`;
-                    break;
-                case 'Посох Хлада':
-                    iconHtml = `<img src="../../../assets/iceball.png" alt="${weaponAlt}" class="weapon-card-img" />`;
-                    break;
-            }
+            const iconHtml = `<img src="${imgSrc}" alt="${w.name}" class="weapon-card-img" />`;
 
             el.innerHTML = `
                 <div>${iconHtml}</div>
@@ -342,7 +330,7 @@ export class DOMManager {
 
             const img = document.createElement('img');
             img.className = 'hero-sprite-img';
-            img.src = this.selectedArch === 'mage' ? mageImgUrl : warriorImgUrl;
+            img.src = this.selectedArch === 'mage' ? ASSETS.hero.volhvPrev : ASSETS.hero.warriorPrev;
             img.alt = 'Спрайт героя';
 
             spriteDiv.appendChild(img);

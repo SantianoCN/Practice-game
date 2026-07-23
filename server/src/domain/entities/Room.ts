@@ -2,7 +2,7 @@ import { Enemy } from './Enemy';
 import { Chest, DroppedItem } from './Chest';
 import { Obstacle } from './Obstacle';
 import { Bullet } from './Bullet';
-import { Direction, RoomType } from '@game/shared';
+import { Direction, RoomType, GAME_CONFIG } from '@game/shared';
 import { SpatialGrid } from '../physics/SpatialGrid';
 import { Portal } from './Portal';
 
@@ -28,7 +28,7 @@ export class Room {
 
     public getObstacleGrid(): SpatialGrid<Obstacle> {
         if (!this.obstacleGrid) {
-            this.obstacleGrid = new SpatialGrid<Obstacle>(100);
+            this.obstacleGrid = new SpatialGrid<Obstacle>(GAME_CONFIG.GRID_SIZE);
             for (const obs of this.obstacles) {
                 this.obstacleGrid.insert(obs);
             }

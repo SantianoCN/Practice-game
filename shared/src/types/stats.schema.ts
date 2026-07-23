@@ -14,6 +14,7 @@ export const EntityStatsSchema = z.object({
     visualId: z.string(),
     width: z.number(),
     height: z.number(),
+    maxInventoryLength: z.number(),
     archetype: ArchetypeSchema
 });
 export type EntityStats = z.infer<typeof EntityStatsSchema>;

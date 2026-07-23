@@ -13,6 +13,7 @@ export class Player extends LivingEntity {
     public ticksSinceLastInput: number = 0;
     private static readonly INPUT_TIMEOUT_TICKS = 8;
     public isOnline: boolean = true;
+    public maxInventoryLength: number;
 
     public heldKeys = {
         up: false,
@@ -40,6 +41,7 @@ export class Player extends LivingEntity {
     ) {
         super(id, x, y, stats.width, stats.height, stats.speed, stats.visualId, stats.maxHp, stats.maxHp, stats.archetype);
         this.inventory = [startWeapon];
+        this.maxInventoryLength = stats.maxInventoryLength;
     }
 
     get activeWeaponVisualId(): string {
@@ -127,7 +129,7 @@ export class Player extends LivingEntity {
     }
 
     public addWeaponToInventory(weapon: Weapon): Weapon | void {
-        if (this.inventory.length >= 3) {
+        if (this.inventory.length >= this.maxInventoryLength) {
             const toDrop = this.inventory[this.currentWeaponIndex];
             this.inventory[this.currentWeaponIndex] = weapon;
             return toDrop;

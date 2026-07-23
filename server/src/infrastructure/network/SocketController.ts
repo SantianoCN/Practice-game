@@ -77,8 +77,6 @@ export class SocketController {
                     isHost
                 });
             } catch (err) {
-                console.error('[REQUEST_PROFILE] Ошибка на сервере:', err);
-                
                 callback({ success: false, message: 'Ошибка загрузки профиля' });
             }
         });
@@ -329,12 +327,10 @@ export class SocketController {
         this.socket.on(ClientEvent.LEAVE_SESSION, () => {
             const sessionId = this.socket.data.sessionId;
             if (!sessionId) return;
-
-            console.log(`[Leave Game] Игрок ${this.login} добровольно покинул отряд.`);
             const result = this.sessionUseCase.leaveSession(sessionId, userId, this.login);
-            this.socket.data.sessionId = null;
-
+            
             if (!result) return;
+            this.socket.data.sessionId = null;
 
             if (result.migrated) {
                 for (const id of result.remainingOnlineIds) {

@@ -16,6 +16,9 @@ export class VisualEntity {
     public maxMana: number = 100;
     public gold: number = 0;
     public activeWeaponVisualId: string = '';
+    public inventory: any[] = [];
+    public currentWeaponIndex: number = 0;
+    
 
     public isDying: boolean = false;
     public lastFacing: 'left' | 'Top' | 'right' = 'right';
@@ -23,6 +26,7 @@ export class VisualEntity {
     public currentFrame: number = 0;
     public type: EntityType = 'player';
     public speed: number = 0;
+    public angle: number = 0;
 
     private frameTimer: number = 0;
     private readonly timePerFrame: number = 0.2;
@@ -33,6 +37,7 @@ export class VisualEntity {
         y: number, 
         w: number, 
         h: number, 
+        public maxInventoryLength: number,
         visualId: string, 
         type: 'player' | 'enemy' | 'bullet', 
         speed: number = 0

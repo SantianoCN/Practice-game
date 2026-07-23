@@ -139,11 +139,14 @@ export class GameTickUseCase {
 
                             if (result && result.droppedWeapon) {
                                 const droppedWeapon = result.droppedWeapon;
+                                const preset = this.presetProvider.getItemPreset(droppedWeapon.presetId);
                                 const replacementItem = new DroppedItem(
                                     this.idGen.generateId('item'),
                                     player.x,
                                     player.y,
                                     droppedWeapon.config.visualId,
+                                    preset?.dropWidth,
+                                    preset?.dropHeight,
                                     droppedWeapon.presetId,
                                     [{ type: 'equip_weapon', weaponPresetId: droppedWeapon.presetId }]
                                 );
@@ -165,9 +168,13 @@ export class GameTickUseCase {
                 room.cleanupDeadEntities();
 
                 if (playersInRoom.length > 0) {
-                    const snapshot = this.buildSnapshot(room, playersInRoom);
-                    for (const player of playersInRoom) {
-                        this.broadcaster.broadcastSnapshot(player.id, snapshot);
+                    try {
+                        const snapshot = this.buildSnapshot(room, playersInRoom);
+                        for (const player of playersInRoom) {
+                            this.broadcaster.broadcastSnapshot(player.id, snapshot);
+                        }
+                    } catch (err) {
+                        console.error('[GameTickBuildSnapshot Fatal]', err, ' в сессии ', session.sessionId);
                     }
                 }
             }
@@ -177,7 +184,23 @@ export class GameTickUseCase {
     private buildSnapshot(room: Room, players: Player[]): GameSnapshotDTO {
         return GameSnapshotSchema.parse({
             room: room,
-            players: players,
+            players: players.map(player => ({
+                id: player.id,
+                x: player.x,
+                y: player.y,
+                width: player.width,
+                height: player.height,
+                visualId: player.visualId,
+                hp: player.hp,
+                maxHp: player.maxHp,
+                mana: player.mana,
+                maxMana: player.maxMana,
+                gold: player.gold,
+                maxInventoryLength: player.maxInventoryLength,
+                inventory: player.inventory.map(weapon => weapon.config),
+                currentWeaponIndex: player.currentWeaponIndex,
+                activeWeaponVisualId: player.activeWeaponVisualId
+            })),
             enemies: room.enemies,
             bullets: room.bullets
         });

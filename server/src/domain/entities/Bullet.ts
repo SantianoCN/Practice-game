@@ -22,6 +22,10 @@ export class Bullet extends MoveableEntity {
         this.range = config.range;
     }
 
+    public get angle(): number {
+        return Math.atan2(this.vy, this.vx);
+    }
+
     public override updatePosition(deltaTime: number): void {
         if (this.isDestroyed) return;
 

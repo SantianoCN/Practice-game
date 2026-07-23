@@ -5,7 +5,7 @@ export const SLASH: ProjectileStats = { radius: 10, damage: 15, range: 60, speed
 export const ICE_BALL: ProjectileStats = { radius: 10, damage: 6, range: 350, speed: 250, visualId: 'blue_ball' };
 export const AXE_SLASH: ProjectileStats = { radius: 10, damage: 30, range: 50, speed: 300, visualId: 'axe_slash' };
 
-export const STAFF: WeaponStats = { cooldownMs: 2000, manaCost: 10, projectile: FIREBALL, visualId: 'staff' };
+export const STAFF: WeaponStats = { cooldownMs: 0, manaCost: 10, projectile: FIREBALL, visualId: 'staff' };
 export const SWORD: WeaponStats = { cooldownMs: 800, manaCost: 0, projectile: SLASH, visualId: 'iron_sword' };
 export const ICE_STAFF: WeaponStats = { cooldownMs: 1000, manaCost: 5, projectile: ICE_BALL, visualId: 'ice_staff' };
 export const AXE: WeaponStats = { cooldownMs: 1500, manaCost: 0, projectile: AXE_SLASH, visualId: 'battle_axe' };

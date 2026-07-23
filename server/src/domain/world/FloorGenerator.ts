@@ -26,7 +26,7 @@ export class MapGenerator {
         private roomWidth: number,
         private roomHeight: number,
         private generateId: IDGenerator,
-        private getChestPreset: (presetId: string) => { width: number, height: number } | null
+        private getChestPreset: (presetId: string) => { width: number; height: number; visualIdClosed: string } | null
     ) {}
 
     public generateLobby(): (Room | null)[][] {
@@ -171,7 +171,7 @@ export class MapGenerator {
                     this.generateId('portal'),
                     this.roomWidth / 2,
                     this.roomHeight / 2,
-                    48,
+                    48,  // Вынести
                     48,
                     'portal_closed'
                 );
@@ -204,6 +204,7 @@ export class MapGenerator {
 
             const width = preset ? preset.width : 28;
             const height = preset ? preset.height : 28;
+            const visualIdClosed = preset ? preset.visualIdClosed : 'chest_closed';
             const x = ch.gridX * this.CELL_SIZE + width / 2;
             const y = ch.gridY * this.CELL_SIZE + height / 2;
 
@@ -215,7 +216,8 @@ export class MapGenerator {
                 height, 
                 ch.gridX, 
                 ch.gridY, 
-                ch.presetId
+                ch.presetId,
+                visualIdClosed
             );
             room.chests.push(chest);
         }
