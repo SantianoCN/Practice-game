@@ -7,7 +7,6 @@ import { IDGenerator } from '@game/shared';
 
 const mctsModule = require('../../../build/Release/mcts.node');
 
-
 interface MCTSState {
     npc_hp: number;
     npc_x: number;
@@ -45,8 +44,8 @@ export class EnemyAIService {
     private static mctsInstances: Map<string, any> = new Map();
 
 
-    private static readonly MCTS_ITERATIONS = 80;
-    private static readonly MCTS_C_VALUE = 0.3;
+    private static readonly MCTS_ITERATIONS = 100;
+    private static readonly MCTS_C_VALUE = 0.2;
     private static readonly MAP_WIDTH = 800;
     private static readonly MAP_HEIGHT = 600;
 
@@ -102,22 +101,16 @@ export class EnemyAIService {
             const distance = Math.hypot(dx, dy);
             const attackRange = enemy.currentWeapon ? (enemy.currentWeapon.config.projectile.range * 0.8) : 50;
 
-
-
             const useMCTS = distance < this.MCTS_RANGE;
 
             if (useMCTS) {
-
                 const lastUpdate = this.lastUpdateTime.get(enemy.id) || 0;
                 if (currentTime - lastUpdate >= this.UPDATE_INTERVAL_MS) {
                     this.lastUpdateTime.set(enemy.id, currentTime);
 
-
                     const mcts = this.getMCTSInstance(enemy.id);
 
-
                     const state = this.buildMCTSState(enemy, alivePlayers, room);
-
 
                     const result = mcts.findBestAction(state);
 
@@ -125,15 +118,12 @@ export class EnemyAIService {
                 }
 
             } else {
-
                 this.applySimpleAI(enemy, closestPlayer, distance, attackRange);
             }
-
 
             enemy.updateEntity(deltaTime);
             CollisionEngine.resolveWallBounds(enemy, roomWidth, roomHeight, room, false);
             CollisionEngine.resolveObstacles(enemy, room.getObstacleGrid());
-
 
             if (enemy.aiState === 'attack' && enemy.targetId && closestPlayer) {
                 const dirX = closestPlayer.x - enemy.x;
