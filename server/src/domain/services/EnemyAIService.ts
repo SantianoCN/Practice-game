@@ -46,7 +46,7 @@ export class EnemyAIService {
 
 
     private static readonly MCTS_ITERATIONS = 80;
-    private static readonly MCTS_C_VALUE = 0.0;
+    private static readonly MCTS_C_VALUE = 0.3;
     private static readonly MAP_WIDTH = 800;
     private static readonly MAP_HEIGHT = 600;
 
@@ -120,7 +120,6 @@ export class EnemyAIService {
 
 
                     const result = mcts.findBestAction(state);
-                    console.log(result);
 
                     this.applyMCTSAction(enemy, closestPlayer, result, attackRange);
                 }
