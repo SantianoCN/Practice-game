@@ -246,7 +246,7 @@ export class MapGenerator {
         const y = this.roomHeight / 2;
 
         const bossStats = { ...WARRIOR_PRESET_LIZARD };
-        bossStats.maxHp = 10; 
+        bossStats.maxHp = 300; 
         bossStats.speed = 120;
         bossStats.visualId = 'red_box'; 
 

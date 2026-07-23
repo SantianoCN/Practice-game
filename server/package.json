@@ -10,6 +10,7 @@
     "@game/shared": "*",
     "@prisma/client": "^5.22.0",
     "express": "^4.22.2",
+    "node-addon-api": "^8.9.0",
     "socket.io": "^4.8.3"
   },
   "devDependencies": {
