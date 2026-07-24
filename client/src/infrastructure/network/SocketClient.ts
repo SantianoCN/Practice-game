@@ -1,11 +1,12 @@
 import { io, Socket } from 'socket.io-client';
 import { INetworkClient } from '../../application/interfaces/INetworkClient';
-import {
+import type {
     PlayerActionDTO, GameSnapshotDTO, SessionCreateRequestDTO,
     SessionCreateResponseDTO, SessionJoinRequestDTO, SessionJoinResponseDTO,
-    PlayerClassPresetDTO, ClientEvent, ServerEvent, RoomInitDTO,
+    PlayerClassPresetDTO, RoomInitDTO,
     BuyItemResponseDTO, PlayerProgressDTO
 } from '@game/shared';
+import {  ClientEvent, ServerEvent } from '@game/shared';
 
 interface ProfileResult {
     login: string;
@@ -21,7 +22,7 @@ export class SocketClient implements INetworkClient {
     constructor(private serverUrl: string) {
         this.socket = io(this.serverUrl, {
             autoConnect: false,
-            transports: ['websocket']
+            transports: ['polling', 'websocket']
         });
     }
 

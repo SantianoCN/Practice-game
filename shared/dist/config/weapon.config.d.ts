@@ -1,0 +1,13 @@
+import { WeaponStats, ProjectileStats, StartingWeaponStats } from '../types/weapon.schema';
+export declare const FIREBALL: ProjectileStats;
+export declare const SLASH: ProjectileStats;
+export declare const ICE_BALL: ProjectileStats;
+export declare const AXE_SLASH: ProjectileStats;
+export declare const STAFF: WeaponStats;
+export declare const SWORD: WeaponStats;
+export declare const ICE_STAFF: WeaponStats;
+export declare const AXE: WeaponStats;
+export declare const STARTING_SWORD: StartingWeaponStats;
+export declare const STARTING_AXE: StartingWeaponStats;
+export declare const STARTING_STAFF: StartingWeaponStats;
+export declare const STARTING_ICE_STAFF: StartingWeaponStats;

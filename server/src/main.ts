@@ -136,7 +136,7 @@ async function bootstrap() {
     tick();
 
     const PORT = process.env.PORT || 3000;
-    const HOST = '0.0.0.0'; 
+    const HOST = 'localhost'; 
     httpServer.listen(PORT, () => {
         console.log(`[Server] Clean Architecture Engine running on http://${HOST}:${PORT}`);
     });

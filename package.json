@@ -5,5 +5,11 @@
     "shared",
     "server",
     "client"
-  ]
+  ],
+  "devDependencies": {
+    "@types/pica": "^9.0.5"
+  },
+  "dependencies": {
+    "pica": "^10.0.2"
+  }
 }
