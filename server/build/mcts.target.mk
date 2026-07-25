@@ -11,6 +11,8 @@ DEFS_Debug := \
 	'-D_FILE_OFFSET_BITS=64' \
 	'-D_LARGEFILE_SOURCE' \
 	'-D__STDC_FORMAT_MACROS' \
+	'-DOPENSSL_NO_PINSHARED' \
+	'-DOPENSSL_THREADS' \
 	'-DNAPI_CPP_EXCEPTIONS' \
 	'-DBUILDING_NODE_EXTENSION' \
 	'-DDEBUG' \
@@ -23,7 +25,6 @@ CFLAGS_Debug := \
 	-Wall \
 	-Wextra \
 	-Wno-unused-parameter \
-	-fPIC \
 	-m64 \
 	-g \
 	-O0
@@ -34,20 +35,19 @@ CFLAGS_C_Debug :=
 # Flags passed to only C++ files.
 CFLAGS_CC_Debug := \
 	-fno-rtti \
-	-fno-strict-aliasing \
 	-std=gnu++17 \
 	-fexceptions \
 	-std=c++17
 
 INCS_Debug := \
-	-I/home/dimaj/.cache/node-gyp/22.22.1/include/node \
-	-I/home/dimaj/.cache/node-gyp/22.22.1/src \
-	-I/home/dimaj/.cache/node-gyp/22.22.1/deps/openssl/config \
-	-I/home/dimaj/.cache/node-gyp/22.22.1/deps/openssl/openssl/include \
-	-I/home/dimaj/.cache/node-gyp/22.22.1/deps/uv/include \
-	-I/home/dimaj/.cache/node-gyp/22.22.1/deps/zlib \
-	-I/home/dimaj/.cache/node-gyp/22.22.1/deps/v8/include \
-	-I/home/dimaj/practice/Practice-game/node_modules/node-addon-api
+	-I/root/.cache/node-gyp/20.20.2/include/node \
+	-I/root/.cache/node-gyp/20.20.2/src \
+	-I/root/.cache/node-gyp/20.20.2/deps/openssl/config \
+	-I/root/.cache/node-gyp/20.20.2/deps/openssl/openssl/include \
+	-I/root/.cache/node-gyp/20.20.2/deps/uv/include \
+	-I/root/.cache/node-gyp/20.20.2/deps/zlib \
+	-I/root/.cache/node-gyp/20.20.2/deps/v8/include \
+	-I/root/Practice-game/node_modules/node-addon-api
 
 DEFS_Release := \
 	'-DNODE_GYP_MODULE_NAME=mcts' \
@@ -58,6 +58,8 @@ DEFS_Release := \
 	'-D_FILE_OFFSET_BITS=64' \
 	'-D_LARGEFILE_SOURCE' \
 	'-D__STDC_FORMAT_MACROS' \
+	'-DOPENSSL_NO_PINSHARED' \
+	'-DOPENSSL_THREADS' \
 	'-DNAPI_CPP_EXCEPTIONS' \
 	'-DBUILDING_NODE_EXTENSION'
 
@@ -68,7 +70,6 @@ CFLAGS_Release := \
 	-Wall \
 	-Wextra \
 	-Wno-unused-parameter \
-	-fPIC \
 	-m64 \
 	-O3 \
 	-fno-omit-frame-pointer
@@ -79,20 +80,19 @@ CFLAGS_C_Release :=
 # Flags passed to only C++ files.
 CFLAGS_CC_Release := \
 	-fno-rtti \
-	-fno-strict-aliasing \
 	-std=gnu++17 \
 	-fexceptions \
 	-std=c++17
 
 INCS_Release := \
-	-I/home/dimaj/.cache/node-gyp/22.22.1/include/node \
-	-I/home/dimaj/.cache/node-gyp/22.22.1/src \
-	-I/home/dimaj/.cache/node-gyp/22.22.1/deps/openssl/config \
-	-I/home/dimaj/.cache/node-gyp/22.22.1/deps/openssl/openssl/include \
-	-I/home/dimaj/.cache/node-gyp/22.22.1/deps/uv/include \
-	-I/home/dimaj/.cache/node-gyp/22.22.1/deps/zlib \
-	-I/home/dimaj/.cache/node-gyp/22.22.1/deps/v8/include \
-	-I/home/dimaj/practice/Practice-game/node_modules/node-addon-api
+	-I/root/.cache/node-gyp/20.20.2/include/node \
+	-I/root/.cache/node-gyp/20.20.2/src \
+	-I/root/.cache/node-gyp/20.20.2/deps/openssl/config \
+	-I/root/.cache/node-gyp/20.20.2/deps/openssl/openssl/include \
+	-I/root/.cache/node-gyp/20.20.2/deps/uv/include \
+	-I/root/.cache/node-gyp/20.20.2/deps/zlib \
+	-I/root/.cache/node-gyp/20.20.2/deps/v8/include \
+	-I/root/Practice-game/node_modules/node-addon-api
 
 OBJS := \
 	$(obj).target/$(TARGET)/src/infrastructure/mcts/mcts_bridge.o \
