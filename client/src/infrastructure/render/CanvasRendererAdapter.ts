@@ -33,6 +33,8 @@ export class CanvasRendererAdapter {
 
     private playerRenderers: Record<string, EntityRenderer[]> = {};
     private playerVariantWeapons: Record<string, string[]> = {};
+    private lastGridX: number | null = null;
+    private lastGridY: number | null = null;
 
     private enemyRenderers: Record<string, EntityRenderer> = {};
     private assetSrcMap: Map<string, string> = new Map();
@@ -166,6 +168,8 @@ export class CanvasRendererAdapter {
     public reset(): void {
         this.initVisitedMatrix();
         this.currentRoomKey = '';
+        this.lastGridX = null;
+        this.lastGridY = null;
     }
 
     private prerenderStaticScene(obstacles: BaseEntityState[]): void {
@@ -224,6 +228,17 @@ export class CanvasRendererAdapter {
         const x = room.gridX;
         const y = room.gridY;
         if (x < 0 || x >= this.matrixSize || y < 0 || y >= this.matrixSize) return;
+
+        if (this.lastGridX !== null && this.lastGridY !== null) {
+            const distance = Math.abs(x - this.lastGridX) + Math.abs(y - this.lastGridY);
+            
+            if (room.type === 'Start' && distance > 1) {
+                this.initVisitedMatrix();
+            }
+        }
+
+        this.lastGridX = x;
+        this.lastGridY = y;
 
         this.visitedMatrix[y][x] = { state: 'visited', type: room.type };
 

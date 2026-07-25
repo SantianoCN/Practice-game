@@ -1,5 +1,3 @@
-// src/main.ts (Клиент)
-
 import { DOMManager } from './infrastructure/ui/DOMManager';
 import { SocketClient } from './infrastructure/network/SocketClient';
 import { KeyboardAdapter } from './infrastructure/input/KeyboardAdapter';
@@ -7,11 +5,7 @@ import { CanvasRendererAdapter } from './infrastructure/render/CanvasRendererAda
 import { SyncStateUseCase } from './application/use-cases/SyncStateUseCase';
 import { BaseResponseDTO, PlayerClassPresetDTO, PlayerProgressDTO } from '@game/shared';
 
-const SERVER_URL = (import.meta.env?.VITE_API_URL as string) || (
-    window.location.hostname === 'localhost' && window.location.port !== '3000'
-        ? 'http://localhost:3000'
-        : window.location.origin
-);
+const SERVER_URL = 'http://217.114.14.204:3000';
 
 class App {
     private ui = new DOMManager();
@@ -124,7 +118,6 @@ class App {
         this.ui.onPortalNextFloor = () => {
             this.network.sendNextFloor();
             this.ui.showPortalModal(false);
-            this.renderer.reset();
             this.stateSync.clear();
         };
 
