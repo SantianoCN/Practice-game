@@ -9,15 +9,14 @@ import { ISaveRepository } from '../interfaces/ISaveRepository';
 
 export interface HostMigrationResult {
     migrated: boolean;
-    newHostId?: string;
-    newHostLogin?: string;
-    remainingOnlineIds: string[];
+    newHostAccountId?: string;
+    remainingOnlineAccountIds: string[];
 }
 
 export class SessionManagementUseCase {
     private deleteTimers = new Map<string, ReturnType<typeof setTimeout>>();
     private reconnectTimers = new Map<string, ReturnType<typeof setTimeout>>();
-    private loginSessionMap = new Map<string, string>();
+    private accountSessionMap = new Map<string, string>();
 
     constructor(
         private repo: IGameRepository,
@@ -32,11 +31,11 @@ export class SessionManagementUseCase {
         return this.repo.get(sessionId);
     }
 
-    public findActiveSessionByLogin(login: string): string | undefined {
-        const sessionId = this.loginSessionMap.get(login);
+    public findActiveSessionByAccountId(accountId: string): string | undefined {
+        const sessionId = this.accountSessionMap.get(accountId);
         if (!sessionId) return undefined;
         if (!this.repo.get(sessionId)) {
-            this.loginSessionMap.delete(login);
+            this.accountSessionMap.delete(accountId);
             return undefined;
         }
         return sessionId;
@@ -51,9 +50,9 @@ export class SessionManagementUseCase {
 
         const session = this.repo.get(sessionId);
         if (session) {
-            for (const login of session.allowedLogins) {
-                if (this.loginSessionMap.get(login) === sessionId) {
-                    this.loginSessionMap.delete(login);
+            for (const accountId of session.allowedAccountIds) {
+                if (this.accountSessionMap.get(accountId) === sessionId) {
+                    this.accountSessionMap.delete(accountId);
                 }
             }
         }
@@ -81,7 +80,7 @@ export class SessionManagementUseCase {
         this.terminateSession(sessionId);
     }
 
-    private addPlayerToSession(session: GameSession, userId: string, login: string, archetype: string, weaponId: string): void {
+    private addPlayerToSession(session: GameSession, accountId: string, login: string, archetype: string, weaponId: string): void {
         const pendingTimer = this.deleteTimers.get(session.sessionId);
         if (pendingTimer) {
             clearTimeout(pendingTimer);
@@ -89,8 +88,12 @@ export class SessionManagementUseCase {
         }
 
         const player = EntityFactory.createPlayer(
-            userId, login, archetype, weaponId,
-            session.roomWidth / 2, session.roomHeight / 2,
+            accountId,
+            login,
+            archetype, 
+            weaponId,
+            session.roomWidth / 2, 
+            session.roomHeight / 2,
             (prefix) => this.idGen.generateId(prefix)
         );
 
@@ -98,17 +101,17 @@ export class SessionManagementUseCase {
         player.roomY = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
 
         session.addPlayer(player);
-        session.allowedLogins.add(login);
-        this.loginSessionMap.set(login, session.sessionId);
+        session.allowedAccountIds.add(accountId);
+        this.accountSessionMap.set(accountId, session.sessionId);
     }
 
-    public createSession(userId: string, login: string, archetype: string, weaponId: string): string {
+    public createSession(accountId: string, login: string, archetype: string, weaponId: string): string {
         const sessionId = this.idGen.generateUUID('session');
         const session = new GameSession(sessionId, this.roomWidth, this.roomHeight, GAME_DIFFICULTY.LVL1);
 
         session.isLobby = false;
-        session.hostId = userId;
-        session.hostLogin = login;
+        session.isSingleplayer = true;
+        session.hostAccountId = accountId;
 
         const mapGenerator = new MapGenerator(
             GAME_CONFIG.MAP_SIZE,
@@ -121,18 +124,18 @@ export class SessionManagementUseCase {
 
         session.floorMap = mapGenerator.generate();
         this.repo.save(session);
-        this.addPlayerToSession(session, userId, login, archetype, weaponId);
+        this.addPlayerToSession(session, accountId, login, archetype, weaponId);
 
         return sessionId;
     }
 
-    public createLobby(userId: string, login: string, archetype: string, weaponId: string): string {
+    public createLobby(accountId: string, login: string, archetype: string, weaponId: string): string {
         const sessionId = this.idGen.generateUUID('session');
         const session = new GameSession(sessionId, this.roomWidth, this.roomHeight, GAME_DIFFICULTY.LVL1);
 
         session.isLobby = true;
-        session.hostId = userId;
-        session.hostLogin = login;
+        session.isSingleplayer = false;
+        session.hostAccountId = accountId;
 
         const mapGenerator = new MapGenerator(
             GAME_CONFIG.MAP_SIZE,
@@ -145,75 +148,90 @@ export class SessionManagementUseCase {
 
         session.floorMap = mapGenerator.generateLobby();
         this.repo.save(session);
-        this.addPlayerToSession(session, userId, login, archetype, weaponId);
+        this.addPlayerToSession(session, accountId, login, archetype, weaponId);
 
         return sessionId;
     }
 
-    public async loadRestoredLobby(sessionId: string, requestingUserId: string, requestingLogin: string): Promise<string | null> {
-        const session = await this.saveRepo.loadRun(sessionId);
+    public async loadRestoredSession(
+        saveId: string, 
+        requestingAccountId: string
+    ): Promise<{ sessionId: string; isSingleplayer: boolean } | null> {
+        const session = await this.saveRepo.loadRun(saveId);
         if (!session) return null;
-        session.isLobby = true;
+
+        await this.saveRepo.deleteRun(saveId);
+
+        const hostPlayer = session.getPlayer(requestingAccountId);
+        if (!hostPlayer) return null;
+
+        if (!hostPlayer) return null;
+
+        session.isRestoredSave = true;
+
+        for (const p of session.players.values()) {
+            this.accountSessionMap.set(p.id, session.sessionId);
+        }
+
+        hostPlayer.id = requestingAccountId;
+        hostPlayer.name = hostPlayer.name;
+        hostPlayer.isOnline = true;
+        hostPlayer.vx = 0;
+        hostPlayer.vy = 0;
+        hostPlayer.lastBroadcastedRoomX = null;
+        hostPlayer.lastBroadcastedRoomY = null;
+
+        session.hostAccountId = requestingAccountId;
 
         const mapGenerator = new MapGenerator(
             GAME_CONFIG.MAP_SIZE,
-            GAME_DIFFICULTY.LVL1,
+            session.difficulty,
             this.roomWidth,
             this.roomHeight,
             (prefix) => this.idGen.generateId(prefix),
             (id) => this.presetProvider.getChestPreset(id)
         );
 
-        session.floorMap = mapGenerator.generateLobby();
+        const startX = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
+        const startY = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
 
-        for (const login of session.allowedLogins) {
-            this.loginSessionMap.set(login, session.sessionId);
-        }
-
-        const hostPlayer = Array.from(session.players.values()).find(p => p.name === requestingLogin);
-        if (hostPlayer) {
-            session.removePlayer(hostPlayer.id);
-
-            hostPlayer.id = requestingUserId;
-            hostPlayer.isOnline = true;
-            hostPlayer.roomX = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
-            hostPlayer.roomY = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
+        if (session.isSingleplayer) {
+            session.isLobby = false;
+            session.floorMap = mapGenerator.generate();
+            
+            hostPlayer.roomX = startX;
+            hostPlayer.roomY = startY;
             hostPlayer.x = session.roomWidth / 2;
             hostPlayer.y = session.roomHeight / 2;
-            hostPlayer.vx = 0;
-            hostPlayer.vy = 0;
-            hostPlayer.lastBroadcastedRoomX = null;
-            hostPlayer.lastBroadcastedRoomY = null;
+        } else {
+            session.isLobby = true;
+            session.floorMap = mapGenerator.generateLobby();
 
-            session.addPlayer(hostPlayer);
-
-            session.hostId = requestingUserId;
-            session.hostLogin = requestingLogin;
+            hostPlayer.roomX = startX;
+            hostPlayer.roomY = startY;
+            hostPlayer.x = session.roomWidth / 2;
+            hostPlayer.y = session.roomHeight / 2;
         }
 
         this.repo.save(session);
-        return session.sessionId;
+        return { sessionId: session.sessionId, isSingleplayer: session.isSingleplayer };
     }
 
-    public joinLobby(sessionId: string, userId: string, login: string, archetype: string, weaponId: string): boolean {
+    public joinLobby(sessionId: string, accountId: string, login: string, archetype: string, weaponId: string): boolean {
         const session = this.repo.get(sessionId);
-        if (!session) return false;
+        if (!session || !session.isLobby) return false;
 
-        if (!session.isLobby) {
-            console.log(`[Security Action] Попытка несанкционированного входа в уже активный бой: ${sessionId}`);
-            return false;
-        }
-
-        if (session.allowedLogins.size > 0) {
-            if (!session.allowedLogins.has(login)) {
-                console.log(`[Security Action] Игрок ${login} не имеет прав доступа к сессии ${sessionId}`);
+        if (session.isRestoredSave) {
+            if (!session.allowedAccountIds.has(accountId)) {
                 return false;
             }
 
-            const existingPlayer = Array.from(session.players.values()).find(p => p.name === login);
+            const existingPlayer = session.getPlayer(accountId);
+
             if (existingPlayer) {
                 session.removePlayer(existingPlayer.id);
-                existingPlayer.id = userId;
+                existingPlayer.id = accountId;
+                existingPlayer.name = login;
                 existingPlayer.isOnline = true;
                 existingPlayer.roomX = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
                 existingPlayer.roomY = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
@@ -225,21 +243,28 @@ export class SessionManagementUseCase {
                 existingPlayer.lastBroadcastedRoomY = null;
 
                 session.addPlayer(existingPlayer);
-                this.loginSessionMap.set(login, sessionId);
-                console.log(`[Restore Join] Игрок ${login} вернулся на свое сохраненное место в лобби.`);
+                this.accountSessionMap.set(accountId, sessionId);
+
+                const reconnectKey = `${sessionId}:${accountId}`;
+                const pendingTimer = this.reconnectTimers.get(reconnectKey);
+                if (pendingTimer) {
+                    clearTimeout(pendingTimer);
+                    this.reconnectTimers.delete(reconnectKey);
+                }
+
                 return true;
             }
             return false;
         }
 
-        this.addPlayerToSession(session, userId, login, archetype, weaponId);
+        this.addPlayerToSession(session, accountId, login, archetype, weaponId);
         return true;
     }
 
-    public startMatch(sessionId: string, userId: string): boolean {
+    public startMatch(sessionId: string, accountId: string): boolean {
         const session = this.repo.get(sessionId);
         if (!session || !session.isLobby) return false;
-        if (session.hostId !== userId) return false;
+        if (session.hostAccountId !== accountId) return false;
 
         const mapGenerator = new MapGenerator(
             GAME_CONFIG.MAP_SIZE,
@@ -257,9 +282,7 @@ export class SessionManagementUseCase {
         const startY = Math.floor(GAME_CONFIG.MAP_SIZE / 2);
 
         for (const player of session.players.values()) {
-            if (!player.isOnline) {
-                continue;
-            }
+            if (!player.isOnline) continue;
             player.roomX = startX;
             player.roomY = startY;
             player.x = session.roomWidth / 2;
@@ -271,52 +294,49 @@ export class SessionManagementUseCase {
         return true;
     }
 
-    private migrateHostIfNeeded(session: GameSession, departingUserId: string): HostMigrationResult {
-        const remainingOnlineIds = Array.from(session.players.values())
-            .filter(p => p.id !== departingUserId && p.isOnline)
+    
+
+    private migrateHostIfNeeded(session: GameSession, departingAccountId: string): HostMigrationResult {
+        const remainingOnlineAccountIds = Array.from(session.players.values())
+            .filter(p => p.id !== departingAccountId && p.isOnline)
             .map(p => p.id);
 
-        if (session.hostId !== departingUserId) {
-            return { migrated: false, remainingOnlineIds };
+        if (session.hostAccountId !== departingAccountId) {
+            return { migrated: false, remainingOnlineAccountIds };
         }
 
         const candidate = Array.from(session.players.values())
-            .find(p => p.id !== departingUserId && p.isOnline);
+            .find(p => p.id !== departingAccountId && p.isOnline);
 
         if (!candidate) {
-            return { migrated: false, remainingOnlineIds };
+            return { migrated: false, remainingOnlineAccountIds };
         }
 
-        session.hostId = candidate.id;
-        session.hostLogin = candidate.name;
+        session.hostAccountId = candidate.id;
 
         return {
             migrated: true,
-            newHostId: session.hostId,
-            newHostLogin: session.hostLogin,
-            remainingOnlineIds
+            newHostAccountId: session.hostAccountId,
+            remainingOnlineAccountIds
         };
     }
 
-    public handlePlayerDisconnect(sessionId: string, userId: string, login: string): HostMigrationResult | null {
+    public handlePlayerDisconnect(sessionId: string, accountId: string): HostMigrationResult | null {
         const session = this.repo.get(sessionId);
         if (!session) return null;
 
-        const player = session.getPlayer(userId);
+        const player = session.getPlayer(accountId);
         if (!player) return null;
 
         player.isOnline = false;
-        console.log(`[Disconnect Tracking] Игрок ${login} потерял связь. Запуск таймера...`);
+        console.log(`[Disconnect Tracking] Игрок ${player.name} (${accountId}) потерял связь. Запуск 2-минутного таймера...`);
 
-        const migrationResult = this.migrateHostIfNeeded(session, userId);
-        if (migrationResult.migrated) {
-            console.log(`[Host Migration] Новым воеводой назначен: ${migrationResult.newHostLogin}`);
-        }
+        const migrationResult = this.migrateHostIfNeeded(session, accountId);
 
-        const reconnectKey = `${sessionId}:${login}`;
+        const reconnectKey = `${sessionId}:${accountId}`;
         const timer = setTimeout(() => {
             this.reconnectTimers.delete(reconnectKey);
-            this.finalizePlayerDeparture(sessionId, userId, login);
+            this.finalizePlayerDeparture(sessionId, accountId);
         }, 120000);
 
         this.reconnectTimers.set(reconnectKey, timer);
@@ -324,14 +344,15 @@ export class SessionManagementUseCase {
         return migrationResult;
     }
 
-    private finalizePlayerDeparture(sessionId: string, userId: string, login: string): void {
+    private finalizePlayerDeparture(sessionId: string, accountId: string): void {
         const session = this.repo.get(sessionId);
         if (!session) return;
 
-        session.removePlayer(userId);
-        session.allowedLogins.delete(login);
-        if (this.loginSessionMap.get(login) === sessionId) {
-            this.loginSessionMap.delete(login);
+        session.removePlayer(accountId);
+        session.allowedAccountIds.delete(accountId);
+
+        if (this.accountSessionMap.get(accountId) === sessionId) {
+            this.accountSessionMap.delete(accountId);
         }
 
         if (session.isEmpty() && !this.deleteTimers.has(sessionId)) {
@@ -340,43 +361,40 @@ export class SessionManagementUseCase {
         }
     }
 
-    public tryReconnectPlayer(sessionId: string, newUserId: string, login: string): boolean {
+    public tryReconnectPlayer(sessionId: string, accountId: string): boolean {
         const session = this.repo.get(sessionId);
         if (!session) return false;
 
-        const reconnectKey = `${sessionId}:${login}`;
+        const reconnectKey = `${sessionId}:${accountId}`;
         const timer = this.reconnectTimers.get(reconnectKey);
 
         if (timer) {
             clearTimeout(timer);
             this.reconnectTimers.delete(reconnectKey);
 
-            const player = Array.from(session.players.values()).find(p => p.name === login);
+            const player = session.getPlayer(accountId);
             if (player) {
-                session.removePlayer(player.id);
-                player.id = newUserId;
                 player.isOnline = true;
-                session.addPlayer(player);
-
                 player.lastBroadcastedRoomX = null;
                 player.lastBroadcastedRoomY = null;
 
-                console.log(`[Reconnect Success] Игрок ${login} успешно вернулся в строй!`);
+                console.log(`[Reconnect Success] Игрок ${player.name} (${accountId}) успешно вернулся в строй!`);
                 return true;
             }
         }
         return false;
     }
 
-    public leaveSession(sessionId: string, userId: string, login: string): HostMigrationResult | null {
+    public leaveSession(sessionId: string, accountId: string): HostMigrationResult | null {
         const session = this.repo.get(sessionId);
         if (!session) return null;
 
-        session.removePlayer(userId);
-        session.allowedLogins.delete(login);
-        this.loginSessionMap.delete(login);
+        session.removePlayer(accountId);
+        session.allowedAccountIds.delete(accountId);
 
-        const migrationResult = this.migrateHostIfNeeded(session, userId);
+        this.accountSessionMap.delete(accountId);
+
+        const migrationResult = this.migrateHostIfNeeded(session, accountId);
 
         if (session.isEmpty()) {
             if (!this.deleteTimers.has(sessionId)) {

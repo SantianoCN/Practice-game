@@ -1,3 +1,5 @@
+// src/main.ts (Клиент)
+
 import { DOMManager } from './infrastructure/ui/DOMManager';
 import { SocketClient } from './infrastructure/network/SocketClient';
 import { KeyboardAdapter } from './infrastructure/input/KeyboardAdapter';
@@ -102,9 +104,15 @@ class App {
             try {
                 const res = await this.network.restoreSave();
                 if (res.success && res.sessionId) {
-                    this.isHost = true;
-                    this.ui.showStartMatchButton(true);
-                    this.startGame(res.sessionId, false, true);
+                    if (res.isSingleplayer) {
+                        this.isHost = false;
+                        this.ui.showStartMatchButton(false);
+                        this.startGame(res.sessionId, true, false);
+                    } else {
+                        this.isHost = true;
+                        this.ui.showStartMatchButton(true);
+                        this.startGame(res.sessionId, false, true);
+                    }
                 } else {
                     this.ui.showErrorLobby(res.message || 'Не удалось продолжить поход');
                 }
@@ -125,11 +133,12 @@ class App {
                 const res = await this.network.saveAndExit();
                 if (res.success) {
                     this.ui.showPortalModal(false);
+                    this.ui.showToast('Поход успешно сохранен!', 'success');
                 } else {
-                    alert(res.message || 'Не удалось сохранить поход');
+                    this.ui.showToast(res.message || 'Не удалось сохранить поход', 'error');
                 }
             } catch (err) {
-                alert('Ошибка соединения с избой');
+                this.ui.showToast('Ошибка соединения с избой', 'error');
             }
         };
 
@@ -163,11 +172,12 @@ class App {
                 if (res.success && res.progress) {
                     this.metaProgress = res.progress;
                     this.ui.updatePresets(this.classPresets, res.progress);
+                    this.ui.showToast('Разблокировка успешна!', 'success');
                 } else {
-                    alert(res.message || 'Не удалось купить предмет');
+                    this.ui.showToast(res.message || 'Не удалось купить предмет', 'error');
                 }
             } catch (err) {
-                alert('Ошибка отправки запроса покупки');
+                this.ui.showToast('Ошибка отправки запроса покупки', 'error');
             }
         };
 
@@ -210,7 +220,7 @@ class App {
         });
 
         this.network.onError(msg => {
-            alert(`Сервер сообщает: ${msg}`);
+            this.ui.showToast(`Сервер: ${msg}`, 'info');
             if (msg.includes('другого устройства')) this.ui.onLogout?.();
         });
 
@@ -227,12 +237,13 @@ class App {
                         this.metaProgress = res.progress;
                         this.ui.updatePresets(this.classPresets, res.progress);
                     }
+                    this.ui.showToast('Поход завершен! Золото в избе.', 'success');
                     this.stopGame();
                 } else {
-                    alert(res.message || 'Не удалось завершить поход');
+                    this.ui.showToast(res.message || 'Не удалось завершить поход', 'error');
                 }
             } catch (err) {
-                alert('Ошибка соединения при завершении похода');
+                this.ui.showToast('Ошибка соединения при завершении похода', 'error');
             }
         };
 
@@ -241,7 +252,7 @@ class App {
         });
 
         this.network.onSessionTerminated(data => {
-            alert(data.message);
+            this.ui.showToast(data.message, 'info');
             this.stopGame();
         });
     }

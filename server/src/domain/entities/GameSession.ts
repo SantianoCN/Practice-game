@@ -5,11 +5,11 @@ import { FloorDifficulty } from '@game/shared';
 export class GameSession {
     public players: Map<string, Player> = new Map();
     public floorMap: (Room | null)[][] = [];
-    
+    public isSingleplayer: boolean = false;
+    public isRestoredSave: boolean = false;
     public isLobby: boolean = false;
-    public hostId: string = '';
-    public hostLogin: string = '';
-    public allowedLogins: Set<string> = new Set();
+    public hostAccountId: string = '';
+    public allowedAccountIds: Set<string> = new Set();
 
     constructor(
         public readonly sessionId: string,
@@ -18,16 +18,16 @@ export class GameSession {
         public difficulty: FloorDifficulty
     ) {}
 
-    public getPlayer(userId: string): Player | undefined {
-        return this.players.get(userId);
+    public getPlayer(accountId: string): Player | undefined {
+        return this.players.get(accountId);
     }
 
     public addPlayer(player: Player): void {
         this.players.set(player.id, player);
     }
 
-    public removePlayer(userId: string): void {
-        this.players.delete(userId);
+    public removePlayer(accountId: string): void {
+        this.players.delete(accountId);
     }
 
     public getRoom(x: number, y: number): Room | null {

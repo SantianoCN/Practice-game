@@ -5,8 +5,8 @@ import { PLAYER_CLASSES, SHOP_PRICES } from '@game/shared';
 export class BuyItemUseCase {
     constructor(private accountRepo: IAccountRepository) {}
 
-    public async execute(login: string, itemPresetId: string): Promise<PlayerProgress | null> {
-        const account = await this.accountRepo.getByLogin(login);
+    public async execute(accountId: string, itemPresetId: string): Promise<PlayerProgress | null> {
+        const account = await this.accountRepo.getById(accountId);
         if (!account || !account.progress) return null;
 
         const price = SHOP_PRICES[itemPresetId];
@@ -14,7 +14,7 @@ export class BuyItemUseCase {
 
         const progress = account.progress;
 
-        if (progress.metaGold < price) return null;
+        if (progress.gold < price) return null;
 
         const updatedClasses = [...progress.unlockedClasses];
         const updatedWeapons = [...progress.unlockedWeapons];
@@ -31,7 +31,7 @@ export class BuyItemUseCase {
 
         const updatedAccount = await this.accountRepo.updateProgress(
             account.id,
-            progress.metaGold - price,
+            progress.gold - price,
             updatedClasses,
             updatedWeapons
         );

@@ -14,7 +14,7 @@ export const TokenRequestSchema = z.object({
 export type TokenRequestDTO = z.infer<typeof TokenRequestSchema>;
 
 export const PlayerProgressSchema = z.object({
-    metaGold: z.number(),
+    gold: z.number(),
     unlockedClasses: z.array(z.string()),
     unlockedWeapons: z.array(z.string())
 });

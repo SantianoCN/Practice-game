@@ -27,7 +27,7 @@ export class GameTickUseCase {
 
         for (const session of sessions) {
             for (const player of session.players.values()) {
-                if (player.isDead()) continue;
+                if (!player.isOnline || player.isDead()) continue;
 
                 player.processInputQueue();
                 player.applyInputFromHeldKeys();
@@ -51,7 +51,7 @@ export class GameTickUseCase {
                 if (!session.isLobby) {
                     RoomTransitionService.handleTransition(
                         player,
-                        Array.from(session.players.values()),
+                        Array.from(session.players.values()).filter(p => p.isOnline),
                         session.floorMap,
                         session.roomWidth,
                         session.roomHeight
@@ -71,7 +71,13 @@ export class GameTickUseCase {
                         obstacles: currentRoom.obstacles
                     });
                     
-                    this.broadcaster.broadcastRoomInit(player.id, roomInit);
+                    if (!currentRoom.isClear && currentRoom.type === 'Normal'){
+                        for (const player of session.players.values()) {
+                            this.broadcaster.broadcastRoomInit(player.id, roomInit);
+                        }
+                    } else {
+                        this.broadcaster.broadcastRoomInit(player.id, roomInit);
+                    }
                 }
             }
 
@@ -91,7 +97,7 @@ export class GameTickUseCase {
 
             for (const room of activeRooms) {
                 const playersInRoom = Array.from(session.players.values())
-                    .filter(p => p.roomX === room.gridX && p.roomY === room.gridY);
+                    .filter(p => p.isOnline && !p.isDead() && p.roomX === room.gridX && p.roomY === room.gridY);
 
                 if (!session.isLobby) {
                     EnemyAIService.updateEnemies(
@@ -113,7 +119,7 @@ export class GameTickUseCase {
                     if (room.type === 'Boss' && room.portal && room.portal.isActive) {
                         const wantsToTransition = CollisionEngine.checkPortalInteraction(player, room.portal);
                         if (wantsToTransition) {
-                            if (session.hostId === player.id) {
+                            if (session.hostAccountId === player.id) {
                                 this.broadcaster.broadcastPortalInteract(player.id);
                             } else {
                                 this.broadcaster.broadcastError(player.id, 'Только воевода (хост) решает, куда вести дружину!');
