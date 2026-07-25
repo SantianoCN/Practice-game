@@ -52,6 +52,16 @@ export class PrismaAccountRepo implements IAccountRepository {
         return this.mapToDomain(dbAccount);
     }
 
+    async getById(accountId: string): Promise<Account | null> {
+        const dbAccount = await this.prisma.account.findUnique({ 
+            where: { id: accountId },
+            include: this.includeConfig
+        });
+        
+        if (!dbAccount) return null;
+        return this.mapToDomain(dbAccount);
+    }
+
     async getByToken(token: string): Promise<Account | null> {
         const dbAccount = await this.prisma.account.findFirst({ 
             where: { refreshToken: token },

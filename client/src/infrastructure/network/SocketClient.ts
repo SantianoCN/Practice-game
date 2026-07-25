@@ -104,7 +104,7 @@ export class SocketClient implements INetworkClient {
         });
     }
 
-    public restoreSave(): Promise<{ success: boolean; sessionId?: string; message?: string }> {
+    public restoreSave(): Promise<{ success: boolean; sessionId?: string; isSingleplayer?: boolean; message?: string }> {
         return new Promise(resolve => {
             this.socket.emit(ClientEvent.RESTORE_SAVE, {}, (res: any) => {
                 resolve(res);

@@ -8,11 +8,13 @@ datasource db {
 }
 
 model Account {
-  id           String          @id @default(uuid())
-  login        String          @unique
+  id           String            @id @default(uuid())
+  login        String            @unique
   passwordHash String
-  refreshToken String          @default("")
+  refreshToken String            @default("")
   progress     PlayerProgress?
+  hostedRun    RunSave?          @relation("HostAccount")
+  saveStates   PlayerSaveState[]
 }
 
 model PlayerProgress {
@@ -41,29 +43,28 @@ model UnlockedWeapon {
 }
 
 model RunSave {
-  id          String            @id @default(uuid())
-  sessionId   String            @unique
-  hostLogin   String
-  floorNumber Int               @default(1)
-  roomWidth   Int               @default(800)
-  roomHeight  Int               @default(600)
-  players     PlayerSaveState[]
-  createdAt   DateTime          @default(now())
+  id             String            @id @default(uuid())
+  hostAccountId  String            @unique 
+  host           Account           @relation("HostAccount", fields: [hostAccountId], references: [id], onDelete: Cascade)
+  isSingleplayer Boolean           @default(false)
+  floorNumber    Int               @default(1)
+  roomWidth      Int               @default(800)
+  roomHeight     Int               @default(600)
+  players        PlayerSaveState[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
 }
 
 model PlayerSaveState {
   id             String          @id @default(uuid())
   runSaveId      String
   runSave        RunSave         @relation(fields: [runSaveId], references: [id], onDelete: Cascade)
-  login          String
+  accountId      String          
+  account        Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
   archetype      String
-  hp             Int
-  maxHp          Int
-  mana           Float
-  maxMana        Int
   gold           Int
-  weaponPresetId String
   inventory      InventoryItem[]
+  @@unique([runSaveId, accountId])
 }
 
 model InventoryItem {
@@ -71,5 +72,4 @@ model InventoryItem {
   playerSaveStateId String
   playerSaveState   PlayerSaveState @relation(fields: [playerSaveStateId], references: [id], onDelete: Cascade)
   itemId            String
-  quantity          Int             @default(1)
 }

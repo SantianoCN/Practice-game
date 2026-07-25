@@ -80,7 +80,7 @@ async function bootstrap() {
     app.post('/register', async (req, res) => {
         const parsed = LoginDataSchema.safeParse(req.body);
         if (!parsed.success) {
-            return res.status(400).send({ success: false, message: 'Некорректные данные логина или пароля' });
+            return res.status(400).send({ success: false, message: 'Некорректные данные логина или пароля, минимальная длинна логина - 3, минимальная длинна пароля - 4' });
         }
 
         const result = await authUseCase.register(parsed.data);

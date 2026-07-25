@@ -159,7 +159,7 @@ export class DOMManager {
         if (progress) {
             this.progress = progress;
             const goldEl = document.getElementById('lobbyGold');
-            if (goldEl) goldEl.innerText = `${progress.metaGold}`;
+            if (goldEl) goldEl.innerText = `${progress.gold}`;
         }
 
         const heroList = document.getElementById('heroCardList')!;
@@ -343,6 +343,24 @@ export class DOMManager {
 
             container.appendChild(nameSpan);
         }
+    }
+
+    public showToast(message: string, type: 'info' | 'error' | 'success' = 'info', durationMs: number = 3500): void {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerText = message;
+
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.classList.add('toast-hide');
+            toast.addEventListener('animationend', () => {
+                toast.remove();
+            });
+        }, durationMs);
     }
 
     public showPortalModal(show: boolean): void {

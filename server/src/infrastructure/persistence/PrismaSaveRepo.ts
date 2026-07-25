@@ -9,8 +9,10 @@ export class PrismaSaveRepo implements ISaveRepository {
     constructor(private prisma: PrismaClient) {}
 
     private readonly includeConfig = {
+        host: true,
         players: {
             include: {
+                account: true,
                 inventory: true
             }
         }
@@ -18,31 +20,18 @@ export class PrismaSaveRepo implements ISaveRepository {
 
     public async saveRun(session: GameSession): Promise<void> {
         await this.prisma.runSave.deleteMany({
-            where: {
-                OR: [
-                    { sessionId: session.sessionId },
-                    { hostLogin: session.hostLogin }
-                ]
-            }
+            where: { hostAccountId: session.hostAccountId }
         });
 
         const playersData = Array.from(session.players.values()).map(p => {
-            const activeWeapon = p.getActiveWeapon();
-            
             const inventoryItems = p.inventory.map(w => ({
-                itemId: w.presetId,
-                quantity: 1
+                itemId: w.presetId
             }));
 
             return {
-                login: p.name,
+                accountId: p.id,
                 archetype: p.archetype,
-                hp: p.hp,
-                maxHp: p.maxHp,
-                mana: p.mana,
-                maxMana: p.maxMana,
                 gold: p.gold,
-                weaponPresetId: activeWeapon.presetId,
                 inventory: {
                     create: inventoryItems
                 }
@@ -51,8 +40,8 @@ export class PrismaSaveRepo implements ISaveRepository {
 
         await this.prisma.runSave.create({
             data: {
-                sessionId: session.sessionId,
-                hostLogin: session.hostLogin,
+                hostAccountId: session.hostAccountId,
+                isSingleplayer: session.isSingleplayer,
                 floorNumber: session.difficulty.levelNumber || 1,
                 roomWidth: session.roomWidth,
                 roomHeight: session.roomHeight,
@@ -63,9 +52,9 @@ export class PrismaSaveRepo implements ISaveRepository {
         });
     }
 
-    public async loadRun(sessionId: string): Promise<GameSession | null> {
+    public async loadRun(saveId: string): Promise<GameSession | null> {
         const dbSave = await this.prisma.runSave.findUnique({
-            where: { sessionId },
+            where: { id: saveId },
             include: this.includeConfig
         });
 
@@ -74,16 +63,20 @@ export class PrismaSaveRepo implements ISaveRepository {
         const difficultyKey = `LVL${dbSave.floorNumber}`;
         const difficulty = GAME_DIFFICULTY[difficultyKey] || { levelNumber: dbSave.floorNumber, ROOM_COUNT: 10 };
 
-        const session = new GameSession(dbSave.sessionId, dbSave.roomWidth, dbSave.roomHeight, difficulty);
-        session.hostLogin = dbSave.hostLogin;
+        const session = new GameSession(dbSave.id, dbSave.roomWidth, dbSave.roomHeight, difficulty);
+        session.hostAccountId = dbSave.hostAccountId;
+        session.isSingleplayer = dbSave.isSingleplayer;
 
         for (const dbPlayer of dbSave.players) {
-            session.allowedLogins.add(dbPlayer.login);
+            const accountId = dbPlayer.accountId;
+            const login = dbPlayer.account.login;
+
+            session.allowedAccountIds.add(accountId);
 
             const weaponPresets = dbPlayer.inventory.length > 0
                 ? dbPlayer.inventory.map((item: any) => item.itemId)
                 : ['wpn_iron_sword'];
-                
+
             const weapons: Weapon[] = [];
 
             for (let i = 0; i < weaponPresets.length; i++) {
@@ -92,34 +85,27 @@ export class PrismaSaveRepo implements ISaveRepository {
                 const config = (item && item.type === 'weapon' && item.stats) ? item.stats : SWORD;
                 const name = item ? item.name : 'Стальной Меч';
 
-                weapons.push(new Weapon(`wpn_restored_${dbPlayer.login}_${i}`, presetId, name, config));
+                weapons.push(new Weapon(`wpn_restored_${accountId}_${i}`, presetId, name, config));
             }
 
             const classPreset = PLAYER_CLASSES[dbPlayer.archetype] || PLAYER_CLASSES['warrior'];
             const stats = classPreset.stats;
 
             const player = new Player(
-                `restored_offline_${dbPlayer.login}`,
-                dbPlayer.login,
+                accountId,
+                login,
                 dbSave.roomWidth / 2,
                 dbSave.roomHeight / 2,
                 stats,
                 weapons[0],
-                dbPlayer.mana,
-                dbPlayer.maxMana,
+                stats.maxMana,
+                stats.maxMana,
                 stats.manaRegen
             );
 
-            player.hp = dbPlayer.hp;
-            player.maxHp = dbPlayer.maxHp;
             player.gold = dbPlayer.gold;
             player.inventory = weapons;
             player.isOnline = false;
-
-            const activeIndex = weapons.findIndex(w => w.presetId === dbPlayer.weaponPresetId);
-            if (activeIndex !== -1) {
-                player.currentWeaponIndex = activeIndex;
-            }
 
             session.addPlayer(player);
         }
@@ -127,19 +113,16 @@ export class PrismaSaveRepo implements ISaveRepository {
         return session;
     }
 
-    public async deleteRun(sessionId: string): Promise<void> {
+    public async deleteRun(saveId: string): Promise<void> {
         try {
-            await this.prisma.runSave.delete({ where: { sessionId } });
-        } catch (err) {
-            
-        }
+            await this.prisma.runSave.delete({ where: { id: saveId } });
+        } catch (err) {}
     }
 
-    public async getRunSaveByHost(hostLogin: string): Promise<any | null> {
-        return this.prisma.runSave.findFirst({
-            where: { hostLogin },
-            include: this.includeConfig,
-            orderBy: { createdAt: 'desc' }
+    public async getRunSaveByHostAccountId(hostAccountId: string): Promise<any | null> {
+        return this.prisma.runSave.findUnique({
+            where: { hostAccountId },
+            include: this.includeConfig
         });
     }
 }
