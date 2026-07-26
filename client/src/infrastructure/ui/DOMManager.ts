@@ -64,12 +64,36 @@ export class DOMManager {
         document.getElementById('disconnectBtn')?.addEventListener('click', () => this.onLeaveRoom?.());
 
         document.getElementById('copySessionBtn')?.addEventListener('click', () => {
-            const btn = document.getElementById('copySessionBtn')!;
-            const text = document.getElementById('sessionDisplay')?.innerText || '';
-            navigator.clipboard.writeText(text).then(() => {
-                btn.innerText = 'СКОПИРОВАНО!';
-                setTimeout(() => btn.innerText = 'СКОПИРОВАТЬ ID', 1200);
-            });
+            const btn = document.getElementById('copySessionBtn') as HTMLButtonElement | null;
+            const text = document.getElementById('sessionDisplay')?.textContent?.trim() || '';
+
+            if (!btn || !text) return;
+
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+
+            textArea.focus();
+            textArea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    btn.innerText = 'СКОПИРОВАНО!';
+                    btn.classList.add('button-copied');
+                    setTimeout(() => {
+                        btn.innerText = 'СКОПИРОВАТЬ';
+                        btn.classList.remove('button-copied');
+                    }, 1200);
+                }
+            } catch (err) {
+                console.error('Ошибка копирования:', err);
+            } finally {
+                document.body.removeChild(textArea);
+            }
         });
 
         document.getElementById('portalNextBtn')?.addEventListener('click', () => {

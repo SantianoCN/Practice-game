@@ -746,3 +746,13 @@ input.text-center {
         opacity: 0;
     }
 }
+
+.copy-btn.button-copied {
+    background-color: #2e4c1f !important;
+    box-shadow: 
+        inset 4px 4px 0px #4d7a39, 
+        inset -4px -4px 0px #182810 !important;
+}
+.copy-btn.button-copied:hover {
+    background-color: #4d7a39 !important;
+}
