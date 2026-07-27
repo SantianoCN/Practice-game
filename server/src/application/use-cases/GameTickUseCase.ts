@@ -158,9 +158,6 @@ export class GameTickUseCase {
                     const interactedChestId = CollisionEngine.checkChestInteraction(player, room.chests);
                     if (interactedChestId) {
                         this.openChestUseCase.execute(session.sessionId, player.id, interactedChestId);
-                        player.isInteracting = true
-                    } else {
-                        player.isInteracting = false
                     }
 
                     const pickedItems = CollisionEngine.resolveLootPickup(player, room.droppedItems, (presetId) => this.presetProvider.getItemPreset(presetId));
@@ -236,7 +233,8 @@ export class GameTickUseCase {
                 maxInventoryLength: player.maxInventoryLength,
                 inventory: player.inventory.map(weapon => weapon.config),
                 currentWeaponIndex: player.currentWeaponIndex,
-                activeWeaponVisualId: player.activeWeaponVisualId
+                activeWeaponVisualId: player.activeWeaponVisualId,
+                isInteracting: player.isInteracting ?? false
             })),
             enemies: room.enemies,
             bullets: room.bullets
