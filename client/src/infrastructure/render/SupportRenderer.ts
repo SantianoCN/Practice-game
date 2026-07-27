@@ -66,6 +66,20 @@ export class TextureRenderer implements EntityRenderer {
         if (entity.hp !== undefined && entity.maxHp !== undefined && entity.type !== 'player' && entity.hp > 0) {
             this.drawHpBar(context, entity);
         }
+        if (entity.isInteracting) {
+            // 1. Задаем шрифт (размер и семейство)
+            context.font = '32px "Press Start 2P", sans-serif';
+
+            // 2. Выравнивание (по горизонтали и вертикали)
+            context.textAlign = 'center';     // 'left', 'right', 'center'
+            context.textBaseline = 'middle';   // 'top', 'middle', 'bottom'
+
+            // 3. Цвет закраски
+            context.fillStyle = '#ffcc00';
+
+            // 4. Отрисовка залитого текста: fillText(текст, x, y)
+            context.fillText('АБВ', 600, 400);
+        }
     }
 
     private drawHpBar(context: CanvasRenderingContext2D, entity: VisualEntity): void {

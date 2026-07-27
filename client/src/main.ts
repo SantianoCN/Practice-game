@@ -27,6 +27,9 @@ class App {
         this.input.onToggleGuiReq = () => {
             this.renderer.toggleGUI();
         };
+
+        this.input.onHelpPressed(() => this.renderer.toggleHelp());
+
         this.bindUiToNetwork();
         this.bindNetworkToApp();
         this.init();

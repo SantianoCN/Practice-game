@@ -43,6 +43,8 @@ export class CanvasRendererAdapter {
 
     private tileArr: Array<HTMLImageElement | HTMLCanvasElement> = [];
 
+    private isHelpVisible: boolean = false;
+
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
         const ctx = canvas.getContext('2d');
@@ -61,6 +63,10 @@ export class CanvasRendererAdapter {
 
         this.initVisitedMatrix();
         this.registerFromManifest();
+    }
+
+    public toggleHelp(): void {
+        this.isHelpVisible = !this.isHelpVisible;
     }
 
     private registerFromManifest(): void {
@@ -431,6 +437,7 @@ export class CanvasRendererAdapter {
         this.drawBullets(bulletsMap);
         this.drawPlayers(playersMap);
         this.drawEnemies(enemiesMap);
+        if (this.isHelpVisible) this.drawHelpPage()
     }
 
     private drawDoors(room: RoomState): void {
@@ -722,5 +729,19 @@ export class CanvasRendererAdapter {
     private drawFallback(entity: VisualEntity): void {
         this.context.fillStyle = '#ff00ff';
         this.context.fillRect(entity.renderX - entity.width / 2, entity.renderY - entity.height / 2, entity.width, entity.height);
+    }
+
+    private drawHelpPage(): void {
+        const texture = this.textures['F1'];
+        const startX = 10;
+        const startY = 10;
+        const width = 640;
+        const height = 440;
+
+        if (texture) {
+            this.context.drawImage(texture, startX, startY, width, height)
+        } else {
+            this.context.fillRect(0, 0, this.canvas.width, this.canvas.height)
+        }
     }
 }

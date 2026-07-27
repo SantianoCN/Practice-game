@@ -25,6 +25,7 @@ export class VisualEntity {
     public lastFacing: 'left' | 'Top' | 'right' = 'right';
     public currentAnimation: 'move' | 'attack' | 'die' | 'idle' = 'idle';
     public currentFrame: number = 0;
+    public isInteracting: boolean = false;
 
     private frameTimer: number = 0;
     private readonly timePerFrame: number = 0.2;

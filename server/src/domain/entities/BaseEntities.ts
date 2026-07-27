@@ -1,4 +1,5 @@
 import { BoundingBox, Archetype, EntityType } from '@game/shared';
+import { Room } from './Room';
 
 export abstract class StaticEntity {
     constructor(
@@ -28,7 +29,8 @@ export abstract class MoveableEntity {
         public width: number,
         public height: number,
         public speed: number,
-        public visualId: string
+        public visualId: string,
+        public speedMulti: number = 1
     ) {}
 
     public vx: number = 0;
@@ -37,8 +39,8 @@ export abstract class MoveableEntity {
     public updatePosition(deltaTime: number): void {
         const length = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
         if (length > 0) {
-            this.x += (this.vx / length) * this.speed * deltaTime;
-            this.y += (this.vy / length) * this.speed * deltaTime;
+            this.x += (this.vx / length) * this.speed * deltaTime * this.speedMulti;
+            this.y += (this.vy / length) * this.speed * deltaTime * this.speedMulti;
         }
     }
 

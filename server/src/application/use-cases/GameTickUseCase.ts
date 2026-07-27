@@ -47,7 +47,11 @@ export class GameTickUseCase {
                             room.bullets.push(bullet);
                         }
                     }
-                    
+                    if (room?.isClear) {
+                        player.speedMulti = 2
+                    } else {
+                        player.speedMulti = 1
+                    }
                     player.updateEntity(deltaTime);
                     
                     if (!session.isLobby) {
@@ -154,6 +158,9 @@ export class GameTickUseCase {
                     const interactedChestId = CollisionEngine.checkChestInteraction(player, room.chests);
                     if (interactedChestId) {
                         this.openChestUseCase.execute(session.sessionId, player.id, interactedChestId);
+                        player.isInteracting = true
+                    } else {
+                        player.isInteracting = false
                     }
 
                     const pickedItems = CollisionEngine.resolveLootPickup(player, room.droppedItems, (presetId) => this.presetProvider.getItemPreset(presetId));
