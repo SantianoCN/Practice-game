@@ -47,7 +47,11 @@ export class GameTickUseCase {
                             room.bullets.push(bullet);
                         }
                     }
-                    
+                    if (room?.isClear) {
+                        player.speedMulti = 2
+                    } else {
+                        player.speedMulti = 1
+                    }
                     player.updateEntity(deltaTime);
                     
                     if (!session.isLobby) {
