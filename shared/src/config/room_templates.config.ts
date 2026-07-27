@@ -33,7 +33,7 @@ export const ROOM_TEMPLATES: RoomTemplate[] = [
             { startX: 25, startY: 10, endX: 25, endY: 20, obj: 'stone' }  
         ],
         chests: [
-            { gridX: 18, gridY: 12, presetId: "chest_wooden" },
+            { gridX: 18, gridY: 12, presetId: "chest_of_potion" },
             { gridX: 22, gridY: 15, presetId: "chest_wooden" }
         ]
     }, 
@@ -65,7 +65,7 @@ export const ROOM_TEMPLATES: RoomTemplate[] = [
             { startX: 26, startY: 16, endX: 28, endY: 18, obj: 'stone' }
         ],
         chests: [
-            { gridX: 20, gridY: 15, presetId: "chest_wooden" }
+            { gridX: 20, gridY: 15, presetId: "chest_of_weapon" }
         ]
     },
     {
@@ -78,7 +78,7 @@ export const ROOM_TEMPLATES: RoomTemplate[] = [
         ],
         chests: [
             { gridX: 16, gridY: 13, presetId: "chest_wooden" },
-            { gridX: 24, gridY: 17, presetId: "chest_wooden" }
+            { gridX: 24, gridY: 17, presetId: "chest_of_gold" }
         ]
     },
     {
@@ -92,7 +92,7 @@ export const ROOM_TEMPLATES: RoomTemplate[] = [
             { startX: 16, startY: 17, endX: 24, endY: 18, obj: 'stone' }
         ],
         chests: [
-            { gridX: 20, gridY: 15, presetId: "chest_wooden" }
+            { gridX: 20, gridY: 15, presetId: "chest_of_wooden" }
         ]
     },
     {
@@ -106,7 +106,7 @@ export const ROOM_TEMPLATES: RoomTemplate[] = [
             { startX: 26, startY: 14, endX: 31, endY: 15, obj: 'stone' }
         ],
         chests: [
-            { gridX: 19, gridY: 14, presetId: "chest_wooden" }
+            { gridX: 19, gridY: 14, presetId: "chest_of_wooden" }
         ]
     },
     {
@@ -122,8 +122,8 @@ export const ROOM_TEMPLATES: RoomTemplate[] = [
             { startX: 22, startY: 14, endX: 23, endY: 16, obj: 'stone' }
         ],
         chests: [
-            { gridX: 8, gridY: 8, presetId: "chest_wooden" },
-            { gridX: 31, gridY: 21, presetId: "chest_wooden" }
+            { gridX: 12, gridY: 12, presetId: "chest_of_potion" },
+            { gridX: 27, gridY: 21, presetId: "chest_of_gold" }
         ]
     },
     {
@@ -137,7 +137,7 @@ export const ROOM_TEMPLATES: RoomTemplate[] = [
         ],
         chests: [
             { gridX: 32, gridY: 7, presetId: "chest_wooden" },
-            { gridX: 7, gridY: 24, presetId: "chest_wooden" }
+            { gridX: 7, gridY: 24, presetId: "chest_of_weapon" }
         ]
     },
     {
@@ -153,7 +153,7 @@ export const ROOM_TEMPLATES: RoomTemplate[] = [
             { startX: 30, startY: 20, endX: 31, endY: 21, obj: 'stone' }
         ],
         chests: [
-            { gridX: 19, gridY: 4, presetId: "chest_gold_boss" }
+            { gridX: 19, gridY: 2, presetId: "chest_gold_boss" }
         ]
     },
     {
@@ -166,7 +166,38 @@ export const ROOM_TEMPLATES: RoomTemplate[] = [
             { startX: 14, startY: 12, endX: 15, endY: 17, obj: 'stone' }
         ],
         chests: [
-            { gridX: 19, gridY: 14, presetId: "chest_wooden" }
+            { gridX: 19, gridY: 14, presetId: "chest_of_gold" }
+        ]
+    },
+    {
+        id: "layout_11",
+        name: "Караван",
+        type: "Treasure",
+        obstacles: [
+            { startX: 10, startY: 8, endX: 15, endY: 9, obj: 'stone' },
+            { startX: 24, startY: 19, endX: 29, endY: 20, obj: 'stone' },
+            { startX: 18, startY: 13, endX: 21, endY: 15, obj: 'stone' }
+        ],
+        chests: [
+            { gridX: 11, gridY: 11, presetId: "chest_of_gold" },
+            { gridX: 28, gridY: 16, presetId: "chest_of_potion" },
+            { gridX: 20, gridY: 11, presetId: "chest_of_weapon" }
+        ]
+    },
+    {
+        id: "layout_12",
+        name: "Разрушенная крепость",
+        type: "Treasure",
+        obstacles: [
+            { startX: 8, startY: 8, endX: 12, endY: 12, obj: 'stone' },
+            { startX: 27, startY: 8, endX: 31, endY: 12, obj: 'stone' },
+            { startX: 8, startY: 17, endX: 12, endY: 21, obj: 'stone' },
+            { startX: 27, startY: 17, endX: 31, endY: 21, obj: 'stone' }
+        ],
+        chests: [
+            { gridX: 18, gridY: 14, presetId: "chest_of_gold" },
+            { gridX: 21, gridY: 14, presetId: "chest_of_weapon" },
+            { gridX: 19, gridY: 16, presetId: "chest_of_potion" }
         ]
     }
 ];

@@ -5,8 +5,12 @@ export class KeyboardAdapter implements IInputProvider {
     private keys: Record<string, boolean> = {};
     private listeners: Array<(action: PlayerActionDTO) => void> = [];
     private activeHeartbeat: ReturnType<typeof setInterval> | null = null;
+    public onToggleGuiReq?: () => void;
 
     private handleKeyDown = (event: KeyboardEvent) => {
+        if (event.code === 'KeyH') {
+            this.onToggleGuiReq?.();
+        }
         if (this.keys[event.code]) return; 
         this.keys[event.code] = true;
         this.notifyListeners();
@@ -64,7 +68,6 @@ export class KeyboardAdapter implements IInputProvider {
         if (!hasPressedKeys) return;
 
         this.keys = {};
-        console.log('[KeyboardListener] Окно игры потеряло фокус. Сбрасываем инпут на сервер.');
         this.notifyListeners();
     }
 

@@ -10,6 +10,9 @@ import lizardMage from './enemy/lizard-mage-anim.png';
 
 import coin from './loot/coin.png';
 import potionRed from './loot/potion_red.png';
+import potionBlue from './loot/potion_blue.png';
+import potionGreen from './loot/potion_green.png';
+import potionYellow from './loot/potion_yellow.png';
 import battleAxe from './weapon/axe.png';
 import ironSword from './weapon/sword.png';
 import fireStaff from './weapon/fire_staff.png';
@@ -26,7 +29,7 @@ import caveTile4 from './environment/caveTile4.png';
 export const ASSETS = {
     hero: { warriorSword, warriorAxe, volhvFire, volhvIce, volhvPrev, warriorPrev },
     enemy: { lizardAxe, lizardMage },
-    loot: { coin, potionRed },
+    loot: { coin, potionRed, potionBlue, potionGreen, potionYellow },
     weapon: { battleAxe, ironSword, fireStaff, iceStaff },
     env: { chest, chestOpen, stone, caveTile1, caveTile2, caveTile3, caveTile4}
 };

@@ -4,9 +4,28 @@ import { WeaponStatsSchema } from './weapon.schema';
 export const ItemTypeSchema = z.enum(['weapon', 'gold', 'consumable']);
 export type ItemType = z.infer<typeof ItemTypeSchema>;
 
+export const TimedEffectModifierSchema = z.object({
+    speedBonus: z.number().optional(),
+    maxHpBonus: z.number().optional(),
+    manaRegenBonus: z.number().optional()
+});
+export type TimedEffectModifier = z.infer<typeof TimedEffectModifierSchema>;
+
+export const ActiveEffectSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    duration: z.number(),
+    modifiers: TimedEffectModifierSchema
+});
+export type ActiveEffect = z.infer<typeof ActiveEffectSchema>;
+
 export const GameEffectSchema = z.discriminatedUnion('type', [
     z.object({
         type: z.literal('heal'),
+        value: z.number()
+    }),
+    z.object({
+        type: z.literal('mana'),
         value: z.number()
     }),
     z.object({
@@ -16,6 +35,13 @@ export const GameEffectSchema = z.discriminatedUnion('type', [
     z.object({
         type: z.literal('equip_weapon'),
         weaponPresetId: z.string()
+    }),
+    z.object({
+        type: z.literal('apply_effect'),
+        effectId: z.string(),
+        name: z.string(),
+        duration: z.number(),
+        modifiers: TimedEffectModifierSchema
     })
 ]);
 export type GameEffect = z.infer<typeof GameEffectSchema>;
@@ -31,14 +57,10 @@ const BasePresetSchema = z.object({
 
 export const ItemPresetSchema = z.discriminatedUnion('type', [
     BasePresetSchema.extend({
-        type: z.literal('gold'),
-        stats: z.object({}).optional()
+        type: z.literal('gold')
     }),
     BasePresetSchema.extend({
-        type: z.literal('consumable'),
-        stats: z.object({
-            healAmount: z.number()
-        })
+        type: z.literal('consumable')
     }),
     BasePresetSchema.extend({
         type: z.literal('weapon'),

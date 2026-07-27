@@ -13,6 +13,8 @@ import {
     ICE_BALL,
     SLASH,
     AXE_SLASH,
+    POISON_DART,
+    LIGHTNING
 } from '@game/shared';
 import { ASSETS } from './../../../assets';
 
@@ -40,8 +42,12 @@ const ITEM_ASSET_SOURCES: Record<string, string> = {
     wpn_heavy_axe: ASSETS.weapon.battleAxe,
     wpn_fire_staff: ASSETS.weapon.fireStaff,
     wpn_ice_staff: ASSETS.weapon.iceStaff,
+    wpn_boss_staff: ASSETS.weapon.fireStaff,
     gold_coins: ASSETS.loot.coin,
-    pot_heal: ASSETS.loot.potionRed
+    pot_heal: ASSETS.loot.potionRed,
+    pot_mana: ASSETS.loot.potionBlue,
+    pot_rejuv: ASSETS.loot.potionGreen,
+    pot_speed: ASSETS.loot.potionYellow
 };
 
 const ITEM_ASSETS: StaticAssetEntry[] = Object.values(ITEMS_DATABASE)
@@ -121,13 +127,18 @@ export const ENEMY_VISUAL_MANIFEST: EnemyVisualEntry[] = [
 export type ProjectileRenderMode =
     | { kind: 'orb'; color: string }
     | { kind: 'axe-arc'; color: string }
-    | { kind: 'sword-slash'; color: string };
+    | { kind: 'sword-slash'; color: string }
+    | { kind: 'dart'; color: string }
+    | { kind: 'lightning'; color: string };
+    
 
 export const PROJECTILE_VISUAL_MANIFEST: Record<string, ProjectileRenderMode> = {
     [FIREBALL.visualId]: { kind: 'orb', color: 'red' },
     [ICE_BALL.visualId]: { kind: 'orb', color: 'blue' },
     [SLASH.visualId]: { kind: 'sword-slash', color: '#00d2d3' },
     [AXE_SLASH.visualId]: { kind: 'axe-arc', color: '#e67e22' },
+    [LIGHTNING.visualId]: { kind: 'lightning', color: '#f1c40f' },
+    [POISON_DART.visualId]: { kind: 'dart', color: '#2ecc71' },
 };
 
 export const DEFAULT_PROJECTILE_VISUAL: ProjectileRenderMode = { kind: 'orb', color: 'black' };

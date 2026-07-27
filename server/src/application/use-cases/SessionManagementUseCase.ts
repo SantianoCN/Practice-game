@@ -329,7 +329,6 @@ export class SessionManagementUseCase {
         if (!player) return null;
 
         player.isOnline = false;
-        console.log(`[Disconnect Tracking] Игрок ${player.name} (${accountId}) потерял связь. Запуск 2-минутного таймера...`);
 
         const migrationResult = this.migrateHostIfNeeded(session, accountId);
 
@@ -378,7 +377,6 @@ export class SessionManagementUseCase {
                 player.lastBroadcastedRoomX = null;
                 player.lastBroadcastedRoomY = null;
 
-                console.log(`[Reconnect Success] Игрок ${player.name} (${accountId}) успешно вернулся в строй!`);
                 return true;
             }
         }

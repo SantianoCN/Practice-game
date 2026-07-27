@@ -18,6 +18,19 @@ export class EffectApplier {
                 player.hp = Math.min(player.maxHp, player.hp + effect.value);
                 break;
 
+            case 'mana':
+                player.mana = Math.min(player.maxMana, player.mana + effect.value);
+                break;
+
+            case 'apply_effect':
+                player.addEffect({
+                    id: effect.effectId,
+                    name: effect.name,
+                    duration: effect.duration,
+                    modifiers: effect.modifiers
+                });
+                break;
+
             case 'add_gold':
                 player.addGold(effect.value);
                 break;

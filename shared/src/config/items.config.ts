@@ -1,5 +1,5 @@
 import { ItemPreset } from '../types/loot.schema';
-import { SWORD, AXE, STAFF, ICE_STAFF } from './weapon.config';
+import { SWORD, AXE, STAFF, ICE_STAFF, BOW, LIGHTNING_STAFF, STAFF_OF_BOSS } from './weapon.config';
 
 export const ITEMS_DATABASE: Record<string, ItemPreset> = {
     gold_coins: {
@@ -11,8 +11,7 @@ export const ITEMS_DATABASE: Record<string, ItemPreset> = {
         dropHeight: 24,
         effects: [
             { type: 'add_gold', value: 1 }
-        ],
-        stats: {}
+        ]
     },
     wpn_iron_sword: {
         id: 'wpn_iron_sword',
@@ -62,29 +61,93 @@ export const ITEMS_DATABASE: Record<string, ItemPreset> = {
         ],
         stats: ICE_STAFF
     },
+    wpn_hunter_bow: {
+        id: 'wpn_hunter_bow',
+        type: 'weapon',
+        name: 'Охотничий Лук',
+        visualId: 'hunter_bow',
+        dropWidth: 16,
+        dropHeight: 32,
+        effects: [
+            { type: 'equip_weapon', weaponPresetId: 'wpn_hunter_bow' }
+        ],
+        stats: BOW
+    },
+    wpn_lightning_staff: {
+        id: 'wpn_lightning_staff',
+        type: 'weapon',
+        name: 'Посох Перуна',
+        visualId: 'lightning_staff',
+        dropWidth: 16,
+        dropHeight: 32,
+        effects: [
+            { type: 'equip_weapon', weaponPresetId: 'wpn_lightning_staff' }
+        ],
+        stats: LIGHTNING_STAFF
+    },
+    wpn_boss_staff: {
+        id: 'wpn_boss_staff',
+        type: 'weapon',
+        name: 'Посох Императора',
+        visualId: 'staff',
+        dropWidth: 16,
+        dropHeight: 32,
+        effects: [
+            { type: 'equip_weapon', weaponPresetId: 'wpn_boss_staff' }
+        ],
+        stats: STAFF_OF_BOSS
+    },
     pot_heal: {
         id: 'pot_heal',
         type: 'consumable',
         name: 'Зелье лечения',
         visualId: 'potion_red',
-        dropWidth: 24,
+        dropWidth: 12,
         dropHeight: 24,
         effects: [
             { type: 'heal', value: 50 }
-        ],
-        stats: { healAmount: 50 }
+        ]
     },
     pot_rejuv: {
         id: 'pot_rejuv',
         type: 'consumable',
         name: 'Эликсир Омоложения',
-        visualId: 'potion_purple',
-        dropWidth: 24,
+        visualId: 'potion_green',
+        dropWidth: 12,
         dropHeight: 24,
         effects: [
             { type: 'heal', value: 30 },
             { type: 'add_gold', value: 15 }
-        ],
-        stats: { healAmount: 30 }
+        ]
+    },
+    pot_mana: {
+        id: 'pot_mana',
+        type: 'consumable',
+        name: 'Вода Байкальская',
+        visualId: 'potion_blue',
+        dropWidth: 12,
+        dropHeight: 24,
+        effects: [
+            { type: 'mana', value: 30 }
+        ]
+    },
+    pot_speed: {
+        id: 'pot_speed',
+        type: 'consumable',
+        name: 'Зелье Скорохода',
+        visualId: 'potion_yellow',
+        dropWidth: 12,
+        dropHeight: 24,
+        effects: [
+            {
+                type: 'apply_effect',
+                effectId: 'speed_boost',
+                name: 'Ускорение',
+                duration: 10,
+                modifiers: {
+                    speedBonus: 60
+                }
+            }
+        ]
     }
 };

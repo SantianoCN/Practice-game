@@ -1,12 +1,10 @@
 import { Room } from '../entities/Room';
-import { Enemy } from '../entities/Enemy';
 import { Obstacle } from '../entities/Obstacle';
 import { Chest } from '../entities/Chest';
-import { Weapon } from '../entities/Weapon';
 import { EntityFactory } from '../factories/EntityFactory';
-import { ROOM_TEMPLATES, RoomTemplate } from './RoomTemplates';
-import { AXE, FIREBALL, ICE_STAFF, MAGE_PRESET_LIZARD, STAFF, SWORD, WARRIOR_PRESET_LIZARD,
-    GAME_CONFIG, IDGenerator, RoomType, FloorDifficulty
+import { AXE, ICE_STAFF, MAGE_PRESET_LIZARD, STAFF, SWORD, WARRIOR_PRESET_LIZARD,
+    GAME_CONFIG, IDGenerator, RoomType, FloorDifficulty, BOSS_PRESET_LIZARD, STAFF_OF_BOSS, 
+    ROOM_TEMPLATES, RoomTemplate
  } from '@game/shared';
  import { Portal } from '../entities/Portal'; 
 
@@ -176,7 +174,7 @@ export class MapGenerator {
                     'portal_closed'
                 );
             } else if (room.type === 'Normal') {
-                const enemyCount = Math.floor(Math.random() * 3) + 2; 
+                const enemyCount = Math.floor(Math.random() * (this.difficulty.ENEMY_MAX - this.difficulty.ENEMY_MIN)) + this.difficulty.ENEMY_MIN; 
                 for (let i = 0; i < enemyCount; i++) {
                     this.spawnEnemy(room);
                 }
@@ -185,7 +183,6 @@ export class MapGenerator {
             }
         }
     }
-
 
     private applyTemplate(room: Room, template: RoomTemplate): void {
         for (const obs of template.obstacles) {
@@ -246,25 +243,7 @@ export class MapGenerator {
     private spawnBoss(room: Room): void {
         const x = this.roomWidth / 2;
         const y = this.roomHeight / 2;
-
-        const bossStats = { ...WARRIOR_PRESET_LIZARD };
-        bossStats.maxHp = 10; 
-        bossStats.speed = 120;
-        bossStats.visualId = 'red_box'; 
-
-        const bossWeaponConfig = { ...STAFF, cooldownMs: 500, projectile: FIREBALL };
-        
-        const weapon = new Weapon(
-            this.generateId('wpn'), 
-            'wpn_fire_staff', 
-            'Посох Ящера-Императора', 
-            bossWeaponConfig
-        );
-        
-        const boss = new Enemy(this.generateId('boss'), x, y, bossStats, weapon);
-        boss.width = 64; 
-        boss.height = 64;
-
+        const boss = EntityFactory.createEnemy(x, y, BOSS_PRESET_LIZARD, STAFF_OF_BOSS, this.generateId);
         room.enemies.push(boss);
     }
 

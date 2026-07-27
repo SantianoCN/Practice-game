@@ -4,7 +4,7 @@ import { Bullet } from '../entities/Bullet';
 import { Room } from '../entities/Room';
 import { Chest, DroppedItem } from '../entities/Chest';
 import { Player } from '../entities/Player';
-import { BoundingBox, GAME_CONFIG } from '@game/shared';
+import { BoundingBox, GAME_CONFIG, ItemPreset } from '@game/shared';
 import { SpatialGrid } from './SpatialGrid';
 import { Portal } from '../entities/Portal';
 
@@ -183,7 +183,11 @@ export class CollisionEngine {
         return null;
     }
 
-    public static resolveLootPickup(player: Player, droppedItems: DroppedItem[]): DroppedItem[] {
+    public static resolveLootPickup(
+        player: Player, 
+        droppedItems: DroppedItem[],
+        getItemPreset: (presetId: string) => ItemPreset | null
+    ): DroppedItem[] {
         const playerBounds = player.getBounds();
         const collected: DroppedItem[] = [];
         
@@ -191,9 +195,10 @@ export class CollisionEngine {
             const item = droppedItems[i];
             
             if (this.isOverlapping(playerBounds, item.getBounds())) {
-                const hasWeaponEquip = item.onPickup.some(effect => effect.type === 'equip_weapon');
+                const preset = getItemPreset(item.presetId);
+                const requiresInteraction = preset?.type !== 'gold';
                 
-                if (hasWeaponEquip) {
+                if (requiresInteraction) {
                     if (!player.isInteracting) continue;
                     player.isInteracting = false;
                 }

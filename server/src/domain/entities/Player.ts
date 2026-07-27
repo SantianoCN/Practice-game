@@ -1,6 +1,6 @@
 import { LivingEntity } from './BaseEntities';
 import { Weapon } from './Weapon';
-import { GAME_CONFIG, EntityStats, EntityType, PlayerCommand } from '@game/shared';
+import { GAME_CONFIG, EntityStats, EntityType, PlayerCommand, ActiveEffect } from '@game/shared';
 
 export class Player extends LivingEntity {
     public inventory: Weapon[];
@@ -9,6 +9,10 @@ export class Player extends LivingEntity {
     public gold: number = 0;
     public isInteracting: boolean = false; 
     public inputQueue: PlayerCommand[] = [];
+    public readonly baseSpeed: number;
+    public readonly baseMaxHp: number;
+    public readonly baseManaRegen: number;
+    public activeEffects = new Map<string, ActiveEffect>();
 
     public ticksSinceLastInput: number = 0;
     private static readonly INPUT_TIMEOUT_TICKS = 8;
@@ -42,6 +46,9 @@ export class Player extends LivingEntity {
         super(id, x, y, stats.width, stats.height, stats.speed, stats.visualId, stats.maxHp, stats.maxHp, stats.archetype);
         this.inventory = [startWeapon];
         this.maxInventoryLength = stats.maxInventoryLength;
+        this.baseSpeed = stats.speed;
+        this.baseMaxHp = stats.maxHp;
+        this.baseManaRegen = stats.manaRegen;
     }
 
     public getActiveWeapon(): Weapon {
@@ -65,8 +72,48 @@ export class Player extends LivingEntity {
             this.invulnTimer -= deltaTime;
             if (this.invulnTimer <= 0) this.isInvulnerable = false;
         }
+        
         this.mana += this.manaRegen * deltaTime;
-        if (this.mana > this.maxMana)  this.mana = this.maxMana;
+        if (this.mana > this.maxMana) this.mana = this.maxMana;
+
+        if (this.activeEffects.size > 0) {
+            let hasExpired = false;
+
+            for (const [id, effect] of this.activeEffects.entries()) {
+                effect.duration -= deltaTime;
+                if (effect.duration <= 0) {
+                    this.activeEffects.delete(id);
+                    hasExpired = true;
+                }
+            }
+
+            if (hasExpired) {
+                this.recalculateStats();
+            }
+        }
+    }
+
+    public addEffect(effect: ActiveEffect): void {
+        this.activeEffects.set(effect.id, { ...effect });
+        this.recalculateStats();
+    }
+
+    public recalculateStats(): void {
+        let speedBonus = 0;
+        let maxHpBonus = 0;
+        let manaRegenBonus = 0;
+
+        for (const effect of this.activeEffects.values()) {
+            if (effect.modifiers.speedBonus) speedBonus += effect.modifiers.speedBonus;
+            if (effect.modifiers.maxHpBonus) maxHpBonus += effect.modifiers.maxHpBonus;
+            if (effect.modifiers.manaRegenBonus) manaRegenBonus += effect.modifiers.manaRegenBonus;
+        }
+
+        this.speed = this.baseSpeed + speedBonus;
+        this.maxHp = this.baseMaxHp + maxHpBonus;
+        this.manaRegen = this.baseManaRegen + manaRegenBonus;
+
+        if (this.hp > this.maxHp) this.hp = this.maxHp;
     }
 
     public processInputQueue(): void {

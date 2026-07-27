@@ -171,8 +171,8 @@ async function bootstrap() {
 
     tick();
 
-    httpServer.listen(Number(PORT), HOST, () => {
-        console.log(`[Server] Clean Architecture Engine running on http://${HOST}:${PORT}`);
+    httpServer.listen(PORT, () => {
+        console.log(`[Server] Clean Architecture Engine running on `);
     });
 }
 

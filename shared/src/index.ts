@@ -1,7 +1,7 @@
 export * from './config/game.config';
 export * from './config/classes.config';
 export * from './config/items.config';
-export * from './config/loot-tables.config';
+export * from './config/loot_tables.config';
 export * from './config/chests.config';
 export * from './types/entity.schema';
 export * from './types/weapon.schema';
@@ -18,3 +18,4 @@ export * from './events/network.events';
 export * from './config/shop.config'
 export * from './config/weapon.config'
 export * from './config/difficulty.config'
+export * from './config/room_templates.config'

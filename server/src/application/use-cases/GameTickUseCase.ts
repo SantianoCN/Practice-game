@@ -156,7 +156,7 @@ export class GameTickUseCase {
                         this.openChestUseCase.execute(session.sessionId, player.id, interactedChestId);
                     }
 
-                    const pickedItems = CollisionEngine.resolveLootPickup(player, room.droppedItems);
+                    const pickedItems = CollisionEngine.resolveLootPickup(player, room.droppedItems, (presetId) => this.presetProvider.getItemPreset(presetId));
 
                     for (const item of pickedItems) {
                         for (const effect of item.onPickup) {

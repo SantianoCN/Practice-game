@@ -26,7 +26,9 @@ export class NextFloorUseCase {
         } else {
             nextDifficulty = {
                 levelNumber: nextLevelNumber,
-                ROOM_COUNT: 15 + (nextLevelNumber - 2) * 3
+                ROOM_COUNT: 15 + (nextLevelNumber - 2) * 3,
+                ENEMY_MIN: 5 + (nextLevelNumber - 2) * 3,
+                ENEMY_MAX: 10 + (nextLevelNumber - 2) * 3
             };
         }
 
@@ -59,7 +61,6 @@ export class NextFloorUseCase {
             player.lastBroadcastedRoomY = null;
         }
 
-        console.log(`[Floor Transition] Сессия ${sessionId} успешно перешла на этаж ${nextLevelNumber} (Сложность: ${nextDifficulty.ROOM_COUNT} комнат)`);
         return true;
     }
 }

@@ -26,7 +26,7 @@ export class CanvasRendererAdapter {
     private visitedMatrix: MapCell[][] = [];
     private readonly matrixSize = GAME_CONFIG.MAP_SIZE;
     private lastHotbarState: string = '';
-
+    public isGuiVisible: boolean = true;
     private offscreenCanvas: HTMLCanvasElement;
     private offscreenContext: CanvasRenderingContext2D;
     private currentRoomKey: string = '';
@@ -162,7 +162,15 @@ export class CanvasRendererAdapter {
 
         if (!room) return;
         this.updateVisitedRooms(room);
-        this.drawGUI(players, myId);
+        if (this.isGuiVisible) {
+            this.drawGUI(players, myId);
+            if (!room) return;
+            this.drawMiniMap(room.gridX, room.gridY);
+        }
+    }
+
+    public toggleGUI(): void {
+        this.isGuiVisible = !this.isGuiVisible;
     }
 
     public reset(): void {
@@ -423,8 +431,6 @@ export class CanvasRendererAdapter {
         this.drawBullets(bulletsMap);
         this.drawPlayers(playersMap);
         this.drawEnemies(enemiesMap);
-        if (!room) return;
-        this.drawMiniMap(room.gridX, room.gridY);
     }
 
     private drawDoors(room: RoomState): void {
@@ -503,8 +509,67 @@ export class CanvasRendererAdapter {
                 case 'orb':
                     this.drawOrb(bullet, visual.color);
                     return;
+                case 'dart':
+                    this.drawDart(bullet, visual.color);
+                    return;
+                case 'lightning':
+                    this.drawLightning(bullet, visual.color);
+                    return;
             }
         });
+    }
+
+    private drawDart(bullet: VisualEntity, color: string): void {
+        const bx = Math.round(bullet.renderX);
+        const by = Math.round(bullet.renderY);
+        const angle = this.getBulletAngle(bullet);
+
+        this.context.save();
+        this.context.translate(bx, by);
+        this.context.rotate(angle);
+
+        this.context.beginPath();
+        this.context.moveTo(10, 0);
+        this.context.lineTo(-6, -3);
+        this.context.lineTo(-3, 0);
+        this.context.lineTo(-6, 3);
+        this.context.closePath();
+
+        this.context.fillStyle = color;
+        this.context.shadowBlur = 8;
+        this.context.shadowColor = color;
+        this.context.fill();
+
+        this.context.restore();
+    }
+
+    private drawLightning(bullet: VisualEntity, color: string): void {
+        const bx = Math.round(bullet.renderX);
+        const by = Math.round(bullet.renderY);
+        const angle = this.getBulletAngle(bullet);
+        const radius = Math.round(bullet.width || 12);
+
+        this.context.save();
+        this.context.translate(bx, by);
+        this.context.rotate(angle);
+
+        this.context.beginPath();
+        this.context.moveTo(radius, 0);
+        this.context.lineTo(0, -radius / 2);
+        this.context.lineTo(radius / 4, 0);
+        this.context.lineTo(-radius, radius / 2);
+        this.context.lineTo(-radius / 4, 0);
+        this.context.closePath();
+
+        this.context.fillStyle = '#ffffff';
+        this.context.strokeStyle = color;
+        this.context.lineWidth = 2;
+        this.context.shadowBlur = 12;
+        this.context.shadowColor = color;
+        this.context.fill();
+        this.context.stroke();
+
+        this.context.restore();
     }
 
     private drawOrb(bullet: VisualEntity, color: string): void {
