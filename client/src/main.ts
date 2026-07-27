@@ -5,7 +5,7 @@ import { CanvasRendererAdapter } from './infrastructure/render/CanvasRendererAda
 import { SyncStateUseCase } from './application/use-cases/SyncStateUseCase';
 import { BaseResponseDTO, PlayerClassPresetDTO, PlayerProgressDTO } from '@game/shared';
 
-const SERVER_URL = 'http://localhost:3000';
+const SERVER_URL = 'http://217.114.14.204:3000';
 
 class App {
     private ui = new DOMManager();
@@ -24,6 +24,8 @@ class App {
     constructor() {
         const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
         this.renderer = new CanvasRendererAdapter(canvas);
+
+        this.input.onHelpPressed(() => this.renderer.toggleHelp());
 
         this.bindUiToNetwork();
         this.bindNetworkToApp();

@@ -5,8 +5,19 @@ export class KeyboardAdapter implements IInputProvider {
     private keys: Record<string, boolean> = {};
     private listeners: Array<(action: PlayerActionDTO) => void> = [];
     private activeHeartbeat: ReturnType<typeof setInterval> | null = null;
+    private onHelpCallback?: () => void;
+
+    public onHelpPressed(callback: () => void): void {
+        this.onHelpCallback = callback;
+    }
 
     private handleKeyDown = (event: KeyboardEvent) => {
+        if (event.code === 'F1') {
+            event.preventDefault();
+            this.onHelpCallback?.();
+            return;
+        }
+
         if (this.keys[event.code]) return; 
         this.keys[event.code] = true;
         this.notifyListeners();
@@ -106,4 +117,5 @@ export class KeyboardAdapter implements IInputProvider {
     public getCurrentAction(): PlayerActionDTO {
         return this.getPlayerAction();
     }
+
 }
