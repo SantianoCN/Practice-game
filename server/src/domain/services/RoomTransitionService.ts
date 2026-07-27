@@ -13,6 +13,9 @@ export class RoomTransitionService {
         const room = this.getRoom(floorMap, player.roomX, player.roomY);
         if (!room || room.enemies.length > 0) return;
 
+        const originRoomX = player.roomX;
+        const originRoomY = player.roomY;
+
         let nextX = player.roomX;
         let nextY = player.roomY;
         let spawnX = player.x;
@@ -70,9 +73,14 @@ export class RoomTransitionService {
                 player.vx = 0;
                 player.vy = 0;
 
-                if (nextRoom.type === 'Normal' && !nextRoom.isClear) {
+                if (this.combatTransition(nextRoom)) {
                     for (const p of allPlayers) {
-                        if (p.id !== player.id && !p.isDead()) {
+                        if (
+                            p.id !== player.id &&
+                            p.isOnline &&
+                            p.roomX === originRoomX &&
+                            p.roomY === originRoomY
+                        ) {
                             p.roomX = nextX;
                             p.roomY = nextY;
                             const offsetX = (Math.random() - 0.5) * 40; 
@@ -86,6 +94,10 @@ export class RoomTransitionService {
                 }
             }
         }
+    }
+
+    public static combatTransition(room: Room) {
+        return (room.type === 'Normal' || room.type === 'Boss') && !room.isClear
     }
 
     private static getRoom(floorMap: (Room | null)[][], x: number, y: number): Room | null {

@@ -216,4 +216,18 @@ export class CollisionEngine {
         }
         return false;
     }
+
+    public static resolvePlayerRevival(player: Player, deadPlayers: Player[]): Player | null {
+        if (!player.isInteracting || deadPlayers.length === 0) return null;
+        
+        const playerBounds = player.getBounds();
+
+        for (const deadPlayer of deadPlayers) {
+            if (this.isOverlapping(playerBounds, deadPlayer.getBounds())) {
+                player.isInteracting = false;
+                return deadPlayer;
+            }
+        }
+        return null;
+    }
 }

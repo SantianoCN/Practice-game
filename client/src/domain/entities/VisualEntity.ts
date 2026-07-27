@@ -9,7 +9,9 @@ export class VisualEntity {
     public width: number;
     public height: number;
     public visualId: string;
-    
+    public type: EntityType;
+    public angle: number = 0;
+
     public hp: number = 100;
     public maxHp: number = 100;
     public mana: number = 100;
@@ -18,15 +20,11 @@ export class VisualEntity {
     public activeWeaponVisualId: string = '';
     public inventory: any[] = [];
     public currentWeaponIndex: number = 0;
-    
+    public maxInventoryLength: number = 3;
 
-    public isDying: boolean = false;
     public lastFacing: 'left' | 'Top' | 'right' = 'right';
     public currentAnimation: 'move' | 'attack' | 'die' | 'idle' = 'idle';
     public currentFrame: number = 0;
-    public type: EntityType = 'player';
-    public speed: number = 0;
-    public angle: number = 0;
 
     private frameTimer: number = 0;
     private readonly timePerFrame: number = 0.2;
@@ -37,10 +35,9 @@ export class VisualEntity {
         y: number, 
         w: number, 
         h: number, 
-        public maxInventoryLength: number,
+        maxInventoryLength: number,
         visualId: string, 
-        type: 'player' | 'enemy' | 'bullet', 
-        speed: number = 0
+        type: EntityType
     ) {
         this.id = id;
         this.targetX = x;
@@ -49,55 +46,27 @@ export class VisualEntity {
         this.renderY = y;
         this.width = w;
         this.height = h;
+        this.maxInventoryLength = maxInventoryLength;
         this.visualId = visualId;
         this.type = type;
-        this.speed = speed;
     }
 
-    public updateInterpolation(dt: number, lerpSpeed: number = 12): void {
-        if (!this.isDying) {
-            const lerpFactor = 1 - Math.exp(-lerpSpeed * dt);
-            this.renderX += (this.targetX - this.renderX) * lerpFactor;
-            this.renderY += (this.targetY - this.renderY) * lerpFactor;
-        } else if (this.type === 'bullet') {
-            const dx = this.targetX - this.renderX;
-            const dy = this.targetY - this.renderY;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            if (distance > 0) {
-                const dirX = dx / distance;
-                const dirY = dy / distance;
-                const step = this.speed * dt;
-                if (step >= distance) {
-                    this.renderX = this.targetX;
-                    this.renderY = this.targetY;
-                } else {
-                    this.renderX += dirX * step;
-                    this.renderY += dirY * step;
-                }
-            }
-        }
+    public updateInterpolation(dt: number, lerpSpeed: number = 22): void {
+        const lerpFactor = 1 - Math.exp(-lerpSpeed * dt);
+        this.renderX += (this.targetX - this.renderX) * lerpFactor;
+        this.renderY += (this.targetY - this.renderY) * lerpFactor;
 
         this.updateAnimation(dt);
     }
 
-    public hasReachedTarget(epsilon: number = 2): boolean {
-        const dx = Math.abs(this.targetX - this.renderX);
-        const dy = Math.abs(this.targetY - this.renderY);
-        return dx < epsilon && dy < epsilon;
-    }
-
     private updateAnimation(dt: number): void {
-        if (this.isDying || this.type === 'bullet') return;
-
-        if (this.currentAnimation === 'idle') {
+        if (this.currentAnimation === 'idle' || this.currentAnimation === 'die') {
             this.currentFrame = 0;
             this.frameTimer = 0;
             return;
         }
 
         this.frameTimer += dt;
-
         if (this.frameTimer >= this.timePerFrame) {
             this.frameTimer = 0;
             this.currentFrame = (this.currentFrame + 1) % 3;

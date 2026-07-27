@@ -1,18 +1,14 @@
 import { 
     GameSnapshotDTO, 
     RoomState, 
-    PlayerState, 
-    EnemyState, 
-    BulletState,
-    RoomInitDTO,
-    ObstacleState
+    RoomInitDTO, 
+    ObstacleState 
 } from '@game/shared';
 import { VisualEntity } from '../../domain/entities/VisualEntity';
 
 export class SyncStateUseCase {
     public entities = new Map<string, VisualEntity>();
     public currentRoomState: RoomState | null = null;
-    
     public staticObstacles: ObstacleState[] = [];
 
     public setStaticRoom(roomInit: RoomInitDTO): void {
@@ -20,128 +16,102 @@ export class SyncStateUseCase {
     }
 
     public processSnapshot(snapshot: GameSnapshotDTO): void {
-        const activeIds = new Set<string>();
         this.currentRoomState = snapshot.room;
+        const activeIdsInSnapshot = new Set<string>();
 
-        snapshot.players.forEach(serverPlayer => {
-            activeIds.add(serverPlayer.id);
+        for (const p of snapshot.players) {
+            activeIdsInSnapshot.add(p.id);
+            const entity = this.getOrCreateEntity(
+                p.id, p.x, p.y, p.width, p.height, 
+                p.maxInventoryLength ?? 3, p.visualId, 'player'
+            );
 
-            let visualPlayer = this.entities.get(serverPlayer.id);
+            this.updateFacingAndAnimation(entity, p.x, p.y, p.hp);
 
-            if (!visualPlayer) {
-                visualPlayer = new VisualEntity(
-                    serverPlayer.id,
-                    serverPlayer.x,
-                    serverPlayer.y,
-                    serverPlayer.width,
-                    serverPlayer.height,
-                    serverPlayer.maxInventoryLength,
-                    serverPlayer.visualId,
-                    'player'
-                );
-                this.entities.set(serverPlayer.id, visualPlayer);
-            } else {
-                if (serverPlayer.x < visualPlayer.targetX) {
-                    visualPlayer.lastFacing = 'left';
-                } else if (serverPlayer.x > visualPlayer.targetX) {
-                    visualPlayer.lastFacing = 'right';
-                }
+            entity.targetX = p.x;
+            entity.targetY = p.y;
+            entity.hp = p.hp;
+            entity.maxHp = p.maxHp;
+            entity.mana = p.mana;
+            entity.maxMana = p.maxMana;
+            entity.gold = p.gold;
+            entity.inventory = p.inventory || [];
+            entity.currentWeaponIndex = p.currentWeaponIndex ?? 0;
+            entity.activeWeaponVisualId = p.activeWeaponVisualId || 'iron_sword';
+        }
 
-                if (serverPlayer.x !== visualPlayer.targetX || serverPlayer.y !== visualPlayer.targetY) {
-                    visualPlayer.currentAnimation = 'move';
-                } else {
-                    visualPlayer.currentAnimation = 'idle';
-                }
-            }
+        for (const e of snapshot.enemies) {
+            activeIdsInSnapshot.add(e.id);
+            const entity = this.getOrCreateEntity(
+                e.id, e.x, e.y, e.width, e.height, 
+                1, e.visualId, 'enemy'
+            );
 
-            visualPlayer.targetX = serverPlayer.x;
-            visualPlayer.targetY = serverPlayer.y;
-            visualPlayer.hp = serverPlayer.hp;
-            visualPlayer.maxHp = serverPlayer.maxHp;
-            visualPlayer.mana = serverPlayer.mana;
-            visualPlayer.maxMana = serverPlayer.maxMana;
-            visualPlayer.gold = serverPlayer.gold;
-            visualPlayer.inventory = serverPlayer.inventory || [];
-            visualPlayer.currentWeaponIndex = serverPlayer.currentWeaponIndex ?? 0;
-            visualPlayer.maxInventoryLength = serverPlayer.maxInventoryLength ?? (serverPlayer as any).maxInventoryLength ?? 3;
-            visualPlayer.activeWeaponVisualId = serverPlayer.activeWeaponVisualId || 'iron_sword';
-        });
+            this.updateFacingAndAnimation(entity, e.x, e.y, e.hp);
 
-        snapshot.enemies.forEach(e => {
-            activeIds.add(e.id);
-            this.updateOrCreate(e.id, e, e.hp, e.maxHp, 0, 0, 0, '', 'enemy', 0);
-        });
+            entity.targetX = e.x;
+            entity.targetY = e.y;
+            entity.hp = e.hp;
+            entity.maxHp = e.maxHp;
+        }
 
-        snapshot.bullets.forEach(b => {
-            activeIds.add(b.id);
-            this.updateOrCreate(b.id, b, 0, 0, 0, 0, 0, '', 'bullet', b.speed);
-            const entity = this.entities.get(b.id)!;
+        for (const b of snapshot.bullets) {
+            activeIdsInSnapshot.add(b.id);
+            const entity = this.getOrCreateEntity(
+                b.id, b.x, b.y, b.width, b.height, 
+                1, b.visualId, 'bullet'
+            );
+
+            entity.targetX = b.x;
+            entity.targetY = b.y;
             entity.angle = b.angle;
-        });
-
-        for (const [id, entity] of this.entities.entries()) {
-            if (!activeIds.has(id)) entity.isDying = true;
         }
-    }
 
-    private updateOrCreate(
-        id: string, 
-        data: PlayerState | EnemyState | BulletState, 
-        hp: number, 
-        maxHp: number, 
-        mana: number, 
-        maxMana: number, 
-        gold: number, 
-        activeWeaponVisualId: string, 
-        type: 'player' | 'enemy' | 'bullet',
-        speed: number
-    ): void {
-        let entity = this.entities.get(id);
-        if (!entity) {
-            entity = new VisualEntity(id, data.x, data.y, data.width, data.height, 1, data.visualId, type, speed);
-            this.entities.set(id, entity);
-        } else {
-            if (data.x < entity.targetX) {
-                entity.lastFacing = 'left';
-            } else if (data.x > entity.targetX) {
-                entity.lastFacing = 'right';
-            } else if (data.x === entity.targetX && data.y === entity.targetY) {
-                entity.lastFacing = 'Top';
+        for (const id of this.entities.keys()) {
+            if (!activeIdsInSnapshot.has(id)) {
+                this.entities.delete(id);
             }
-
-            if (data.x !== entity.targetX || data.y !== entity.targetY) {
-                entity.currentAnimation = 'move';
-            } else {
-                entity.currentAnimation = 'idle';
-            }
-
-            entity.targetX = data.x;
-            entity.targetY = data.y;
-            entity.visualId = data.visualId;
-            entity.speed = speed;
         }
-        entity.hp = hp; 
-        entity.maxHp = maxHp;
-        entity.mana = mana; 
-        entity.maxMana = maxMana;
-        entity.gold = gold; 
-        entity.activeWeaponVisualId = activeWeaponVisualId;
     }
 
     public tickInterpolation(dt: number): void {
-        this.entities.forEach((entity, id) => {
+        this.entities.forEach(entity => {
             entity.updateInterpolation(dt);
-            
-            if (entity.isDying) {
-                if (entity.type === 'bullet') {
-                    if (entity.hasReachedTarget()) {
-                        this.entities.delete(id);
-                    }
-                } else {
-                    this.entities.delete(id);
-                }
-            }
         });
+    }
+
+    private getOrCreateEntity(
+        id: string, 
+        x: number, 
+        y: number, 
+        w: number, 
+        h: number, 
+        maxInv: number, 
+        visualId: string, 
+        type: 'player' | 'enemy' | 'bullet'
+    ): VisualEntity {
+        let entity = this.entities.get(id);
+        if (!entity) {
+            entity = new VisualEntity(id, x, y, w, h, maxInv, visualId, type);
+            this.entities.set(id, entity);
+        }
+        return entity;
+    }
+
+    private updateFacingAndAnimation(entity: VisualEntity, newX: number, newY: number, hp: number): void {
+        if (newX < entity.targetX) {
+            entity.lastFacing = 'left';
+        } else if (newX > entity.targetX) {
+            entity.lastFacing = 'right';
+        }
+
+        if (hp <= 0) {
+            entity.currentAnimation = 'die';
+        } else if (newX !== entity.targetX || newY !== entity.targetY) {
+            entity.currentAnimation = 'move';
+        } else {
+            entity.currentAnimation = 'idle';
+        }
     }
 
     public clear(): void {

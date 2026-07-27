@@ -44,8 +44,13 @@ export class Player extends LivingEntity {
         this.maxInventoryLength = stats.maxInventoryLength;
     }
 
+    public getActiveWeapon(): Weapon {
+        return this.inventory[this.currentWeaponIndex] || this.inventory[0];
+    }
+
     get activeWeaponVisualId(): string {
-        return this.getActiveWeapon().config.visualId;
+        const weapon = this.getActiveWeapon();
+        return weapon?.config?.visualId || 'iron_sword';
     }
 
     public changeWeapon(weaponIndex: number) {
@@ -145,7 +150,7 @@ export class Player extends LivingEntity {
         return this.gold;
     }
 
-    public getActiveWeapon(): Weapon {
-        return this.inventory[this.currentWeaponIndex];
+    public revive(amount?: number): void {
+        this.hp = amount ?? Math.floor(this.maxHp / 2);
     }
 }

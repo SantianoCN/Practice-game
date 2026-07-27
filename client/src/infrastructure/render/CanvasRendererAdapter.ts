@@ -348,6 +348,22 @@ export class CanvasRendererAdapter {
             };
             weaponEl.innerText = weaponNames[me.activeWeaponVisualId] || me.activeWeaponVisualId.toUpperCase();
         }
+
+        if (me.hp <= 0) {
+            this.context.save();
+            this.context.fillStyle = 'rgba(0, 0, 0, 0.4)';
+            this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+            this.context.fillStyle = '#e74c3c';
+            this.context.font = '14px "Press Start 2P", monospace';
+            this.context.textAlign = 'center';
+            this.context.fillText('ВЫ ПОГИБЛИ', this.canvas.width / 2, this.canvas.height / 2 - 10);
+
+            this.context.fillStyle = '#ecf0f1';
+            this.context.font = '8px "Press Start 2P", monospace';
+            this.context.fillText('Ожидайте помощи отряда (E)...', this.canvas.width / 2, this.canvas.height / 2 + 15);
+            this.context.restore();
+        }
     }
 
     private updateHtmlHotbar(me: any, maxSlots: number, activeIdx: number): void {

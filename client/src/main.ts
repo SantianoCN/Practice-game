@@ -314,16 +314,15 @@ class App {
         const deltaTime = (startTime - this.lastTime) / 1000;
         this.lastTime = startTime;
 
-        this.stateSync.tickInterpolation(deltaTime);
+        this.gameLoopId = requestAnimationFrame(this.tick);
 
+        this.stateSync.tickInterpolation(deltaTime);
         this.renderer.render(
             this.stateSync.entities,
             this.stateSync.currentRoomState,
             this.stateSync.staticObstacles,
             this.myId
         );
-
-        this.gameLoopId = requestAnimationFrame(this.tick);
     }
 }
 

@@ -29,41 +29,41 @@ export class TextureRenderer implements EntityRenderer {
             context.save();
 
             let startY = 0;
-            
-            if (animation === 'move') {
-                startY = this.frameHeight
-            } else if (animation === 'attack') {
-                startY = this.frameHeight * 2
-            } else if (entity.hp <= 0) {
-                startY = this.frameHeight * 3
-            };
+            const isDead = entity.hp <= 0;
 
-            const currentFrame = (entity.currentFrame || 0) % 3;
+            if (isDead) {
+                context.globalAlpha = 0.6;
+                startY = 0;
+            } else if (animation === 'move') {
+                startY = this.frameHeight;
+            } else if (animation === 'attack') {
+                startY = this.frameHeight * 2;
+            }
+
+            const currentFrame = isDead ? 0 : ((entity.currentFrame || 0) % 3);
             const startX = currentFrame * this.frameWidth;
 
-            if (facing === 'left') {
-                context.translate(rx, ry);
+            context.translate(rx, ry);
+
+            if (isDead) {
+                context.rotate(Math.PI / 2);
+            } else if (facing === 'left') {
                 context.scale(-1, 1);
-                context.drawImage(
-                    this.texture, 
-                    startX, startY, this.frameWidth, this.frameHeight,
-                    -Math.round(rw / 2), -Math.round(rh / 2), rw, rh
-                );
-            } else {
-                context.drawImage(
-                    this.texture, 
-                    startX, startY, this.frameWidth, this.frameHeight,
-                    rx - Math.round(rw / 2), ry - Math.round(rh / 2), rw, rh
-                );
             }
+
+            context.drawImage(
+                this.texture, 
+                startX, startY, this.frameWidth, this.frameHeight,
+                -Math.round(rw / 2), -Math.round(rh / 2), rw, rh
+            );
             
             context.restore();
         } else {
-            context.fillStyle = '#ff00ff';
+            context.fillStyle = entity.hp <= 0 ? '#555555' : '#ff00ff';
             context.fillRect(rx - Math.round(rw / 2), ry - Math.round(rh / 2), rw, rh);
         }
 
-        if (entity.hp !== undefined && entity.maxHp !== undefined && entity.type !== 'player') {
+        if (entity.hp !== undefined && entity.maxHp !== undefined && entity.type !== 'player' && entity.hp > 0) {
             this.drawHpBar(context, entity);
         }
     }

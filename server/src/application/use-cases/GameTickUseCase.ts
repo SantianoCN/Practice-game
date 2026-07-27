@@ -12,6 +12,7 @@ import { DroppedItem } from '../../domain/entities/Chest';
 import { OpenChestUseCase } from './OpenChestUseCase';
 import { IPresetProvider } from '../interfaces/IPresetProvider';
 import { EffectApplier } from '../../domain/services/EffectApplier';
+import { ZodError } from 'zod';
 
 export class GameTickUseCase {
     constructor(
@@ -27,35 +28,37 @@ export class GameTickUseCase {
 
         for (const session of sessions) {
             for (const player of session.players.values()) {
-                if (!player.isOnline || player.isDead()) continue;
+                if (!player.isOnline) continue;
 
-                player.processInputQueue();
-                player.applyInputFromHeldKeys();
-                
-                const room = session.getRoom(player.roomX, player.roomY);
-                if (room) {
-                    const bullet = PlayerCombatService.handleAttack(
-                        player,
-                        room,
-                        currentTime,
-                        () => this.idGen.generateId('bullet')
-                    );
+                if (!player.isDead()) {
+                    player.processInputQueue();
+                    player.applyInputFromHeldKeys();
                     
-                    if (bullet) {
-                        room.bullets.push(bullet);
+                    const room = session.getRoom(player.roomX, player.roomY);
+                    if (room) {
+                        const bullet = PlayerCombatService.handleAttack(
+                            player,
+                            room,
+                            currentTime,
+                            () => this.idGen.generateId('bullet')
+                        );
+                        
+                        if (bullet) {
+                            room.bullets.push(bullet);
+                        }
                     }
-                }
-                
-                player.updateEntity(deltaTime);
-                
-                if (!session.isLobby) {
-                    RoomTransitionService.handleTransition(
-                        player,
-                        Array.from(session.players.values()).filter(p => p.isOnline),
-                        session.floorMap,
-                        session.roomWidth,
-                        session.roomHeight
-                    );
+                    
+                    player.updateEntity(deltaTime);
+                    
+                    if (!session.isLobby) {
+                        RoomTransitionService.handleTransition(
+                            player,
+                            Array.from(session.players.values()).filter(p => p.isOnline),
+                            session.floorMap,
+                            session.roomWidth,
+                            session.roomHeight
+                        );
+                    }
                 }
 
                 const currentRoom = session.getRoom(player.roomX, player.roomY);
@@ -71,9 +74,12 @@ export class GameTickUseCase {
                         obstacles: currentRoom.obstacles
                     });
                     
-                    if (!currentRoom.isClear && currentRoom.type === 'Normal'){
-                        for (const player of session.players.values()) {
-                            this.broadcaster.broadcastRoomInit(player.id, roomInit);
+                    if (RoomTransitionService.combatTransition(currentRoom)) {
+                        const roomOccupants = Array.from(session.players.values())
+                            .filter(p => p.isOnline && p.roomX === currentRoom.gridX && p.roomY === currentRoom.gridY);
+
+                        for (const occupant of roomOccupants) {
+                            this.broadcaster.broadcastRoomInit(occupant.id, roomInit);
                         }
                     } else {
                         this.broadcaster.broadcastRoomInit(player.id, roomInit);
@@ -84,6 +90,7 @@ export class GameTickUseCase {
             const activeRooms = new Set<Room>();
             
             for (const player of session.players.values()) {
+                if (!player.isOnline) continue;
                 const room = session.getRoom(player.roomX, player.roomY);
                 if (room) activeRooms.add(room);
             }
@@ -97,12 +104,15 @@ export class GameTickUseCase {
 
             for (const room of activeRooms) {
                 const playersInRoom = Array.from(session.players.values())
-                    .filter(p => p.isOnline && !p.isDead() && p.roomX === room.gridX && p.roomY === room.gridY);
+                    .filter(p => p.isOnline && p.roomX === room.gridX && p.roomY === room.gridY);
+
+                const livingPlayers = playersInRoom.filter(p => !p.isDead());
+                const deadPlayers = playersInRoom.filter(p => p.isDead());
 
                 if (!session.isLobby) {
                     EnemyAIService.updateEnemies(
                         room.enemies, 
-                        playersInRoom, 
+                        livingPlayers, 
                         room, 
                         deltaTime, 
                         currentTime, 
@@ -112,10 +122,24 @@ export class GameTickUseCase {
                     );
                 }
 
-                for (const player of playersInRoom) {
+                for (const player of livingPlayers) {
                     CollisionEngine.resolveWallBounds(player, session.roomWidth, session.roomHeight, room, true);
                     CollisionEngine.resolveObstacles(player, room.getObstacleGrid());
-                    
+                        
+                    const revivedAlly = CollisionEngine.resolvePlayerRevival(player, deadPlayers);
+                    if (revivedAlly) {
+                        revivedAlly.revive();
+                        
+                        this.broadcaster.broadcastError(
+                            player.id, 
+                            `Вы подняли соратника ${revivedAlly.name}!`
+                        );
+                        this.broadcaster.broadcastError(
+                            revivedAlly.id, 
+                            `Вас поднял воевода ${player.name}!`
+                        );
+                    }
+
                     if (room.type === 'Boss' && room.portal && room.portal.isActive) {
                         const wantsToTransition = CollisionEngine.checkPortalInteraction(player, room.portal);
                         if (wantsToTransition) {
@@ -168,7 +192,7 @@ export class GameTickUseCase {
 
                 CollisionEngine.resolveBulletEnvironment(room.bullets, room.getObstacleGrid(), session.roomWidth, session.roomHeight);
                 CollisionEngine.resolveBullets(room.bullets, room.enemies);
-                CollisionEngine.resolveBullets(room.bullets, playersInRoom);
+                CollisionEngine.resolveBullets(room.bullets, livingPlayers);
                 
                 room.checkClearCondition();
                 room.cleanupDeadEntities();
