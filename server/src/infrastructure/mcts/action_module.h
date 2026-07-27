@@ -4,95 +4,275 @@
 #include "game_state.h"
 #include "room_map.h"
 
-inline int sign(int v) { return (v > 0) - (v < 0); }
+inline Position find_pos_on_range(Position npc, Position target, int range, const RoomMap& map) {
+	double dx = npc.x - target.x;
+	double dy = npc.y - target.y;
+	double base_angle = std::atan2(dy, dx);
 
-inline const Player* find_closest_player(const GameState& state, int& out_dist_sq) {
-    const Player* best = nullptr;
-    out_dist_sq = INT_MAX;
-    for (int i = 0; i < state.players_count; i++) {
-        if (state.players[i].hp <= 0) continue;
-        int dx = state.players[i].x - state.npc_x;
-        int dy = state.players[i].y - state.npc_y;
-        int d = dx * dx + dy * dy;
-        if (d < out_dist_sq) {
-            out_dist_sq = d;
-            best = &state.players[i];
-        }
-    }
-    return best;
+	double angle = base_angle + (rand() % 180 - 90) * 3.14 / 180.0f;
+	int px = target.x + std::cos(angle) * range;
+	int py = target.y + std::sin(angle) * range;
+
+	if (map.is_wall(px, py)) {
+		for (int i = 0; i < 12; i++) {
+			angle = base_angle + (rand() % 180 - 90) * 3.14 / 180.0f;
+			px = target.x + std::cos(angle) * range;
+			py = target.y + std::sin(angle) * range;
+			if (!map.is_wall(px, py)) break;
+		}
+	}
+
+	return Position(px, py);
 }
 
-inline void move_up(GameState& s, const RoomMap&, bool npc_turn, int player_idx) {
-    if (npc_turn) { s.npc_vx = 0; s.npc_vy = -1; }
-    else if (s.players_count != 0) { s.players[player_idx].vx = 0; s.players[player_idx].vy = -1; }
+inline Player* find_closest_player(GameState& state) {
+	Player* best = nullptr;
+	int min_dist = INT_MAX;
+	for (int i = 0; i < state.players_count; i++) {
+		if (state.players[i].hp <= 0) continue;
+		int dx = state.players[i].x - state.npc_x;
+		int dy = state.players[i].y - state.npc_y;
+		int dist = sqrt(dx * dx + dy * dy);
+		if (dist < min_dist) {
+			min_dist = dist;
+			best = &state.players[i];
+		}
+	}
+	return best;
 }
 
-inline void move_down(GameState& s, const RoomMap&, bool npc_turn, int player_idx) {
-    if (npc_turn) { s.npc_vx = 0; s.npc_vy = 1; }
-    else if (s.players_count != 0) { s.players[player_idx].vx = 0; s.players[player_idx].vy = 1; }
+inline Position update_position(Position pos, int vx, int vy, int speed, int delta_time = 1) {
+	int length = std::sqrt(vx * vx + vy * vy);
+	if (length < 1e-6) return pos;
+	int x = pos.x + (vx / length) * speed * delta_time;
+	int y = pos.y + (vy / length) * speed * delta_time;
+	return Position(x, y);
 }
 
- inline void move_left(GameState& s, const RoomMap&, bool npc_turn, int player_idx) {
-    if (npc_turn) { s.npc_vx = -1; s.npc_vy = 0; }
-    else if (s.players_count != 0) { s.players[player_idx].vx = -1; s.players[player_idx].vy = 0; }
+inline void update_positions(GameState& state, RoomMap& map) {
+	for (int i = 0; i < state.players_count; i++) {
+		Player& player = state.players[i];
+		auto pos = update_position(Position(player.x, player.y), player.vx, player.vy, 1);
+		if (!map.is_wall(pos.x, pos.y)) {
+			player.x = pos.x;
+			player.y = pos.y;
+		}
+	}
+
+	auto npc_pos = update_position( 
+		Position(state.npc_x, state.npc_y),
+		state.npc_vx,
+		state.npc_vy,
+		state.npc_speed
+	);
+	if (!map.is_wall(npc_pos.x, npc_pos.y)) {
+		state.npc_x = npc_pos.x;
+		state.npc_y = npc_pos.y;
+	}
 }
 
-inline void move_right(GameState& s, const RoomMap&, bool npc_turn, int player_idx) {
-    if (npc_turn) { s.npc_vx = 1; s.npc_vy = 0; }
-    else if (s.players_count != 0) { s.players[player_idx].vx = 1; s.players[player_idx].vy = 0; }
+inline void player_attack(GameState& state, const RoomMap& map, bool npc_turn, int player_idx) {
+	if (npc_turn) return;
+
+	Player& player = state.players[player_idx];
+	if (player.hp <= 0) return;
+
+	if (map.has_line_of_sight(player.x, player.y, state.npc_x, state.npc_y)) {
+		int dx = state.npc_x - player.x;
+		int dy = state.npc_y - player.y;
+		int distance = sqrt(dx * dx + dy * dy); 
+		if (distance <= player.range)
+			state.npc_hp -= player.damage;
+	}
 }
 
-inline void wait(GameState& s, const RoomMap&, bool npc_turn, int player_idx) {
-    if (npc_turn) { s.npc_vx = 0; s.npc_vy = 0; }
-    else if (s.players_count != 0) { s.players[player_idx].vx = 0; s.players[player_idx].vy = 0; }
+
+inline void player_move_closer(GameState& state, const RoomMap& map, bool npc_turn, int player_idx) {
+	if (npc_turn) return;
+
+	Player& player = state.players[player_idx];
+	if (player.hp <= 0) return;
+
+	int dx = state.npc_x - player.x;
+	int dy = state.npc_y - player.y;
+	int dist = std::sqrt(dx * dx + dy * dy);
+
+	if (dist > 0) {
+		int nx = player.x + (dx / dist) * player.speed;
+		int ny = player.y + (dy / dist) * player.speed;
+
+		if (!map.is_wall(nx, ny)) {
+			player.x = nx;
+			player.y = ny;
+		}
+	}
 }
 
-inline void approach(GameState& s, const RoomMap&, bool npc_turn, int player_idx) {
-    if (npc_turn) {
-        int d; const Player* t = find_closest_player(s, d);
-        s.npc_vx = t ? sign(t->x - s.npc_x) : 0;
-        s.npc_vy = t ? sign(t->y - s.npc_y) : 0;
-    }
-    else if (s.players_count != 0) {
-        s.players[player_idx].vx = sign(s.npc_x - s.players[player_idx].x);
-        s.players[player_idx].vy = sign(s.npc_y - s.players[player_idx].y);
-    }
-}
-inline void retreat(GameState& s, const RoomMap&, bool npc_turn, int player_idx) {
-    if (npc_turn) {
-        int d; const Player* t = find_closest_player(s, d);
-        s.npc_vx = t ? -sign(t->x - s.npc_x) : 0;
-        s.npc_vy = t ? -sign(t->y - s.npc_y) : 0;
-    }
-    else if (s.players_count != 0) {
-        s.players[player_idx].vx = -sign(s.npc_x - s.players[player_idx].x);
-        s.players[player_idx].vy = -sign(s.npc_y - s.players[player_idx].y);
-    }
+inline void player_move_away(GameState& state, const RoomMap& map, bool npc_turn, int player_idx) {
+	if (npc_turn) return;
+
+	Player& player = state.players[player_idx];
+	if (player.hp <= 0) return;
+
+	int dx = player.x - state.npc_x;
+	int dy = player.y - state.npc_y;
+	int dist = std::sqrt(dx * dx + dy * dy);
+
+	if (dist > 0) {
+		int nx = player.x + (dx / dist) * player.speed;
+		int ny = player.y + (dy / dist) * player.speed;
+
+		if (!map.is_wall(nx, ny)) {
+			player.x = nx;
+			player.y = ny;
+		}
+	}
 }
 
-inline void strafe_left(GameState& s, const RoomMap&, bool npc_turn, int player_idx) { 
-    move_left(s, {}, npc_turn, player_idx); 
+
+inline void follow_path(GameState& state, const Position to_pos, const RoomMap& map) {
+	std::vector<Position> path = map.find_path(
+		state.npc_x,
+		state.npc_y, 
+		to_pos.x, 
+		to_pos.y
+	);
+	for (const Position& pos : path) {
+		state.npc_x = pos.x;
+		state.npc_y = pos.y;
+	}
 }
 
-inline void strafe_right(GameState& s, const RoomMap&, bool npc_turn, int player_idx) { 
-    move_right(s, {}, npc_turn, player_idx); 
+inline void try_attack(GameState& state, Player* target, const RoomMap& map) {
+	if (map.has_line_of_sight(state.npc_x, state.npc_y, target->x, target->y)) {
+		int dx = target->x - state.npc_x;
+		int dy = target->y - state.npc_y;
+		int distance = sqrt(dx * dx + dy * dy);
+		if (distance <= state.npc_range)
+			target->hp -= state.npc_damage;
+	}
 }
 
-inline void attack(GameState& s, const RoomMap& map, bool npc_turn, int player_idx) {
-    if (npc_turn) {
-        s.npc_vx = 0; s.npc_vy = 0;
-        int dist_sq;
-        const Player* target = find_closest_player(s, dist_sq);
-        if (!target || dist_sq > s.npc_range * s.npc_range) return;
-        if (!map.has_line_of_sight(s.npc_x, s.npc_y, target->x, target->y)) return;
-        for (Player& p : s.players) if (&p == target) { p.hp -= s.npc_damage; break; }
-    }
-    else if (s.players_count != 0) {
-        Player& p = s.players[player_idx];
-        p.vx = 0; p.vy = 0;
-        int dx = s.npc_x - p.x, dy = s.npc_y - p.y;
-        if (dx * dx + dy * dy > p.range * p.range) return;
-        if (!map.has_line_of_sight(p.x, p.y, s.npc_x, s.npc_y)) return;
-        s.npc_hp -= p.damage;
-    }
+inline void wait(GameState& state, const RoomMap& map, bool npc_turn, int player_idx) {
+}
+
+inline int get_dist(Position npc, Position target) {
+	int dx = target.x - npc.x;
+	int dy = target.y - npc.y; 
+	return sqrt(dx * dx + dy * dy); 
+}
+
+
+inline void engage(GameState& state, const RoomMap& map, bool npc_turn, int player_idx) {
+	if (!npc_turn) return;
+
+	auto target = find_closest_player(state);
+	auto target_pos = Position(target->x, target->y);
+	auto npc_pos = Position(state.npc_x, state.npc_y);
+	target_pos = find_pos_on_range(npc_pos, target_pos, state.npc_range, map);
+	follow_path(state, target_pos, map);
+	try_attack(state, target, map);
+}	
+
+inline void kite(GameState& state, const RoomMap& map, bool npc_turn, int player_idx) {
+	if (!npc_turn) return;
+
+	auto target = find_closest_player(state);
+	if (!target) return;
+
+	auto target_pos = Position(target->x, target->y);
+	auto npc_pos = Position(state.npc_x, state.npc_y);
+
+	if (get_dist(npc_pos, target_pos) < state.npc_range) {
+		int dx = state.npc_x - target->x;
+		int dy = state.npc_y - target->y;
+		int dist = std::sqrt(dx * dx + dy * dy);
+
+		if (dist > 0) {
+			int retreat_x = state.npc_x + (dx / dist) * (state.npc_range - dist + 50);
+			int retreat_y = state.npc_y + (dy / dist) * (state.npc_range - dist + 50);
+
+			if (!map.is_wall(retreat_x, retreat_y)) {
+				follow_path(state, Position(retreat_x, retreat_y), map);
+			}
+		}
+	}
+	try_attack(state, target, map);
+}
+
+inline void flank(GameState& state, const RoomMap& map, bool npc_turn, int player_idx) {
+	if (!npc_turn) return;
+
+	auto target = find_closest_player(state);
+	if (!target) return;
+
+	auto target_pos = Position(target->x, target->y);
+	auto npc_pos = Position(state.npc_x, state.npc_y);
+
+	int dx = state.npc_x - target->x;
+	int dy = state.npc_y - target->y;
+	int dist = std::sqrt(dx * dx + dy * dy);
+
+	if (dist > 0) {
+		int base_angle = std::atan2(dy, dx);
+
+		int offset = (rand() % 180 + 90) * 3.14f / 180.0f;
+		if (rand() % 2 == 0) offset = -offset;
+
+		int flank_angle = base_angle + offset;
+
+		int flank_x = target->x + std::cos(flank_angle) * state.npc_range;
+		int flank_y = target->y + std::sin(flank_angle) * state.npc_range;
+
+		if (!map.is_wall(flank_x, flank_y)) {
+			follow_path(state, Position(flank_x, flank_y), map);
+		}
+	}
+}
+
+inline void retreat(GameState& state, const RoomMap& map, bool npc_turn, int player_idx) {
+	if (!npc_turn) return;
+
+	auto target = find_closest_player(state);
+	if (!target) return;
+
+	int dx = state.npc_x - target->x;
+	int dy = state.npc_y - target->y;
+	int dist = std::sqrt(dx * dx + dy * dy);
+
+	if (dist == 0) {
+		int angle = rand() % 360;
+		int retreat_x = state.npc_x + std::cos(angle * 3.14 / 180) * state.npc_range * 1.5;
+		int retreat_y = state.npc_y + std::sin(angle * 3.14 / 180) * state.npc_range * 1.5;
+		if (!map.is_wall(retreat_x, retreat_y)) {
+			follow_path(state, Position(retreat_x, retreat_y), map);
+		}
+		return;
+	}
+
+	int retreat_dist = state.npc_range * 1.5;
+	int retreat_x = state.npc_x + (dx * retreat_dist) / dist;
+	int retreat_y = state.npc_y + (dy * retreat_dist) / dist;
+
+	if (map.is_wall(retreat_x, retreat_y)) {
+		for (int angle = 30; angle <= 150; angle += 30) {
+			for (int sign : {-1, 1}) {
+				int a = angle * sign;
+				int rx = (dx * std::cos(a * 3.14 / 180) - dy * std::sin(a * 3.14 / 180)) * retreat_dist / dist;
+				int ry = (dx * std::sin(a * 3.14 / 180) + dy * std::cos(a * 3.14 / 180)) * retreat_dist / dist;
+
+				int tx = state.npc_x + rx;
+				int ty = state.npc_y + ry;
+
+				if (!map.is_wall(tx, ty)) {
+					retreat_x = tx;
+					retreat_y = ty;
+					break;
+				}
+			}
+			if (!map.is_wall(retreat_x, retreat_y)) break;
+		}
+	}
+
+	follow_path(state, Position(retreat_x, retreat_y), map);
 }

@@ -2,6 +2,10 @@
   "targets": [
     {
       "target_name": "mcts",
+      "include_dirs": [
+        ".",
+        "<!@(node -p \"require('node-addon-api').include\")"
+      ],
       "sources": [
         "src/infrastructure/mcts/mcts_bridge.cpp",
         "src/infrastructure/mcts/game_engine.cpp",
@@ -9,16 +13,27 @@
         "src/infrastructure/mcts/tree.cpp",
         "src/infrastructure/mcts/action_module.h"
       ],
-      "include_dirs": [
-        "<!@(node -p \"require('node-addon-api').include\")"
+      "defines": [
+        "NAPI_VERSION=6"
       ],
-      "dependencies": [
-        "<!(node -p \"require('node-addon-api').gyp\")"
+      "cflags": [
+        "-std=c++17"
       ],
-      "cflags!": [ "-fno-exceptions" ],
-      "cflags_cc!": [ "-fno-exceptions" ],
-      "cflags_cc": [ "-fexceptions", "-std=c++17" ],
-      "defines": [ "NAPI_CPP_EXCEPTIONS" ]
+      "conditions": [
+        [
+          "OS=='win'",
+          {
+            "msvs_settings": {
+              "VCCLCompilerTool": {
+                "AdditionalOptions": [
+                  "/std:c++17",
+                  "/EHsc"
+                ]
+              }
+            }
+          }
+        ]
+      ]
     }
   ]
 }

@@ -1,6 +1,10 @@
 #pragma once
 #include <vector>
 #include <cstdlib>
+#include <queue>
+#include <unordered_set>
+#include <unordered_map>
+#include "position.h"
 
 struct Obstacle {
     int x;
@@ -15,14 +19,11 @@ struct RoomMap {
     int height;
 
     bool is_wall(int x, int y) const {
-        if (x < 0 || x >= width || y < 0 || y >= height) {
-            return true;
-        }
+        if (x < 0 || x >= width || y < 0 || y >= height) return true;
         for (const Obstacle& ob : obstacles) {
-            if (x >= ob.x && x < ob.x + ob.width &&
-                y >= ob.y && y < ob.y + ob.height) {
-                return true;
-            }
+            int left = ob.x - ob.width / 2, right = ob.x + ob.width / 2;
+            int top = ob.y - ob.height / 2, bottom = ob.y + ob.height / 2;
+            if (x >= left && x < right && y >= top && y < bottom) return true;
         }
         return false;
     }
@@ -57,5 +58,64 @@ struct RoomMap {
                 y += sy;
             }
         }
+    }
+
+    std::vector<Position> find_path(int from_x, int from_y, int to_x, int to_y, int cell_size = 20) const {
+        std::vector<Position> result;
+        if (has_line_of_sight(from_x, from_y, to_x, to_y)) {
+            result.push_back(Position(to_x, to_y));
+            return result;
+        }
+
+        int cols = (width + cell_size - 1) / cell_size;
+        int rows = (height + cell_size - 1) / cell_size;
+        int sx = from_x / cell_size, sy = from_y / cell_size;
+        int gx = to_x / cell_size, gy = to_y / cell_size;
+        if (sx == gx && sy == gy) return result;
+
+        auto cell_walkable = [&](int cx, int cy) {
+            return !is_wall(cx * cell_size + cell_size / 2, cy * cell_size + cell_size / 2);
+            };
+        auto key = [&](int x, int y) { return y * cols + x; };
+
+        std::queue<std::pair<int, int>> q;
+        std::unordered_set<int> visited;
+        std::unordered_map<int, int> came_from;
+        q.push({ sx, sy });
+        visited.insert(key(sx, sy));
+
+        static const int dxs[4] = { 0, 0, -1, 1 };
+        static const int dys[4] = { -1, 1, 0, 0 };
+        bool found = false;
+
+        while (!q.empty()) {
+            auto [cx, cy] = q.front(); q.pop();
+            if (cx == gx && cy == gy) { found = true; break; }
+            for (int d = 0; d < 4; ++d) {
+                int nx = cx + dxs[d], ny = cy + dys[d];
+                if (nx < 0 || ny < 0 || nx >= cols || ny >= rows) continue;
+                if (!cell_walkable(nx, ny)) continue;
+                int k = key(nx, ny);
+                if (visited.count(k)) continue;
+                visited.insert(k);
+                came_from[k] = key(cx, cy);
+                q.push({ nx, ny });
+            }
+        }
+        if (!found) return result;
+
+        std::vector<std::pair<int, int>> cells;
+        int cur = key(gx, gy);
+        int start_key = key(sx, sy);
+        while (cur != start_key) {
+            cells.push_back({ cur % cols, cur / cols });
+            cur = came_from[cur];
+        }
+        std::reverse(cells.begin(), cells.end());
+
+        for (auto& [cx, cy] : cells) {
+            result.push_back(Position(cx * cell_size + cell_size / 2, cy * cell_size + cell_size / 2));
+        }
+        return result;
     }
 };

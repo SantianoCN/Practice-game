@@ -20,6 +20,6 @@ public:
         c_value = c;
     }
 
-    std::string print_stat();
+    void print_stat();
     ActionType find_best_action(GameState state);
 };

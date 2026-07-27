@@ -1,30 +1,27 @@
 #pragma once
 
+// Тактические многокомпанентные действия
 enum ActionType {
-    MoveUp,     // 0
-    MoveDown,   // 1
-    MoveLeft,   // 2
-    MoveRight,  // 3
-    Wait,       // 4
-    Approach,   // 5
-    Retreat,    // 6
-    StrafeLeft, // 7
-    StrafeRight,// 8
-    Attack,     // 9
-    None,       // 10
-    COUNT       // 11
+    Engage, // сближение и атака при LOS
+    Kite,   // держать дистанцию и стрелять при LOS
+    Flank,  // обойти/зайти в тыл
+    Retreat,// отступить, отойти
+    Wait,   // никчего не делать или стрелять
+    PlayerAttack,   // игрок атакует
+    PlayerMoveAway, // игрок отходит
+    PlayerMoveCloser,   // игрок приближается
+    None,   // нет действия
+    COUNT   // кол-во действий
 };
 
 inline const char* action_names[] = {
-			"Вверх",        // MoveUp
-			"Вниз",         // MoveDown
-			"Влево",        // MoveLeft
-			"Вправо",       // MoveRight
-			"Ждать",        // Wait
-			"Сближение",    // Approach
-			"Отступление",  // Retreat
-			"Стрейф влево", // StrafeLeft
-			"Стрейф вправо",// StrafeRight
-			"Атака",        // Attack
-			"Нет действия"  // None
+    "Engage",
+    "Kite",
+    "Flank",
+    "Retreat",
+    "Wait",
+    "PlayerAttack", 
+    "PlayeMoveAway",
+    "PlayerMoveCloser",
+    "None"
 };

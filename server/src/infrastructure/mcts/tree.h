@@ -9,7 +9,7 @@ private:
     Node* root = nullptr;
     Node* current_node = nullptr;
 
-    void initialize_node(Node* node) const;
+    void initialize_action_pull(Node* node, const std::vector<ActionType>& actions) const;
 public:
     Tree() {}
     Tree(GameState current_state) {
@@ -20,14 +20,14 @@ public:
         current_node = root;
     }
     Node* get_root() const;
-    void reset(GameState state);
-
+    void reset(GameState state, const std::vector<ActionType>& actions);
+    
     GameState get_current_state() const;
     ActionType get_current_action() const;
     ActionType get_next_untried();
 
     bool is_fully_expanded() const;
-    void expand_current(GameState state, ActionType action);
+    void expand_current(GameState next_state, ActionType next_action, const std::vector<ActionType>& actions);
     void select_best_uct(double c);
     void backpropagation(double reward);
     ActionType best_action_by_visits();

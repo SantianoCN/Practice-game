@@ -28,12 +28,6 @@ public:
     int visits = 0;
     Node(GameState state, ActionType action, Node* parent = nullptr)
         : game_state(state), action(action), parent(parent) {
-        std::vector<ActionType> actions;
-        for (int i = static_cast<int>(ActionType::Attack);
-            i < static_cast<int>(ActionType::MoveUp); i++) {
-            actions.push_back(static_cast<ActionType>(i));
-        }
-        action_pull = actions;
     }
 
     double uct(int parent_visits, const double c) const;

@@ -1,0 +1,5 @@
+C:\practica\Practice-game\server\src\infrastructure\mcts\mcts_bridge.cpp;C:\practica\Practice-game\server\build\Release\obj\mcts\src\infrastructure\mcts\mcts_bridge.obj
+C:\practica\Practice-game\server\src\infrastructure\mcts\game_engine.cpp;C:\practica\Practice-game\server\build\Release\obj\mcts\src\infrastructure\mcts\game_engine.obj
+C:\practica\Practice-game\server\src\infrastructure\mcts\mcts.cpp;C:\practica\Practice-game\server\build\Release\obj\mcts\src\infrastructure\mcts\mcts.obj
+C:\practica\Practice-game\server\src\infrastructure\mcts\tree.cpp;C:\practica\Practice-game\server\build\Release\obj\mcts\src\infrastructure\mcts\tree.obj
+C:\Users\santi\AppData\Local\npm-cache\_npx\c463d28440264a05\node_modules\node-gyp\src\win_delay_load_hook.cc;C:\practica\Practice-game\server\build\Release\obj\mcts\win_delay_load_hook.obj
