@@ -21,7 +21,8 @@ export const PlayerStateSchema = BaseEntityStateSchema.extend({
     maxInventoryLength: z.number(),
     inventory: z.array(WeaponStatsSchema),
     currentWeaponIndex: z.number(),
-    activeWeaponVisualId: z.string()
+    activeWeaponVisualId: z.string(),
+    isInteracting: z.boolean()
 });
 export type PlayerState = z.infer<typeof PlayerStateSchema>;
 

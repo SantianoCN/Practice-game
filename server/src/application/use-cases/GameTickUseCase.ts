@@ -158,6 +158,9 @@ export class GameTickUseCase {
                     const interactedChestId = CollisionEngine.checkChestInteraction(player, room.chests);
                     if (interactedChestId) {
                         this.openChestUseCase.execute(session.sessionId, player.id, interactedChestId);
+                        player.isInteracting = true
+                    } else {
+                        player.isInteracting = false
                     }
 
                     const pickedItems = CollisionEngine.resolveLootPickup(player, room.droppedItems);
