@@ -174,10 +174,14 @@ export class CollisionEngine {
             if (chest.isOpened) continue;
             
             if (this.isOverlapping(playerBounds, chest.getBounds())) {
+                player.canInteracting = true;
                 if (player.isInteracting) {
-                    player.isInteracting = false; 
+                    player.isInteracting = false;
+                    player.canInteracting = false;
                     return chest.id;
                 }
+            } else {
+                player.canInteracting = false;
             }
         }
         return null;
@@ -199,12 +203,18 @@ export class CollisionEngine {
                 const requiresInteraction = preset?.type !== 'gold';
                 
                 if (requiresInteraction) {
-                    if (!player.isInteracting) continue;
+                    if (!player.isInteracting) {
+                        player.canInteracting = true;
+                        continue;
+                    } 
                     player.isInteracting = false;
+                    player.canInteracting = false;
                 }
 
                 collected.push(item);
                 droppedItems.splice(i, 1);
+            } else {
+                player.canInteracting = false;
             }
         }
         return collected;
@@ -214,23 +224,33 @@ export class CollisionEngine {
         if (!portal || !portal.isActive) return false;
 
         if (this.isOverlapping(player.getBounds(), portal.getBounds())) {
+            player.canInteracting = true;
             if (player.isInteracting) {
                 player.isInteracting = false;
+                player.canInteracting = false;
                 return true;
             }
+        } else {
+            player.canInteracting = false;
         }
         return false;
     }
 
     public static resolvePlayerRevival(player: Player, deadPlayers: Player[]): Player | null {
-        if (!player.isInteracting || deadPlayers.length === 0) return null;
+        if (deadPlayers.length === 0) return null;
         
         const playerBounds = player.getBounds();
 
         for (const deadPlayer of deadPlayers) {
             if (this.isOverlapping(playerBounds, deadPlayer.getBounds())) {
-                player.isInteracting = false;
-                return deadPlayer;
+                player.canInteracting = true;
+                if (player.isInteracting) {
+                    player.isInteracting = false;
+                    player.canInteracting = false;
+                    return deadPlayer;
+                } 
+            } else {
+                player.canInteracting = false;
             }
         }
         return null;

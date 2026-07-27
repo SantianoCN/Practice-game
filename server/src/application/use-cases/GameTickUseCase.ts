@@ -234,7 +234,7 @@ export class GameTickUseCase {
                 inventory: player.inventory.map(weapon => weapon.config),
                 currentWeaponIndex: player.currentWeaponIndex,
                 activeWeaponVisualId: player.activeWeaponVisualId,
-                isInteracting: player.isInteracting ?? false
+                canInteracting: player.canInteracting
             })),
             enemies: room.enemies,
             bullets: room.bullets

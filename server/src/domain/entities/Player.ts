@@ -8,6 +8,7 @@ export class Player extends LivingEntity {
     public readonly entityType: EntityType = 'player';
     public gold: number = 0;
     public isInteracting: boolean = false; 
+    public canInteracting: boolean = false; 
     public inputQueue: PlayerCommand[] = [];
     public readonly baseSpeed: number;
     public readonly baseMaxHp: number;

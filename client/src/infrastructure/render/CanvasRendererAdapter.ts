@@ -363,6 +363,14 @@ export class CanvasRendererAdapter {
             weaponEl.innerText = weaponNames[me.activeWeaponVisualId] || me.activeWeaponVisualId.toUpperCase();
         }
 
+        if (me.canInteracting) {
+            this.context.font = '8px "Press Start 2P", sans-serif';
+            this.context.textAlign = 'center';
+            this.context.textBaseline = 'middle';
+            this.context.fillStyle = '#ffcc00';
+            this.context.fillText('Для взаимодействия нажмите "E"', me.renderX, me.renderY + 20);
+        }
+
         if (me.hp <= 0) {
             this.context.save();
             this.context.fillStyle = 'rgba(0, 0, 0, 0.4)';

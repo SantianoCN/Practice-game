@@ -38,7 +38,7 @@ export class SyncStateUseCase {
             entity.inventory = p.inventory || [];
             entity.currentWeaponIndex = p.currentWeaponIndex ?? 0;
             entity.activeWeaponVisualId = p.activeWeaponVisualId || 'iron_sword';
-            entity.isInteracting = p.isInteracting
+            entity.canInteracting = p.canInteracting
         }
 
         for (const e of snapshot.enemies) {

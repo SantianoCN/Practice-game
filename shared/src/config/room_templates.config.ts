@@ -92,7 +92,7 @@ export const ROOM_TEMPLATES: RoomTemplate[] = [
             { startX: 16, startY: 17, endX: 24, endY: 18, obj: 'stone' }
         ],
         chests: [
-            { gridX: 20, gridY: 15, presetId: "chest_of_wooden" }
+            { gridX: 20, gridY: 15, presetId: "chest_wooden" }
         ]
     },
     {
@@ -106,7 +106,7 @@ export const ROOM_TEMPLATES: RoomTemplate[] = [
             { startX: 26, startY: 14, endX: 31, endY: 15, obj: 'stone' }
         ],
         chests: [
-            { gridX: 19, gridY: 14, presetId: "chest_of_wooden" }
+            { gridX: 19, gridY: 14, presetId: "chest_wooden" }
         ]
     },
     {
