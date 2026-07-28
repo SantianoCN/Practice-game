@@ -12,7 +12,7 @@ import {
     StaticAssetEntry,
 } from './asset-manifest.config';
 import { GAME_CONFIG } from '@game/shared';
-import F1 from './../../../assets/F1.png'
+import { ASSETS } from './../../../assets/index'
 
 interface MapCell {
     state: 'unseen' | 'visible' | 'visited';
@@ -45,6 +45,7 @@ export class CanvasRendererAdapter {
     private tileArr: Array<HTMLImageElement | HTMLCanvasElement> = [];
 
     private isHelpVisible: boolean = false;
+    private swordSlashTexture: HTMLImageElement;
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -64,6 +65,8 @@ export class CanvasRendererAdapter {
 
         this.initVisitedMatrix();
         this.registerFromManifest();
+        this.swordSlashTexture = new Image();
+        this.swordSlashTexture.src = ASSETS.particle.swordSlash;
     }
 
     public toggleHelp(): void {
@@ -178,8 +181,7 @@ export class CanvasRendererAdapter {
                 this.drawMiniMap(room.gridX, room.gridY);
             }
         }
-        if (this.isHelpVisible) this.drawHelpPage();
-        console.log(this.isHelpVisible)
+        if (this.isHelpVisible) this.drawHelpPage()
     }
 
     public toggleGUI(): void {
@@ -649,30 +651,17 @@ export class CanvasRendererAdapter {
     private drawAxeSlash(bullet: VisualEntity, color: string): void {
         const bx = Math.round(bullet.renderX);
         const by = Math.round(bullet.renderY);
-        const radius = Math.round(bullet.width);
+        const slashLength = Math.round(bullet.height || 45);
+        const slashWidth = Math.round(bullet.width || 20);
 
         const angle = this.getBulletAngle(bullet);
 
         this.context.save();
         this.context.translate(bx, by);
         this.context.rotate(angle);
-        this.context.beginPath();
-        const arcAngle = Math.PI / 3;
-        this.context.arc(0, 0, radius, -arcAngle, arcAngle, false);
-        this.context.arc(0, 0, radius * 0.35, arcAngle, -arcAngle, true);
-        this.context.closePath();
-
-        const gradient = this.context.createRadialGradient(0, 0, radius * 0.2, 0, 0, radius);
-        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
-        gradient.addColorStop(0.5, color);
-        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-
-        this.context.fillStyle = gradient;
-        this.context.shadowBlur = 12;
-        this.context.shadowColor = color;
-        this.context.fill();
-
-        this.context.restore();
+        if (this.swordSlashTexture) this.context.drawImage(this.swordSlashTexture, -slashWidth / 2, -slashLength / 2, slashWidth, slashLength)
+        else this.drawOrb(bullet, color)
+        this.context.restore()
     }
 
     private drawSwordSlash(bullet: VisualEntity, color: string): void {
@@ -686,22 +675,9 @@ export class CanvasRendererAdapter {
         this.context.save();
         this.context.translate(bx, by);
         this.context.rotate(angle);
-        this.context.beginPath();
-        this.context.moveTo(0, -slashLength / 2);
-        this.context.quadraticCurveTo(slashWidth, 0, 0, slashLength / 2);
-        this.context.quadraticCurveTo(slashWidth * 0.25, 0, 0, -slashLength / 2);
-        this.context.closePath();
-
-        this.context.fillStyle = '#ffffff';
-        this.context.shadowBlur = 15;
-        this.context.shadowColor = color;
-        this.context.fill();
-
-        this.context.strokeStyle = color;
-        this.context.lineWidth = 2;
-        this.context.stroke();
-
-        this.context.restore();
+        if (this.swordSlashTexture) this.context.drawImage(this.swordSlashTexture, -slashWidth / 2, -slashLength / 2, slashWidth, slashLength)
+        else this.drawOrb(bullet, color)
+        this.context.restore()
     }
 
     private drawPlayers(playersMap: Map<string, VisualEntity>): void {
@@ -774,7 +750,7 @@ export class CanvasRendererAdapter {
 
     private drawHelpPage(): void {
         const texture = new Image;
-        texture.src = F1;
+        texture.src = ASSETS.buble.F1;
 
         if (texture) this.context.drawImage(texture, 0, 0, this.canvas.width, this.canvas.height)
         else {

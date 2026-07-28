@@ -1,13 +1,13 @@
 import { WeaponStats, ProjectileStats, StartingWeaponStats } from '../types/weapon.schema';
 
-export const FIREBALL: ProjectileStats = { radius: 10, damage: 10, range: 400, speed: 300, visualId: 'red_ball' };
-export const SLASH: ProjectileStats = { radius: 10, damage: 15, range: 60, speed: 400, visualId: 'slash_effect' };
-export const ICE_BALL: ProjectileStats = { radius: 10, damage: 6, range: 350, speed: 250, visualId: 'blue_ball' };
+export const FIREBALL: ProjectileStats = { radius: 10, damage: 100, range: 400, speed: 300, visualId: 'red_ball' };
+export const SLASH: ProjectileStats = { radius: 20, damage: 15, range: 60, speed: 400, visualId: 'slash_effect' };
+export const ICE_BALL: ProjectileStats = { radius: 15, damage: 6, range: 350, speed: 250, visualId: 'blue_ball' };
 export const AXE_SLASH: ProjectileStats = { radius: 10, damage: 30, range: 50, speed: 300, visualId: 'axe_slash' };
 export const POISON_DART: ProjectileStats = { radius: 6, damage: 12, range: 450, speed: 500, visualId: 'green_dart' };
 export const LIGHTNING: ProjectileStats = { radius: 12, damage: 22, range: 380, speed: 600, visualId: 'lightning_spark' };
 
-export const STAFF: WeaponStats = { cooldownMs: 2000, manaCost: 10, projectile: FIREBALL, visualId: 'fire_staff' };
+export const STAFF: WeaponStats = { cooldownMs: 200, manaCost: 10, projectile: FIREBALL, visualId: 'fire_staff' };
 export const SWORD: WeaponStats = { cooldownMs: 800, manaCost: 0, projectile: SLASH, visualId: 'iron_sword' };
 export const ICE_STAFF: WeaponStats = { cooldownMs: 1000, manaCost: 5, projectile: ICE_BALL, visualId: 'ice_staff' };
 export const AXE: WeaponStats = { cooldownMs: 1500, manaCost: 0, projectile: AXE_SLASH, visualId: 'battle_axe' };

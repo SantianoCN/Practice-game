@@ -3,9 +3,11 @@ import { SocketClient } from './infrastructure/network/SocketClient';
 import { KeyboardAdapter } from './infrastructure/input/KeyboardAdapter';
 import { CanvasRendererAdapter } from './infrastructure/render/CanvasRendererAdapter';
 import { SyncStateUseCase } from './application/use-cases/SyncStateUseCase';
+import { SoundRender } from './infrastructure/render/SoundRender';
+import { SOUNDS } from './../assets/index'
 import { BaseResponseDTO, PlayerClassPresetDTO, PlayerProgressDTO } from '@game/shared';
 
-const SERVER_URL = 'http://217.114.14.204:3000';
+const SERVER_URL = 'http://localhost:3000';
 
 class App {
     private ui = new DOMManager();
@@ -13,6 +15,7 @@ class App {
     private input = new KeyboardAdapter();
     private renderer: CanvasRendererAdapter;
     private stateSync = new SyncStateUseCase();
+    private audio = new SoundRender()
 
     private myId = '';
     private gameLoopId?: number;
@@ -30,6 +33,7 @@ class App {
 
         this.input.onHelpPressed(() => this.renderer.toggleHelp());
 
+        this.audio.loadSound('envMusic', SOUNDS.env.envMusic)
         this.bindUiToNetwork();
         this.bindNetworkToApp();
         this.init();
@@ -298,6 +302,8 @@ class App {
 
         this.input.startListening();
         this.input.onInputChanged(action => this.network.sendPlayerAction(action));
+        this.audio.playSound('envMusic');
+        console.log('Start envMusic')
 
         this.lastTime = performance.now();
         this.tick();
@@ -310,6 +316,8 @@ class App {
         if (this.gameLoopId) cancelAnimationFrame(this.gameLoopId);
         this.stateSync.clear();
         this.renderer.reset();
+        this.audio.stopSound('envMusic')
+        console.log('Stop envMusic')
 
         this.network.requestProfile()
             .then(profile => {

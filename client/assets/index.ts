@@ -33,11 +33,20 @@ import caveTile4 from './environment/caveTile4.png';
 
 import F1 from './F1.png'
 
+import swordSlash from './weapon/sword-slash.png'
+
 export const ASSETS = {
     hero: { warriorSword, warriorAxe, volhvFire, volhvIce, volhvLightning, volhvPrev, warriorPrev, hunter, hunterPrev },
     enemy: { lizardAxe, lizardMage },
     loot: { coin, potionRed, potionBlue, potionGreen, potionYellow },
     weapon: { battleAxe, ironSword, fireStaff, iceStaff, lightningStaff, hunterBow },
     env: { chest, chestOpen, stone, caveTile1, caveTile2, caveTile3, caveTile4},
-    buble: { F1 }
+    buble: { F1 },
+    particle: { swordSlash }
 };
+
+import envMusic from './sound/env.mp3' 
+
+export const SOUNDS = {
+    env: {envMusic}
+}
