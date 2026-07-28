@@ -70,9 +70,9 @@ export class EnemyAIService {
     ]);
     private static pendingUpdates: Map<string, boolean> = new Map();
 
-    private static MCTS_TIMEOUT_INTERVAL: number = 1000;    // могут быть проблемы с малыми значениями
+    private static MCTS_TIMEOUT_INTERVAL: number = 2500;    // могут быть проблемы с малыми значениями
     private static MCTS_C_VALUE: number = 0.4;
-    private static MCTS_MAX_ITERATIONS: number = 100;
+    private static MCTS_MAX_ITERATIONS: number = 50;
 
     private static enemies: Map<string, EnemyAction> = new Map();
     private static mctsInstance: any = new mctsModule.MCTS(
@@ -114,6 +114,9 @@ export class EnemyAIService {
                 const gameState = EnemyAIService.mapState(enemy, players, room.obstacles);
                 EnemyAIService.pendingUpdates.set(enemy.id, true);
 
+                // action = EnemyAIService.updateAction(enemy, gameState, currentTime);
+                //     ec.isCompleted = false;
+                //     ec.isTimeout = false;
                 setImmediate(() => {
                     action = EnemyAIService.updateAction(enemy, gameState, currentTime);
                     ec.isCompleted = false;
@@ -121,7 +124,20 @@ export class EnemyAIService {
                     EnemyAIService.pendingUpdates.set(enemy.id, false);
                 });
             }
-            EnemyAIService.executeAction(enemy, players, action, idGenerate);
+            EnemyAIService.executeAction(
+                enemy, 
+                players, 
+                action, 
+                idGenerate, 
+                room, 
+                roomWidth, 
+                roomHeight, 
+                currentTime
+            );
+
+            enemy.updateEntity(deltaTime);
+            CollisionEngine.resolveWallBounds(enemy, roomWidth, roomHeight, room, false);
+            CollisionEngine.resolveObstacles(enemy, room.getObstacleGrid());
         }
     }
 
@@ -206,13 +222,17 @@ export class EnemyAIService {
         enemy: Enemy,
         players: Player[],
         action: ActionType,
-        gen: GenerateIdFn
+        gen: GenerateIdFn,
+        room: Room,
+        roomWidth: number,
+        roomHeight: number,
+        currentTime: number
     ): void {
         const ac = EnemyAIService.actions.get(action);
         if (!ac) return;
 
         const target = EnemyAIService.find_closest_target(enemy, players);
-        const isComplete = ac(enemy, target, gen);
+        const isComplete = ac(enemy, target, gen, room, roomWidth, roomHeight, currentTime);
 
         const ec = EnemyAIService.enemies.get(enemy.id);
         if (!ec) return;
