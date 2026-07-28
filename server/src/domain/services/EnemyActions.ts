@@ -49,7 +49,7 @@ function tryFire(
         enemy.x, enemy.y, Infinity, dx / dist, dy / dist, currentTime
     );
     if (bullet) { room.bullets.push(bullet); return true; }
-    return false; // на кулдауне — попробуем ещё раз в следующий тик, действие не завершено
+    return false; 
 }
 
 export const engage: ActionFn = (enemy, target, generateId, room, roomWidth, roomHeight, currentTime) => {
@@ -118,13 +118,14 @@ export const flank: ActionFn = (enemy, target, generateId, room, roomWidth, room
 export const retreat: ActionFn = (enemy, target, generateId, room, roomWidth, roomHeight, currentTime) => {
     const dx = enemy.x - target.x, dy = enemy.y - target.y;
     const dist = Math.hypot(dx, dy) || 1;
+    const attackRange = getAttackRange(enemy);
 
-    let awayX = enemy.x + (dx / dist) * getAttackRange(enemy) * 1.5;
-    let awayY = enemy.y + (dy / dist) * getAttackRange(enemy) * 1.5;
-    if (getAttackRange(enemy) > 80) {
-        awayX = enemy.x + (dx / dist) * getAttackRange(enemy);
-        awayY = enemy.y + (dy / dist) * getAttackRange(enemy);
-    } 
+    let awayX = enemy.x + (dx / dist) * attackRange * 1.5;
+    let awayY = enemy.y + (dy / dist) * attackRange * 1.5;
+    if (attackRange > 80) {
+        awayX = enemy.x + (dx / dist) * attackRange;
+        awayY = enemy.y + (dy / dist) * attackRange;
+    }
 
     const distToGoal = Math.hypot(awayX - enemy.x, awayY - enemy.y);
     if (distToGoal < 20) {
@@ -135,15 +136,6 @@ export const retreat: ActionFn = (enemy, target, generateId, room, roomWidth, ro
 };
 
 export const wait: ActionFn = (enemy, target, generateId, room, roomWidth, roomHeight, currentTime) => {
-    return engage(
-            enemy, 
-            target,
-            generateId, 
-            room, 
-            roomWidth, 
-            roomHeight, 
-            currentTime
-        ); 
     enemy.vx = 0; enemy.vy = 0;
     const attackRange = getAttackRange(enemy);
     const dist = Math.hypot(target.x - enemy.x, target.y - enemy.y);

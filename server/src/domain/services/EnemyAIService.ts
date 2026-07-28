@@ -72,7 +72,8 @@ export class EnemyAIService {
 
     private static MCTS_TIMEOUT_INTERVAL: number = 3000;    // могут быть проблемы с малыми значениями
     private static MCTS_C_VALUE: number = 1.4;
-    private static MCTS_MAX_ITERATIONS: number = 40;
+    private static MCTS_MAX_ITERATIONS: number = 20;
+    private static MCTS_USAGE_INTERVAL: number = 400;
 
     private static enemies: Map<string, EnemyAction> = new Map();
     private static mctsInstance: any = new mctsModule.MCTS(
@@ -108,30 +109,34 @@ export class EnemyAIService {
             if (!ec) continue;
 
             let action = ec.action;
-            if ((ec.isCompleted || ec.isTimeout) 
+            if ((ec.isCompleted || ec.isTimeout)
                 && !EnemyAIService.pendingUpdates.get(enemy.id)
             ) {
                 const gameState = EnemyAIService.mapState(enemy, players, room.obstacles);
                 EnemyAIService.pendingUpdates.set(enemy.id, true);
 
-                // action = EnemyAIService.updateAction(enemy, gameState, currentTime);
-                //     ec.isCompleted = false;
-                //     ec.isTimeout = false;
-                setImmediate(() => {
-                    action = EnemyAIService.updateAction(enemy, gameState, currentTime);
+                if (currentTime - ec.startedAt > this.MCTS_USAGE_INTERVAL) {
+                    setImmediate(() => {
+                        action = EnemyAIService.updateAction(enemy, gameState, currentTime);
+                        ec.action = action;
+                        ec.isCompleted = false;
+                        ec.isTimeout = false;
+                        EnemyAIService.pendingUpdates.set(enemy.id, false);
+                    });
+                } else {
                     ec.isCompleted = false;
                     ec.isTimeout = false;
                     EnemyAIService.pendingUpdates.set(enemy.id, false);
-                });
+                }
             }
             EnemyAIService.executeAction(
-                enemy, 
-                players, 
-                action, 
-                idGenerate, 
-                room, 
-                roomWidth, 
-                roomHeight, 
+                enemy,
+                players,
+                action,
+                idGenerate,
+                room,
+                roomWidth,
+                roomHeight,
                 currentTime
             );
 
@@ -204,7 +209,7 @@ export class EnemyAIService {
         state: GameState,
         currentTime: number
     ): ActionType {
-        //const result = { actionName: 'Kite'};
+        //const result = { actionName: 'Engage'};
         const result = EnemyAIService.mctsInstance.findBestAction(state);
         console.log(result.actionName);
         const ec = EnemyAIService.enemies.get(enemy.id);

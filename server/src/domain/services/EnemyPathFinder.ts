@@ -135,7 +135,7 @@ export default class EnemyPathFinder {
         if (this.hasClearPathToTarget(fromX, fromY, toX, toY, obstacles, roomWidth, roomHeight, radius)) {
             return [{ x: toX, y: toY }];
         }
-
+        
         const cols = Math.ceil(roomWidth / cellSize);
         const rows = Math.ceil(roomHeight / cellSize);
         const sx = Math.floor(fromX / cellSize), sy = Math.floor(fromY / cellSize);
@@ -146,7 +146,7 @@ export default class EnemyPathFinder {
             if (Math.abs(cx - gx) <= 1 && Math.abs(cy - gy) <= 1) {
                 const px = cx * cellSize + cellSize / 2;
                 const py = cy * cellSize + cellSize / 2;
-                return this.isWalkable(px, py, obstacles, roomWidth, roomHeight, 0);
+                return this.isWalkable(px, py, obstacles, roomWidth, roomHeight, radius);
             }
             return this.isWalkable(cx * cellSize + cellSize / 2, cy * cellSize + cellSize / 2, obstacles, roomWidth, roomHeight, radius);
         }
