@@ -58,7 +58,8 @@ export abstract class LivingEntity extends MoveableEntity {
     public isInvulnerable: boolean = false;
     protected invulnTimer: number = 0;
     private static readonly INVULN_DURATION = 0.5;
-    public abstract readonly entityType: EntityType; 
+    public abstract readonly entityType: EntityType;
+    public isAttacking: boolean = false;
 
     constructor(
         id: string, x: number, y: number, width: number, height: number, speed: number, visualId: string,

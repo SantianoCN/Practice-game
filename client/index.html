@@ -109,6 +109,12 @@
             <button id="portalSaveBtn" class="button button-alt" style="margin-bottom: 15px;">СОХРАНИТЬ И ВЫЙТИ</button>
             <button id="portalCloseBtn" class="button button-danger">ОСТАТЬСЯ В ПОХОДЕ</button>
         </div>
+        <div id="gameOverModal" class="card hidden" style="position: absolute; z-index: 100; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 380px;">
+            <h2 style="color: #a32c24;">ОТРЯД ПАЛ</h2>
+            <p style="margin-bottom: 25px; line-height: 1.6; font-size: 8px; color: #ff9999;">Все русы пали в бою. Ящеры одолели дружину...</p>
+            <button id="gameOverCompleteBtn" class="button button-success hidden" style="margin-bottom: 15px; background-color: #b8860b;">ЗАВЕРШИТЬ ПОХОД</button>
+            <button id="gameOverLeaveBtn" class="button button-danger">ВЫЙТИ В ИЗБУ</button>
+        </div>
         <canvas id="gameCanvas" width="800" height="600"></canvas>
         <div id="gameHUD">
             <span class="gold-container">

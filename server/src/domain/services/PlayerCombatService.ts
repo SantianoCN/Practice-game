@@ -58,6 +58,7 @@ export class PlayerCombatService {
 
         if (bullet) {
             player.mana -= weapon.config.manaCost;
+            player.isAttacking = true;
             return bullet;
         }
 

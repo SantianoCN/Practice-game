@@ -179,4 +179,8 @@ export class SocketClient implements INetworkClient {
     public onHostMigrated(cb: (data: { newHostAccountId: string }) => void): void {
         this.socket.on(ServerEvent.HOST_MIGRATED, cb);
     }
+
+    public onGameOver(cb: () => void): void {
+        this.socket.on(ServerEvent.GAME_OVER, cb);
+    }
 }

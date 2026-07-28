@@ -8,7 +8,8 @@ export const BaseEntityStateSchema = z.object({
     y: z.number(),
     width: z.number(),
     height: z.number(),
-    visualId: z.string()
+    visualId: z.string(),
+    isAttacking: z.boolean()
 });
 export type BaseEntityState = z.infer<typeof BaseEntityStateSchema>;
 

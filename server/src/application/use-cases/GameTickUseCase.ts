@@ -27,6 +27,18 @@ export class GameTickUseCase {
         const sessions = this.repo.getAll();
 
         for (const session of sessions) {
+            if (!session.isGameOver) {
+                const onlinePlayers = Array.from(session.players.values()).filter(p => p.isOnline);
+                const allDead = onlinePlayers.length > 0 && onlinePlayers.every(p => p.isDead());
+
+                if (allDead) {
+                    session.isGameOver = true;
+                    for (const player of onlinePlayers) {
+                        this.broadcaster.broadcastGameOver(player.id);
+                    }
+                }
+            }
+
             for (const player of session.players.values()) {
                 if (!player.isOnline) continue;
 
@@ -114,6 +126,10 @@ export class GameTickUseCase {
                 const deadPlayers = playersInRoom.filter(p => p.isDead());
 
                 if (!session.isLobby) {
+                    for (const enemy of room.enemies) {
+                        enemy.isAttacking = false;
+                    }
+
                     EnemyAIService.updateEnemies(
                         room.enemies, 
                         livingPlayers, 
@@ -128,6 +144,7 @@ export class GameTickUseCase {
 
                 for (const player of livingPlayers) {
                     player.canInteracting = false;
+                    player.isAttacking = false;
 
                     CollisionEngine.resolveWallBounds(player, session.roomWidth, session.roomHeight, room, true);
                     CollisionEngine.resolveObstacles(player, room.getObstacleGrid());
@@ -237,7 +254,8 @@ export class GameTickUseCase {
                 inventory: player.inventory.map(weapon => weapon.config),
                 currentWeaponIndex: player.currentWeaponIndex,
                 activeWeaponVisualId: player.activeWeaponVisualId,
-                canInteracting: player.canInteracting
+                canInteracting: player.canInteracting,
+                isAttacking: player.isAttacking
             })),
             enemies: room.enemies,
             bullets: room.bullets

@@ -25,7 +25,8 @@ export const ServerEvent = {
     SESSION_TERMINATED: 'server:session-terminated',
     PORTAL_INTERACT: 'server:portal-interact',
     ROOM_INIT: 'server:room-init',
-    HOST_MIGRATED: 'server:host-migrated'
+    HOST_MIGRATED: 'server:host-migrated',
+    GAME_OVER: 'server:game-over'
 } as const;
 
 export type ClientEventType = typeof ClientEvent[keyof typeof ClientEvent];

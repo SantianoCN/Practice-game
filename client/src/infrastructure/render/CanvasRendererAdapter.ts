@@ -169,7 +169,7 @@ export class CanvasRendererAdapter {
             else if (e.type === 'bullet') bullets.set(id, e);
         });
 
-        this.drawScreen(players, enemies, bullets, room);
+        this.drawScreen(players, enemies, bullets, room, myId);
 
         if (!room) return;
         this.updateVisitedRooms(room);
@@ -442,7 +442,8 @@ export class CanvasRendererAdapter {
         playersMap: Map<string, VisualEntity>,
         enemiesMap: Map<string, VisualEntity>,
         bulletsMap: Map<string, VisualEntity>,
-        room: RoomState | null
+        room: RoomState | null,
+        myId: string
     ): void {
         if (room && this.currentRoomKey) {
             this.context.drawImage(this.offscreenCanvas, 0, 0);
@@ -455,7 +456,7 @@ export class CanvasRendererAdapter {
         if (room?.chests) this.drawChests(room.chests);
         if (room?.droppedItems) this.drawDroppedItems(room.droppedItems);
         this.drawBullets(bulletsMap);
-        this.drawPlayers(playersMap);
+        this.drawPlayers(playersMap, myId);
         this.drawEnemies(enemiesMap);
         if (room?.portal && room.portal.isActive) {
             this.drawPortal(room?.portal);
@@ -661,14 +662,18 @@ export class CanvasRendererAdapter {
         this.context.restore()
     }
 
-    private drawPlayers(playersMap: Map<string, VisualEntity>): void {
+    private drawPlayers(playersMap: Map<string, VisualEntity>, myId: string): void {
         playersMap.forEach(player => {
             if (player.name) {
                 this.context.save();
                 this.context.font = '8px "Press Start 2P", sans-serif';
                 this.context.textAlign = 'center';
                 this.context.textBaseline = 'middle';
-                this.context.fillStyle = '#ffcc00';
+                if (player.id === myId) {
+                    this.context.fillStyle = '#ff0000';
+                } else {
+                    this.context.fillStyle = '#ffcc00';
+                }
                 this.context.fillText(player.name, player.renderX, player.renderY - 25);
                 this.context.restore();
             }

@@ -267,6 +267,16 @@ class App {
             this.ui.showToast(data.message, 'info');
             this.stopGame();
         });
+
+        this.network.onGameOver(() => {
+            this.ui.showGameOverModal(true, this.isHost);
+            this.ui.updateHostStatus(this.isHost);
+        });
+
+        this.network.onSessionTerminated(data => {
+            this.ui.showToast(data.message, 'info');
+            this.stopGame();
+        });
     }
 
     private async connectToServer(token: string): Promise<void> {
@@ -313,6 +323,7 @@ class App {
         localStorage.removeItem('game_session_id');
         this.input.stopListening();
         this.ui.showPortalModal(false);
+        this.ui.showGameOverModal(false);
         if (this.gameLoopId) cancelAnimationFrame(this.gameLoopId);
         this.stateSync.clear();
         this.renderer.reset();

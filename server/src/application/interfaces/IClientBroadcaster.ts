@@ -5,4 +5,5 @@ export interface IClientBroadcaster {
     broadcastRoomInit(usersId: string, roomInit: RoomInitDTO): void; 
     broadcastError(userId: string, message: string): void;
     broadcastPortalInteract(userId: string): void;
+    broadcastGameOver(userId: string): void;
 }

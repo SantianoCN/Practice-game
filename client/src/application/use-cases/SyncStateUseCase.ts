@@ -27,6 +27,9 @@ export class SyncStateUseCase {
             );
 
             this.updateFacingAndAnimation(entity, p.x, p.y, p.hp);
+            if (p.isAttacking) {
+                entity.triggerAttack();
+            }
 
             entity.targetX = p.x;
             entity.targetY = p.y;
@@ -49,6 +52,9 @@ export class SyncStateUseCase {
             );
 
             this.updateFacingAndAnimation(entity, e.x, e.y, e.hp);
+            if (e.isAttacking) {
+                entity.triggerAttack();
+            }
 
             entity.targetX = e.x;
             entity.targetY = e.y;

@@ -251,6 +251,7 @@ export class EnemyAIService {
                     );
 
                     if (bullet) {
+                        enemy.isAttacking = true;
                         room.bullets.push(bullet);
                     }
                 }

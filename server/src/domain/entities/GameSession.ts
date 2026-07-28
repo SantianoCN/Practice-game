@@ -10,6 +10,7 @@ export class GameSession {
     public isLobby: boolean = false;
     public hostAccountId: string = '';
     public allowedAccountIds: Set<string> = new Set();
+    public isGameOver: boolean = false;
 
     constructor(
         public sessionId: string,

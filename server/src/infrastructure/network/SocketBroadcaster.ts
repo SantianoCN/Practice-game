@@ -20,4 +20,8 @@ export class SocketBroadcaster implements IClientBroadcaster {
     public broadcastPortalInteract(userId: string): void {
         this.io.to(userId).emit(ServerEvent.PORTAL_INTERACT);
     }
+
+    public broadcastGameOver(userId: string): void {
+        this.io.to(userId).emit(ServerEvent.GAME_OVER);
+    }
 }

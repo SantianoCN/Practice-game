@@ -34,11 +34,11 @@ export class TextureRenderer implements EntityRenderer {
             if (isDead) {
                 context.globalAlpha = 0.6;
                 startY = 0;
-            } else if (animation === 'move') {
-                startY = this.frameHeight;
             } else if (animation === 'attack') {
                 startY = this.frameHeight * 2;
-            }
+            } else if (animation === 'move') {
+                startY = this.frameHeight;
+            } 
 
             const currentFrame = isDead ? 0 : ((entity.currentFrame || 0) % 3);
             const startX = currentFrame * this.frameWidth;

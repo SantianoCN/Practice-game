@@ -149,6 +149,29 @@ export class DOMManager {
         document.getElementById('portalSaveBtn')?.addEventListener('click', () => {
             this.onPortalSaveAndExit?.();
         });
+
+        document.getElementById('gameOverCompleteBtn')?.addEventListener('click', () => {
+            this.onCompleteSession?.();
+        });
+
+        document.getElementById('gameOverLeaveBtn')?.addEventListener('click', () => {
+            this.onLeaveRoom?.();
+        });
+    }
+
+    public showGameOverModal(show: boolean, isHost: boolean = false): void {
+        const modal = document.getElementById('gameOverModal');
+        const hostCompleteBtn = document.getElementById('gameOverCompleteBtn');
+        if (!modal) return;
+
+        if (show) {
+            modal.classList.remove('hidden');
+            if (hostCompleteBtn) {
+                hostCompleteBtn.classList.toggle('hidden', !isHost);
+            }
+        } else {
+            modal.classList.add('hidden');
+        }
     }
 
     public updateHostStatus(isHost: boolean): void {
@@ -191,6 +214,7 @@ export class DOMManager {
     }
 
     public showGame(sessionId: string, isSingleplayer: boolean = false, isHost: boolean = false): void {
+        this.showGameOverModal(false);
         document.getElementById('auth-screen')!.classList.add('hidden');
         document.getElementById('lobby-screen')!.classList.add('hidden');
         document.getElementById('game-screen')!.classList.remove('hidden');

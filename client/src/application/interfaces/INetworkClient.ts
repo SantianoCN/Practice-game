@@ -35,4 +35,5 @@ export interface INetworkClient {
     sendNextFloor(): void;
     onPortalInteract(cb: () => void): void;
     onHostMigrated(cb: (data: { newHostAccountId: string }) => void): void;
+    onGameOver(cb: () => void): void;
 }
