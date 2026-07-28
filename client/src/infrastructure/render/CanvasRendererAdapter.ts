@@ -562,7 +562,7 @@ export class CanvasRendererAdapter {
     private drawDart(bullet: VisualEntity, color: string): void {
         const bx = Math.round(bullet.renderX);
         const by = Math.round(bullet.renderY);
-        const angle = this.getBulletAngle(bullet);
+        const angle = bullet.angle;
 
         this.context.save();
         this.context.translate(bx, by);
@@ -586,7 +586,7 @@ export class CanvasRendererAdapter {
     private drawLightning(bullet: VisualEntity, color: string): void {
         const bx = Math.round(bullet.renderX);
         const by = Math.round(bullet.renderY);
-        const angle = this.getBulletAngle(bullet);
+        const angle = bullet.angle;
         const radius = Math.round(bullet.width || 12);
 
         this.context.save();
@@ -628,31 +628,12 @@ export class CanvasRendererAdapter {
         this.context.restore();
     }
 
-    private getBulletAngle(bullet: VisualEntity): number {
-        const b = bullet as any;
-
-        const prevX = b.prevX ?? bullet.renderX;
-        const prevY = b.prevY ?? bullet.renderY;
-
-        const dx = bullet.renderX - prevX;
-        const dy = bullet.renderY - prevY;
-
-        if (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01) {
-            b.currentAngle = Math.atan2(dy, dx);
-        }
-
-        b.prevX = bullet.renderX;
-        b.prevY = bullet.renderY;
-
-        return b.currentAngle || 0;
-    }
-
     private drawAxeSlash(bullet: VisualEntity, color: string): void {
         const bx = Math.round(bullet.renderX);
         const by = Math.round(bullet.renderY);
         const radius = Math.round(bullet.width);
 
-        const angle = this.getBulletAngle(bullet);
+        const angle = bullet.angle;
 
         this.context.save();
         this.context.translate(bx, by);
@@ -681,8 +662,7 @@ export class CanvasRendererAdapter {
         const by = Math.round(bullet.renderY);
         const slashLength = Math.round(bullet.height || 45);
         const slashWidth = Math.round(bullet.width || 20);
-
-        const angle = this.getBulletAngle(bullet);
+        const angle = bullet.angle;
 
         this.context.save();
         this.context.translate(bx, by);

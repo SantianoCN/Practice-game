@@ -23,6 +23,42 @@ export class DOMManager {
     }
 
     private bindEvents(): void {
+        const authTabLogin = document.getElementById('authTabLogin');
+        const authTabRegister = document.getElementById('authTabRegister');
+        const loginBtn = document.getElementById('loginBtn');
+        const registerBtn = document.getElementById('registerBtn');
+
+        authTabLogin?.addEventListener('click', () => {
+            authTabLogin.classList.add('active');
+            authTabRegister?.classList.remove('active');
+            loginBtn?.classList.remove('hidden');
+            registerBtn?.classList.add('hidden');
+        });
+
+        authTabRegister?.addEventListener('click', () => {
+            authTabRegister.classList.add('active');
+            authTabLogin?.classList.remove('active');
+            registerBtn?.classList.remove('hidden');
+            loginBtn?.classList.add('hidden');
+        });
+
+        const lobbyTabs = document.querySelectorAll('.lobby-tab-btn');
+        lobbyTabs.forEach(tabBtn => {
+            tabBtn.addEventListener('click', () => {
+                lobbyTabs.forEach(b => b.classList.remove('active'));
+                tabBtn.classList.add('active');
+
+                const targetTabId = tabBtn.getAttribute('data-tab');
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.add('hidden');
+                });
+
+                if (targetTabId) {
+                    document.getElementById(targetTabId)?.classList.remove('hidden');
+                }
+            });
+        });
+
         document.getElementById('portalCloseBtn')?.addEventListener('click', () => {
             this.showPortalModal(false);
         });
@@ -33,13 +69,13 @@ export class DOMManager {
             }
         });
 
-        document.getElementById('loginBtn')?.addEventListener('click', () => {
+        loginBtn?.addEventListener('click', () => {
             const l = (document.getElementById('username') as HTMLInputElement).value;
             const p = (document.getElementById('password') as HTMLInputElement).value;
             this.onAuthReq?.('login', l, p);
         });
 
-        document.getElementById('registerBtn')?.addEventListener('click', () => {
+        registerBtn?.addEventListener('click', () => {
             const l = (document.getElementById('username') as HTMLInputElement).value;
             const p = (document.getElementById('password') as HTMLInputElement).value;
             this.onAuthReq?.('register', l, p);
@@ -313,13 +349,47 @@ export class DOMManager {
 
             const iconHtml = `<img src="${imgSrc}" alt="${w.name}" class="weapon-card-img" />`;
 
-            el.innerHTML = `
-                <div>${iconHtml}</div>
-                <div class="weapon-name">${w.name} ${!isUnlocked ? '(ЗАКРЫТО)' : ''}</div>
-                <div class="weapon-desc">${w.description || 'Базовое оружие'}</div>
-            `;
+            if (!isUnlocked) {
+                const price = SHOP_PRICES[w.key] || 150;
+                
+                const infoDiv = document.createElement('div');
+                infoDiv.innerHTML = `
+                    <div>${iconHtml}</div>
+                    <div class="weapon-name">${w.name} (ЗАКРЫТО)</div>
+                    <div class="weapon-desc">${w.description || 'Базовое оружие'}</div>
+                `;
+                el.appendChild(infoDiv);
 
-            el.onclick = () => {
+                const buyBtn = document.createElement('button');
+                buyBtn.type = 'button';
+                buyBtn.className = 'button button-success';
+                buyBtn.style.marginTop = '10px';
+                buyBtn.style.padding = '8px 10px';
+                buyBtn.innerText = `КУПИТЬ ЗА ${price} `;
+
+                const coinImg = document.createElement('img');
+                coinImg.className = 'coin-icon';
+                coinImg.src = ASSETS.loot.coin;
+                coinImg.alt = 'Монета';
+                buyBtn.appendChild(coinImg);
+
+                buyBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    this.onBuyItem?.(w.key);
+                };
+
+                el.appendChild(buyBtn);
+            } else {
+                el.innerHTML = `
+                    <div>${iconHtml}</div>
+                    <div class="weapon-name">${w.name}</div>
+                    <div class="weapon-desc">${w.description || 'Базовое оружие'}</div>
+                `;
+            }
+
+            el.onclick = (e) => {
+                if ((e.target as HTMLElement).closest('button')) return;
+
                 Array.from(wList.children).forEach(c => c.classList.remove('active'));
                 el.classList.add('active');
                 this.selectedWeapon = w.key;
@@ -344,7 +414,6 @@ export class DOMManager {
         container.innerHTML = '';
 
         const isClassUnlocked = this.progress ? this.progress.unlockedClasses.includes(this.selectedArch) : true;
-        const isWeaponUnlocked = this.progress ? this.progress.unlockedWeapons.includes(this.selectedWeapon) : true;
 
         if (!isClassUnlocked) {
             const price = SHOP_PRICES[this.selectedArch] || 300;
@@ -378,40 +447,6 @@ export class DOMManager {
             nameSpan.className = 'hero-name';
             nameSpan.id = 'heroPreviewName';
             nameSpan.innerText = `${preset.name} (КУПИТЬ)`;
-            container.appendChild(nameSpan);
-
-        } else if (!isWeaponUnlocked) {
-            const price = SHOP_PRICES[this.selectedWeapon] || 150;
-            const buyContainer = document.createElement('div');
-            buyContainer.className = 'buy-button-container';
-
-            const titleDiv = document.createElement('div');
-            titleDiv.className = 'buy-title';
-            titleDiv.innerText = 'ОРУЖИЕ ЕЩЕ ЗАПЕРТО!';
-
-            const buyBtn = document.createElement('button');
-            buyBtn.className = 'button button-success';
-            buyBtn.style.width = '240px';
-            buyBtn.innerText = `КУПИТЬ ЗА ${price} `;
-
-            const coinImg = document.createElement('img');
-            coinImg.className = 'coin-icon';
-            coinImg.src = ASSETS.loot.coin;
-            coinImg.alt = 'Монета';
-
-            buyBtn.appendChild(coinImg);
-            buyBtn.onclick = () => {
-                this.onBuyItem?.(this.selectedWeapon);
-            };
-
-            buyContainer.appendChild(titleDiv);
-            buyContainer.appendChild(buyBtn);
-            container.appendChild(buyContainer);
-
-            const nameSpan = document.createElement('span');
-            nameSpan.className = 'hero-name';
-            nameSpan.id = 'heroPreviewName';
-            nameSpan.innerText = `ОРУЖИЕ ЗАКРЫТО`;
             container.appendChild(nameSpan);
 
         } else {

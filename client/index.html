@@ -8,7 +8,10 @@
 </head>
 <body>
     <div id="auth-screen" class="card">
-        <h2>Вход в избу</h2>
+        <div class="auth-tabs">
+            <button type="button" id="authTabLogin" class="auth-tab-btn active">ВХОД</button>
+            <button type="button" id="authTabRegister" class="auth-tab-btn">РЕГИСТРАЦИЯ</button>
+        </div>
         <form id="loginForm" onsubmit="return false;">
             <div class="input-group">
                 <label for="username">Имя Руса (Логин)</label>
@@ -19,7 +22,7 @@
                 <input type="password" id="password" placeholder="Введите пароль" required>
             </div>
             <button type="button" id="loginBtn" class="button button-primary">Войти в игру</button>
-            <button type="button" id="registerBtn" class="button button-alt" style="margin-top: 10px;">Зарегистрироваться</button>
+            <button type="button" id="registerBtn" class="button button-primary hidden">Зарегистрироваться</button>
             <div id="errorText" class="error-message hidden">Неверный логин или пароль</div>
         </form>
     </div>
@@ -27,7 +30,7 @@
         <header class="lobby-header">
             <h1 class="logo"> РУСЫ ПРОТИВ ЯЩЕРОВ: Roguelike</h1>
             <div class="header-stats">
-                <button id="logoutBtn" class="button-logout" style="margin-bottom: 0;">ВЫЙТИ ИЗ ИЗБЫ</button>
+                <button id="logoutBtn" class="button-logout">ВЫЙТИ ИЗ ИЗБЫ</button>
                 <span class="gold-container">
                     <span>ЗОЛОТО: <span id="lobbyGold" class="highlight">0</span></span>
                     <img src="./assets/loot/coin.png" class="coin-icon" />
@@ -35,27 +38,39 @@
             </div>
         </header>
         <div class="lobby-grid">
-            <aside class="panel left-panel">
-                <h3 class="panel-title">ВЫБОР ГЕРОЯ</h3>
-                <div id="heroCardList" class="hero-card-list">
-                    <!-- Генерируется через TS -->
-                </div>
-                <h3 class="panel-title" style="margin-top: 25px;">СТАТИСТИКА</h3>
-                <div class="stats-panel">
-                    <p id="welcomeText" class="user-welcome">Загрузка имени...</p>
-                </div>
-            </aside>
             <main class="center-area">
-                <section class="armory-panel">
-                    <h3 class="panel-title">АРСЕНАЛ (СТАРТОВОЕ ОРУЖИЕ)</h3>
-                    <div id="weaponCardList" class="weapon-grid">
-                        <!-- Генерируется через TS -->
+                <nav class="lobby-tabs">
+                    <button type="button" class="lobby-tab-btn active" data-tab="tab-class">КЛАСС</button>
+                    <button type="button" class="lobby-tab-btn" data-tab="tab-weapon">ОРУЖИЕ</button>
+                    <button type="button" class="lobby-tab-btn" data-tab="tab-stats">СТАТИСТИКА</button>
+                </nav>
+                <div id="tab-class" class="tab-content active">
+                    <div class="tab-split">
+                        <aside class="panel hero-select-panel">
+                            <h3 class="panel-title">ВЫБОР ГЕРОЯ</h3>
+                            <div id="heroCardList" class="hero-card-list">
+                            </div>
+                        </aside>
+                        <div class="stage-scene">
+                            <div id="heroPreviewSprite" class="hero-sprite-container">
+                            </div>
+                        </div>
                     </div>
-                </section>
-                <div class="stage-scene">
-                    <div id="heroPreviewSprite" class="hero-sprite-container">
-                        <!-- Генерируется через TS -->
-                    </div>
+                </div>
+                <div id="tab-weapon" class="tab-content hidden">
+                    <section class="panel armory-panel">
+                        <h3 class="panel-title">АРСЕНАЛ (СТАРТОВОЕ ОРУЖИЕ)</h3>
+                        <div id="weaponCardList" class="weapon-grid">
+                        </div>
+                    </section>
+                </div>
+                <div id="tab-stats" class="tab-content hidden">
+                    <section class="panel stats-panel">
+                        <h3 class="panel-title">ПРОФИЛЬ РУСА</h3>
+                        <div class="stats-info">
+                            <p id="welcomeText" class="user-welcome">Загрузка имени...</p>
+                        </div>
+                    </section>
                 </div>
             </main>
             <aside class="panel right-panel">
@@ -63,7 +78,7 @@
                 <div class="section connection-section">
                     <div id="continueSection" class="hidden">
                         <label>ОТРЯД ЖДЕТ ВАС</label>
-                        <button id="restoreSaveBtn" class="button button-success" style="margin-top: 5px; margin-bottom: 15px; background-color: #b8860b; box-shadow: inset 4px 4px 0px #d4af37, inset -4px -4px 0px #5c3d24;">ПРОДОЛЖИТЬ ПОХОД</button>
+                        <button id="restoreSaveBtn" class="button button-success" style="margin-top: 5px; margin-bottom: 15px; background-color: #b8860b; box-shadow: inset 3px 3px 0px #d4af37, inset -3px -3px 0px #5c3d24;">ПРОДОЛЖИТЬ ПОХОД</button>
                         <div class="divider">ИЛИ НАЧАТЬ НОВЫЙ</div>
                     </div>
                     <label>ОДИНОЧНЫЙ ЗАБЕГ</label>
@@ -91,7 +106,7 @@
             <h2>ВРАТА ЭТАЖА</h2>
             <p style="margin-bottom: 25px; line-height: 1.6; font-size: 8px;">Воевода, куда поведешь дружину дальше?</p>
             <button id="portalNextBtn" class="button button-success" style="margin-bottom: 15px;">ИДТИ ДАЛЬШЕ</button>
-            <button id="portalSaveBtn" class="button button-alt">СОХРАНИТЬ И ВЫЙТИ</button>
+            <button id="portalSaveBtn" class="button button-alt" style="margin-bottom: 15px;">СОХРАНИТЬ И ВЫЙТИ</button>
             <button id="portalCloseBtn" class="button button-danger">ОСТАТЬСЯ В ПОХОДЕ</button>
         </div>
         <canvas id="gameCanvas" width="800" height="600"></canvas>
@@ -100,9 +115,7 @@
                 <span>ЗОЛОТО: <span id="hudGold" class="highlight">0</span></span>
                 <img src="./assets/loot/coin.png" class="coin-icon" />
             </span>
-            <div id="hudHotbar" class="hud-hotbar">
-                <!-- Ячейки будут динамически генерироваться через TS -->
-            </div>
+            <div id="hudHotbar" class="hud-hotbar"></div>
             <span>ОРУЖИЕ: <span id="hudWeapon">ЗАГРУЗКА...</span></span>
         </div>
     </div>

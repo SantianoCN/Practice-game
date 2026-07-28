@@ -14,6 +14,8 @@ export class Player extends LivingEntity {
     public readonly baseMaxHp: number;
     public readonly baseManaRegen: number;
     public activeEffects = new Map<string, ActiveEffect>();
+    public lastDirX: number = 1;
+    public lastDirY: number = 0;
 
     public ticksSinceLastInput: number = 0;
     private static readonly INPUT_TIMEOUT_TICKS = 8;
@@ -179,6 +181,11 @@ export class Player extends LivingEntity {
         if (this.heldKeys.down) this.vy += 1;
         if (this.heldKeys.left) this.vx -= 1;
         if (this.heldKeys.right) this.vx += 1;
+        if (this.vx !== 0 || this.vy !== 0) {
+            const length = Math.hypot(this.vx, this.vy);
+            this.lastDirX = this.vx / length;
+            this.lastDirY = this.vy / length;
+        }
     }
 
     public addWeaponToInventory(weapon: Weapon): Weapon | void {

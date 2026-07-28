@@ -247,4 +247,51 @@ export class CollisionEngine {
         }
         return null;
     }
+
+    public static hasLineOfSight(
+        x0: number, y0: number, 
+        x1: number, y1: number, 
+        obstacles: Obstacle[]
+    ): boolean {
+        if (obstacles.length === 0) return true;
+
+        for (const obs of obstacles) {
+            if (this.lineIntersectsAABB(x0, y0, x1, y1, obs.getBounds())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static lineIntersectsAABB(
+        x0: number, y0: number, 
+        x1: number, y1: number, 
+        box: BoundingBox
+    ): boolean {
+        let tmin = 0;
+        let tmax = 1;
+
+        const dx = x1 - x0;
+        const dy = y1 - y0;
+
+        if (Math.abs(dx) > 1e-8) {
+            const t1 = (box.left - x0) / dx;
+            const t2 = (box.right - x0) / dx;
+            tmin = Math.max(tmin, Math.min(t1, t2));
+            tmax = Math.min(tmax, Math.max(t1, t2));
+        } else if (x0 < box.left || x0 > box.right) {
+            return false;
+        }
+
+        if (Math.abs(dy) > 1e-8) {
+            const t1 = (box.top - y0) / dy;
+            const t2 = (box.bottom - y0) / dy;
+            tmin = Math.max(tmin, Math.min(t1, t2));
+            tmax = Math.min(tmax, Math.max(t1, t2));
+        } else if (y0 < box.top || y0 > box.bottom) {
+            return false;
+        }
+
+        return tmax >= tmin && tmax > 0 && tmin < 1;
+    }
 }

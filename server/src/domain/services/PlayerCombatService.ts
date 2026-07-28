@@ -1,6 +1,7 @@
 import { Player } from '../entities/Player';
 import { Room } from '../entities/Room';
 import { Bullet } from '../entities/Bullet';
+import { CollisionEngine } from '../physics/CollisionEngine';
 
 export class PlayerCombatService {
     public static handleAttack(
@@ -14,24 +15,31 @@ export class PlayerCombatService {
         const weapon = player.getActiveWeapon();
         if (!weapon.canFire(currentTime, player.mana)) return null;
 
-        let dirX = player.vx;
-        let dirY = player.vy;
+        let dirX = player.lastDirX;
+        let dirY = player.lastDirY;
         if (dirX === 0 && dirY === 0) {
             dirX = 1;
         }
+
         const aliveEnemies = room.enemies.filter(e => !e.isDead());
 
         if (aliveEnemies.length > 0) {
-            const target = aliveEnemies.reduce((prev, curr) => {
-                const dPrev = Math.hypot(prev.x - player.x, prev.y - player.y);
-                const dCurr = Math.hypot(curr.x - player.x, curr.y - player.y);
-                return dCurr < dPrev ? curr : prev;
-            });
+            const visibleEnemies = aliveEnemies.filter(enemy => 
+                CollisionEngine.hasLineOfSight(player.x, player.y, enemy.x, enemy.y, room.obstacles)
+            );
 
-            const dist = Math.hypot(target.x - player.x, target.y - player.y);
-            if (dist > 0) {
-                dirX = (target.x - player.x) / dist;
-                dirY = (target.y - player.y) / dist;
+            if (visibleEnemies.length > 0) {
+                const target = visibleEnemies.reduce((prev, curr) => {
+                    const dPrev = Math.hypot(prev.x - player.x, prev.y - player.y);
+                    const dCurr = Math.hypot(curr.x - player.x, curr.y - player.y);
+                    return dCurr < dPrev ? curr : prev;
+                });
+
+                const dist = Math.hypot(target.x - player.x, target.y - player.y);
+                if (dist > 0) {
+                    dirX = (target.x - player.x) / dist;
+                    dirY = (target.y - player.y) / dist;
+                }
             }
         }
 

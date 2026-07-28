@@ -4,8 +4,6 @@
 }
 
 img {
-    image-rendering: auto; 
-    image-rendering: smooth; 
     image-rendering: pixelated; 
 }
 
@@ -14,14 +12,11 @@ img {
 }
 
 body {
-    background-color: #21130b;
+    background-color: #1a0d07;
     background-image: 
-        linear-gradient(90deg, #1b0e07 2px, transparent 2px),
-        linear-gradient(#1b0e07 2px, transparent 2px),
-        linear-gradient(90deg, #120904 2px, transparent 2px),
-        linear-gradient(#120904 2px, transparent 2px);
+        linear-gradient(90deg, #150a04 2px, transparent 2px),
+        linear-gradient(#150a04 2px, transparent 2px);
     background-size: 16px 24px;
-    background-position: 0 0, 0 0, 8px 12px, 8px 12px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -34,79 +29,78 @@ body {
     image-rendering: pixelated;
 }
 
-.list {
-    width: 100%; 
-    padding: 12px; 
-    background-color: #1a0f0a; 
-    color: #f3e5ab; 
-    border: 4px solid #1c0e07; 
-    border-radius: 0px !important; 
-    font-family: 'Press Start 2P', monospace;
-    font-size: 11px;
-    margin-bottom: 10px;
-}
-
-.description {
-    font-size: 9px;
-    color: #bdc3c7; 
-    text-align: left; 
-    line-height: 1.5;
-}
-
 .card {
     background-color: #2b1910;
-    padding: 40px;
-    border: 6px solid #1c0e07;
-    border-radius: 0px !important;
+    padding: 30px;
+    border: 3px solid #8b5a2b;
     box-shadow: 
-        inset 4px 4px 0px #4d301c,    
-        inset -4px -4px 0px #150a04,  
-        0px 10px 0px rgba(0,0,0,0.5); 
+        inset 2px 2px 0px #4d301c,    
+        inset -2px -2px 0px #120904,  
+        0px 8px 16px rgba(0,0,0,0.6); 
     width: 380px;
     text-align: center;
+}
+
+.auth-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 25px;
+    border-bottom: 3px solid #1c0e07;
+    padding-bottom: 8px;
+}
+
+.auth-tab-btn {
+    flex: 1;
+    padding: 10px;
+    background-color: #170d07;
+    border: 2px solid #3c2415;
+    color: #bdc3c7;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    cursor: pointer;
+}
+
+.auth-tab-btn.active {
+    background-color: #311c0f;
+    border-color: #d4af37;
+    color: #d4af37;
 }
 
 h2 {
     margin-bottom: 25px;
     color: #d4af37;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 14px;
+    font-size: 13px;
     text-transform: uppercase;
-    letter-spacing: -1px;
-    text-shadow: 3px 3px 0px #1c0e07;
+    text-shadow: 2px 2px 0px #1c0e07;
 }
 
 .user-welcome {
     font-size: 10px;
-    font-family: 'Press Start 2P', monospace;
-    color: #b8860b;
+    color: #d4af37;
     margin-bottom: 10px;
 }
 
 .input-group {
-    margin-bottom: 20px;
+    margin-bottom: 18px;
     text-align: left;
 }
 
 label {
     display: block;
     margin-bottom: 8px;
-    font-size: 10px;
-    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
     color: #bdc3c7;
-    font-weight: bold;
 }
 
 input {
     width: 100%;
-    padding: 12px;
-    border: 4px solid #1c0e07;
-    border-radius: 0px !important;
+    padding: 10px;
+    border: 3px solid #1c0e07;
     background-color: #120904;
     color: #fff;
     font-family: 'Press Start 2P', monospace;
-    font-size: 11px;
-    box-shadow: inset 3px 3px 0px #000;
+    font-size: 10px;
+    box-shadow: inset 2px 2px 0px #000;
 }
 
 input:focus {
@@ -121,17 +115,14 @@ input.text-center {
 
 .button {
     width: 100%;
-    padding: 14px;
+    padding: 12px;
     color: #f3e5ab;
-    border: 4px solid #1c0e07;
-    border-radius: 0px !important;
+    border: 3px solid #1c0e07;
     font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
+    font-size: 9px;
     cursor: pointer;
     font-weight: bold;
     text-transform: uppercase;
-    transition: none;
-    image-rendering: pixelated;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -139,21 +130,15 @@ input.text-center {
 }
 
 .coin-icon {
-    width: 24px;
-    height: 24px;
-    display: inline-block;
-    image-rendering: pixelated;
+    width: 20px;
+    height: 20px;
     object-fit: contain;
-    box-sizing: border-box;
-    position: relative;
-    top: -1px;
 }
 
 .gold-container {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    vertical-align: middle;
 }
 
 .button:active {
@@ -162,63 +147,27 @@ input.text-center {
 
 .button-primary {
     background-color: #a04822;
-    box-shadow: 
-        inset 4px 4px 0px #cf6e3e, 
-        inset -4px -4px 0px #60250d;
+    box-shadow: inset 3px 3px 0px #cf6e3e, inset -3px -3px 0px #60250d;
 }
-.button-primary:hover {
-    background-color: #cf6e3e;
-}
-.button-primary:active {
-    box-shadow: 
-        inset -4px -4px 0px #cf6e3e, 
-        inset 4px 4px 0px #60250d;
-}
+.button-primary:hover { background-color: #cf6e3e; }
 
 .button-success {
     background-color: #2e4c1f;
-    box-shadow: 
-        inset 4px 4px 0px #4d7a39, 
-        inset -4px -4px 0px #182810;
+    box-shadow: inset 3px 3px 0px #4d7a39, inset -3px -3px 0px #182810;
 }
-.button-success:hover {
-    background-color: #4d7a39;
-}
-.button-success:active {
-    box-shadow: 
-        inset -4px -4px 0px #4d7a39, 
-        inset 4px 4px 0px #182810;
-}
+.button-success:hover { background-color: #4d7a39; }
 
 .button-alt {
     background-color: #1a3c54;
-    box-shadow: 
-        inset 4px 4px 0px #2a6187, 
-        inset -4px -4px 0px #0b1d2b;
+    box-shadow: inset 3px 3px 0px #2a6187, inset -3px -3px 0px #0b1d2b;
 }
-.button-alt:hover {
-    background-color: #2a6187;
-}
-.button-alt:active {
-    box-shadow: 
-        inset -4px -4px 0px #2a6187, 
-        inset 4px 4px 0px #0b1d2b;
-}
+.button-alt:hover { background-color: #2a6187; }
 
 .button-danger {
     background-color: #701610;
-    box-shadow: 
-        inset 4px 4px 0px #a32c24, 
-        inset -4px -4px 0px #380805;
+    box-shadow: inset 3px 3px 0px #a32c24, inset -3px -3px 0px #380805;
 }
-.button-danger:hover {
-    background-color: #a32c24;
-}
-.button-alt:active {
-    box-shadow: 
-        inset -4px -4px 0px #a32c24, 
-        inset 4px 4px 0px #380805;
-}
+.button-danger:hover { background-color: #a32c24; }
 
 .button-logout {
     background: none;
@@ -227,48 +176,19 @@ input.text-center {
     text-decoration: underline;
     cursor: pointer;
     font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
-    margin-bottom: 25px;
-    font-weight: bold;
-    transition: color 0.1s;
-}
-
-.button-logout:hover {
-    color: #cf6e3e;
+    font-size: 9px;
 }
 
 .copy-btn {
     width: auto !important;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0;
     padding: 6px 10px !important;
     font-size: 8px !important;
-    font-family: 'Press Start 2P', monospace;
-    vertical-align: middle;
-    line-height: 1;
-}
-
-.section {
-    margin-bottom: 25px;
-    padding-bottom: 20px;
-    border-bottom: 4px solid #1c0e07;
-}
-
-.section:last-of-type {
-    border-bottom: none;
-    margin-bottom: 0;
-    padding-bottom: 0;
 }
 
 .error-message {
     color: #a32c24;
     margin-top: 15px;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
-    font-weight: bold;
-    text-shadow: 1px 1px 0px #000;
+    font-size: 9px;
 }
 
 #topBar {
@@ -277,69 +197,50 @@ input.text-center {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
-    color: #f3e5ab;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
 }
 
 #sessionDisplay {
-    font-weight: bold;
     color: #d4af37;
 }
 
 #gameCanvas {
     background-color: #3c2415;
-    border: 8px solid #1c0e07;
-    box-shadow: 0 15px 30px rgba(0,0,0,0.7);
-    image-rendering: pixelated;
+    border: 4px solid #1c0e07;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.8);
 }
 
 .lobby-container {
     width: 95vw;
     height: 90vh;
-    max-width: 1200px;
+    max-width: 1100px;
     display: flex;
     flex-direction: column;
-    background-color: #170d07;
-    border: 6px solid #b8860b;
+    background-color: #1a0f0a;
+    border: 3px solid #8b5a2b;
     box-shadow: 
-        0 0 0 4px #1c0e07,
-        inset 0 0 20px rgba(0,0,0,0.8);
+        0 0 0 2px #120904,
+        inset 0 0 15px rgba(0,0,0,0.8);
     padding: 20px;
-    border-radius: 0px !important;
 }
 
 .lobby-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 4px solid #b8860b;
-    padding-bottom: 15px;
-    margin-bottom: 20px;
+    border-bottom: 2px solid #5c3d24;
+    padding-bottom: 12px;
+    margin-bottom: 15px;
 }
 
 .logo {
-    font-family: 'Press Start 2P', monospace;
     color: #d4af37;
-    font-size: 14px;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    text-shadow: 
-        3px 3px 0px #1c0e07,
-        -1px -1px 0px #1c0e07,
-        1px -1px 0px #1c0e07,
-        -1px 1px 0px #1c0e07,
-        1px 1px 0px #1c0e07;
+    font-size: 13px;
+    text-shadow: 2px 2px 0px #000;
 }
 
 .header-stats {
     display: flex;
-    gap: 30px;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
-    font-weight: bold;
+    gap: 20px;
     align-items: center;
 }
 
@@ -349,202 +250,159 @@ input.text-center {
 
 .lobby-grid {
     display: grid;
-    grid-template-columns: 290px 1fr 280px;
-    gap: 20px;
+    grid-template-columns: 1fr 280px;
+    gap: 15px;
+    flex: 1;
+    min-height: 0;
+}
+
+.lobby-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.lobby-tab-btn {
+    padding: 10px 18px;
+    background-color: #120904;
+    border: 2px solid #3c2415;
+    color: #bdc3c7;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    cursor: pointer;
+    box-shadow: inset 2px 2px 0px #000;
+}
+
+.lobby-tab-btn.active {
+    background-color: #2b1910;
+    border-color: #8b5a2b;
+    color: #d4af37;
+    box-shadow: inset 2px 2px 0px #4d301c;
+}
+
+.tab-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.tab-content.hidden {
+    display: none !important;
+}
+
+.tab-split {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 15px;
     flex: 1;
     min-height: 0;
 }
 
 .panel {
     background-color: #21130a;
-    border: 4px solid #1c0e07;
+    border: 3px solid #3c2415;
     padding: 15px;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    border-radius: 0px !important;
 }
 
 .panel-title {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
+    font-size: 9px;
     color: #d4af37;
-    border-bottom: 4px solid #1c0e07;
+    border-bottom: 2px solid #3c2415;
     padding-bottom: 8px;
-    margin-bottom: 15px;
-    text-align: left;
-    letter-spacing: -1px;
-    text-shadow: 2px 2px 0px #000;
+    margin-bottom: 12px;
 }
 
 .hero-card-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
 .hero-card {
     display: flex;
     align-items: center;
-    gap: 15px;
-    background-color: #170d07;
-    border: 4px solid #3c2415;
-    padding: 10px;
+    gap: 10px;
+    background-color: #120904;
+    border: 2px solid #3c2415;
+    padding: 8px;
     cursor: pointer;
-    transition: none;
-    text-align: left;
-    border-radius: 0px !important;
-}
-
-.hero-card:hover {
-    border-color: #b8860b;
-    background-color: #21130a;
 }
 
 .hero-card.active {
-    border-color: #d4af37;
-    background-color: #311c0f;
-    box-shadow: inset 0 0 10px rgba(0,0,0,0.6);
-}
-
-.hero-card-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    border-color: #8b5a2b;
+    background-color: #2b1910;
 }
 
 .hero-card-name {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
-    font-weight: bold;
+    font-size: 8px;
     color: #f3e5ab;
 }
 
 .hero-card-desc {
-    font-size: 8px;
+    font-size: 7px;
     color: #bdc3c7;
-    margin-top: 5px;
-    line-height: 1.4;
-}
-
-.stats-panel {
-    background-color: #170d07;
-    padding: 12px;
-    font-size: 10px;
-    border: 3px dashed #3c2415;
-    text-align: left;
-    line-height: 1.8;
-}
-
-.center-area {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    min-height: 0;
+    margin-top: 4px;
+    line-height: 1.3;
 }
 
 .armory-panel {
-    background-color: #21130a;
-    border: 4px solid #1c0e07;
-    padding: 15px;
-    border-radius: 0px !important;
+    flex: 1;
 }
 
 .weapon-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 15px;
+    gap: 12px;
 }
 
 .weapon-card {
-    background-color: #170d07;
-    border: 4px solid #3c2415;
-    padding: 12px;
+    background-color: #120904;
+    border: 2px solid #3c2415;
+    padding: 10px;
     display: flex;
     flex-direction: column;
     align-items: center;
     cursor: pointer;
-    transition: none;
-    text-align: center;
-    border-radius: 0px !important;
-}
-
-.weapon-card:hover {
-    border-color: #b8860b;
-    background-color: #21130a;
 }
 
 .weapon-card.active {
-    border-color: #d4af37;
-    background-color: #311c0f;
-    box-shadow: inset 0 0 12px rgba(0,0,0,0.6);
+    border-color: #8b5a2b;
+    background-color: #2b1910;
 }
 
 .weapon-name {
-    font-family: 'Press Start 2P', monospace;
     font-size: 8px;
-    font-weight: bold;
     color: #f3e5ab;
-    margin-top: 8px;
-    margin-bottom: 4px;
+    margin-top: 6px;
 }
 
 .weapon-desc {
     font-size: 7px;
     color: #bdc3c7;
-    line-height: 1.4;
+    margin-top: 4px;
 }
 
 .stage-scene {
-    background-color: #0b0604;
-    border: 4px dashed #3c2415;
+    background-color: #0d0704;
+    border: 2px dashed #3c2415;
     flex: 1;
     display: flex;
-    justify-content: space-around;
+    justify-content: center;
     align-items: center;
-    padding: 20px;
-    position: relative;
-    image-rendering: pixelated;
-}
-
-.stage-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
-    color: #7f8c8d;
-}
-
-.stage-item span {
-    letter-spacing: -1px;
 }
 
 .hero-card-img, 
 .weapon-card-img, 
-.hero-sprite-img, 
-.pixel-logo-icon {
-    width: 64px;
-    height: 64px;
-    display: inline-block;
+.hero-sprite-img {
+    width: 56px;
+    height: 56px;
     background-color: #120904;
-    border: 3px dashed #b8860b;
-    image-rendering: pixelated;
+    border: 2px solid #5c3d24;
     object-fit: contain;
-    box-sizing: border-box;
-    background-image: 
-        radial-gradient(circle, #3a2214 30%, transparent 30%),
-        linear-gradient(45deg, transparent 45%, #2d180d 45%, #2d180d 55%, transparent 55%);
-    background-size: 12px 12px;
-    position: relative;
-}
-
-.pixel-logo-icon {
-    width: 24px;
-    height: 24px;
-    border-width: 2px;
-    vertical-align: middle;
 }
 
 .hero-sprite {
@@ -554,28 +412,22 @@ input.text-center {
     animation: float 1.6s infinite steps(4);
 }
 
-.hero-sprite-img {
-    width: 64px;
-    height: 64px;
-    border-style: solid;
-}
-
 .hero-name {
     color: #d4af37 !important;
+    margin-top: 8px;
+    display: block;
 }
 
 @keyframes float {
     0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-8px); }
+    50% { transform: translateY(-6px); }
 }
 
 .divider {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
+    font-size: 8px;
     color: #7f8c8d;
-    margin: 15px 0;
+    margin: 12px 0;
     text-align: center;
-    letter-spacing: -1px;
 }
 
 #gameHUD {
@@ -584,95 +436,63 @@ input.text-center {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
-    padding: 12px 20px;
-    background-color: #1c0e07;
-    border: 4px solid #b8860b;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
-    color: #f3e5ab;
-    box-shadow: inset 4px 4px 0px #311c0f, inset -4px -4px 0px #120904;
-}
-
-#hudGold {
-    color: #f1c40f;
-}
-
-#hudWeapon {
-    color: #bdc3c7;
+    padding: 10px 15px;
+    background-color: #1a0f0a;
+    border: 3px solid #8b5a2b;
 }
 
 .hero-card.locked, .weapon-card.locked {
     filter: grayscale(1);
-    opacity: 0.55;
-    border-color: #2c1a10;
-}
-
-.hero-card.locked:hover, .weapon-card.locked:hover {
-    border-color: #5c120c;
-    background-color: #170d07;
+    opacity: 0.5;
 }
 
 .buy-button-container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 15px;
-    height: 100%;
+    gap: 12px;
 }
 
 .buy-title {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
+    font-size: 9px;
     color: #a32c24;
-    text-shadow: 2px 2px 0px #000;
 }
 
 .hud-hotbar {
     display: flex;
     gap: 6px;
-    background-color: rgba(28, 14, 7, 0.85);
-    border: 2px solid #5c3d24;
+    background-color: #120904;
+    border: 2px solid #3c2415;
     padding: 4px;
-    image-rendering: pixelated;
-    box-shadow: inset 2px 2px 0px #381e0f, inset -2px -2px 0px #1a0e07;
 }
 
 .hud-slot {
-    width: 40px;
-    height: 40px;
-    background-color: rgba(12, 6, 3, 0.9);
-    border: 1.5px solid #8b5a2b;
+    width: 36px;
+    height: 36px;
+    background-color: #0c0603;
+    border: 1px solid #5c3d24;
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-sizing: border-box;
 }
 
 .hud-slot.active {
-    border: 3px solid #d4af37;
-    background-color: rgba(212, 175, 55, 0.12);
-    box-shadow: inset 0 0 4px rgba(212, 175, 55, 0.4);
+    border: 2px solid #d4af37;
+    background-color: rgba(212, 175, 55, 0.1);
 }
 
 .hud-slot-num {
     position: absolute;
     top: 2px;
-    left: 4px;
+    left: 3px;
     font-size: 5px;
-    font-family: "Press Start 2P", monospace;
     color: #8b5a2b;
 }
 
-.hud-slot.active .hud-slot-num {
-    color: #d4af37;
-}
-
 .hud-slot-icon {
-    width: 28px;
-    height: 28px;
-    image-rendering: pixelated;
+    width: 24px;
+    height: 24px;
 }
 
 .toast-container {
@@ -682,77 +502,39 @@ input.text-center {
     z-index: 1000;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    pointer-events: none;
+    gap: 10px;
 }
 
 .toast {
     background-color: #2b1910;
     color: #f3e5ab;
-    border: 4px solid #b8860b;
-    padding: 14px 18px;
+    border: 3px solid #8b5a2b;
+    padding: 12px 16px;
     font-family: 'Press Start 2P', monospace;
     font-size: 8px;
-    line-height: 1.6;
-    box-shadow: 
-        inset 3px 3px 0px #4d301c,    
-        inset -3px -3px 0px #150a04,  
-        4px 4px 0px rgba(0, 0, 0, 0.7);
-    pointer-events: auto;
-    max-width: 340px;
+    max-width: 320px;
     animation: toast-slide-in 0.25s ease-out forwards;
-    image-rendering: pixelated;
-    text-shadow: 1px 1px 0px #000;
 }
 
-.toast-info {
-    border-color: #b8860b;
-}
-
-.toast-error {
-    border-color: #a32c24;
-    background-color: #380805;
-    color: #ff9999;
-}
-
-.toast-success {
-    border-color: #4d7a39;
-    background-color: #182810;
-    color: #a3e085;
-}
-
-.toast-hide {
-    animation: toast-slide-out 0.25s ease-in forwards;
-}
+.toast-error { border-color: #a32c24; background-color: #380805; }
+.toast-success { border-color: #4d7a39; background-color: #182810; }
+.toast-hide { animation: toast-slide-out 0.25s ease-in forwards; }
 
 @keyframes toast-slide-in {
-    from {
-        transform: translateX(120%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
+    from { transform: translateX(120%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
 }
 
 @keyframes toast-slide-out {
-    from {
-        transform: translateX(0);
-        opacity: 1;
-    }
-    to {
-        transform: translateX(120%);
-        opacity: 0;
-    }
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(120%); opacity: 0; }
 }
 
-.copy-btn.button-copied {
-    background-color: #2e4c1f !important;
-    box-shadow: 
-        inset 4px 4px 0px #4d7a39, 
-        inset -4px -4px 0px #182810 !important;
+.right-panel {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
-.copy-btn.button-copied:hover {
-    background-color: #4d7a39 !important;
+
+.right-panel::-webkit-scrollbar {
+    display: none;
 }
