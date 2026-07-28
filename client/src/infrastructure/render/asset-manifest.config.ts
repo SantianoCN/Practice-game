@@ -3,12 +3,15 @@ import {
     ITEMS_DATABASE,
     WARRIOR_PRESET,
     MAGE_PRESET,
+    ARCHER_PRESET,
     WARRIOR_PRESET_LIZARD,
     MAGE_PRESET_LIZARD,
     STARTING_SWORD,
     STARTING_AXE,
     STARTING_STAFF,
     STARTING_ICE_STAFF,
+    STARTING_BOW,
+    STARTING_LIGHTNING_STAFF,
     FIREBALL,
     ICE_BALL,
     SLASH,
@@ -42,6 +45,8 @@ const ITEM_ASSET_SOURCES: Record<string, string> = {
     wpn_heavy_axe: ASSETS.weapon.battleAxe,
     wpn_fire_staff: ASSETS.weapon.fireStaff,
     wpn_ice_staff: ASSETS.weapon.iceStaff,
+    wpn_lightning_staff: ASSETS.weapon.lightningStaff,
+    wpn_hunter_bow: ASSETS.weapon.hunterBow,
     wpn_boss_staff: ASSETS.weapon.fireStaff,
     gold_coins: ASSETS.loot.coin,
     pot_heal: ASSETS.loot.potionRed,
@@ -110,8 +115,18 @@ export const PLAYER_VISUAL_MANIFEST: PlayerVisualEntry[] = [
         variants: [
             { weaponVisualId: STARTING_STAFF.config.visualId, src: ASSETS.hero.volhvFire },
             { weaponVisualId: STARTING_ICE_STAFF.config.visualId, src: ASSETS.hero.volhvIce },
+            { weaponVisualId: STARTING_LIGHTNING_STAFF.config.visualId, src: ASSETS.hero.volhvLightning },
         ],
     },
+    {
+        visualId: ARCHER_PRESET.visualId,
+        variants: [
+            { weaponVisualId: STARTING_BOW.config.visualId, src: ASSETS.hero.hunter },
+            { weaponVisualId: STARTING_SWORD.config.visualId, src: ASSETS.hero.hunter },
+            { weaponVisualId: STARTING_SWORD.config.visualId, src: ASSETS.hero.hunter },
+
+        ]
+    }
 ];
 
 export interface EnemyVisualEntry {

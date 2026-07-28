@@ -12,6 +12,7 @@ import {
     StaticAssetEntry,
 } from './asset-manifest.config';
 import { GAME_CONFIG } from '@game/shared';
+import F1 from './../../../assets/F1.png'
 
 interface MapCell {
     state: 'unseen' | 'visible' | 'visited';
@@ -173,6 +174,8 @@ export class CanvasRendererAdapter {
             if (!room) return;
             this.drawMiniMap(room.gridX, room.gridY);
         }
+        if (this.isHelpVisible) this.drawHelpPage();
+        console.log(this.isHelpVisible)
     }
 
     public toggleGUI(): void {
@@ -276,8 +279,8 @@ export class CanvasRendererAdapter {
 
     private drawGUI(playersMap: Map<string, VisualEntity>, myId: string) {
         const me = playersMap.get(myId);
-        if (!me) return;
 
+        if (!me) return;
         const px = Math.round(me.renderX);
         const py = Math.round(me.renderY);
         const r = me.width ?? 15;
@@ -298,6 +301,7 @@ export class CanvasRendererAdapter {
         const manaRatio = Math.max(0, Math.min(1, mana / maxMana));
 
         this.context.save();
+        this.context.globalAlpha = 0.5
         this.context.fillStyle = '#1c0e07';
         this.context.fillRect(guiX, guiY, guiWidth, guiHeight);
         this.context.strokeStyle = '#b8860b';
@@ -377,7 +381,8 @@ export class CanvasRendererAdapter {
             this.context.font = '8px "Press Start 2P", monospace';
             this.context.fillText('Ожидайте помощи отряда (E)...', this.canvas.width / 2, this.canvas.height / 2 + 15);
             this.context.restore();
-        }
+        };
+        
     }
 
     private updateHtmlHotbar(me: any, maxSlots: number, activeIdx: number): void {
@@ -436,8 +441,7 @@ export class CanvasRendererAdapter {
         if (room?.droppedItems) this.drawDroppedItems(room.droppedItems);
         this.drawBullets(bulletsMap);
         this.drawPlayers(playersMap);
-        this.drawEnemies(enemiesMap);
-        if (this.isHelpVisible) this.drawHelpPage()
+        this.drawEnemies(enemiesMap)
     }
 
     private drawDoors(room: RoomState): void {
@@ -458,6 +462,7 @@ export class CanvasRendererAdapter {
         const mapX = this.canvas.width - mapSize - padding;
         const mapY = padding;
 
+        this.context.globalAlpha = 0.5;
         this.context.fillStyle = 'rgba(26, 15, 10, 0.95)';
         this.context.fillRect(mapX, mapY, mapSize, mapSize);
         this.context.strokeStyle = 'rgba(184, 134, 11, 0.7)';
@@ -498,6 +503,7 @@ export class CanvasRendererAdapter {
                     this.context.lineWidth = 1;
                     this.context.strokeRect(roomX, roomY, roomW, roomH);
                 }
+                this.context.globalAlpha = 1
             }
         }
     }
@@ -732,15 +738,12 @@ export class CanvasRendererAdapter {
     }
 
     private drawHelpPage(): void {
-        const texture = this.textures['F1'];
-        const startX = 10;
-        const startY = 10;
-        const width = 640;
-        const height = 440;
+        const texture = new Image;
+        texture.src = F1;
 
-        if (texture) {
-            this.context.drawImage(texture, startX, startY, width, height)
-        } else {
+        if (texture) this.context.drawImage(texture, 0, 0, this.canvas.width, this.canvas.height)
+        else {
+            this.context.fillStyle = '#00a503a2';
             this.context.fillRect(0, 0, this.canvas.width, this.canvas.height)
         }
     }
