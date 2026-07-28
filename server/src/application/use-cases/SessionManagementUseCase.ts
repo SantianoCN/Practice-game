@@ -106,7 +106,7 @@ export class SessionManagementUseCase {
     }
 
     public createSession(accountId: string, login: string, archetype: string, weaponId: string): string {
-        const sessionId = this.idGen.generateUUID('session');
+        const sessionId = this.idGen.generateUUID(6);
         const session = new GameSession(sessionId, this.roomWidth, this.roomHeight, GAME_DIFFICULTY.LVL1);
 
         session.isLobby = false;
@@ -130,7 +130,7 @@ export class SessionManagementUseCase {
     }
 
     public createLobby(accountId: string, login: string, archetype: string, weaponId: string): string {
-        const sessionId = this.idGen.generateUUID('session');
+        const sessionId = this.idGen.generateUUID(6);
         const session = new GameSession(sessionId, this.roomWidth, this.roomHeight, GAME_DIFFICULTY.LVL1);
 
         session.isLobby = true;

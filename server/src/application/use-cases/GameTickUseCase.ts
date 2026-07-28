@@ -220,6 +220,7 @@ export class GameTickUseCase {
             room: room,
             players: players.map(player => ({
                 id: player.id,
+                name: player.name,
                 x: player.x,
                 y: player.y,
                 width: player.width,

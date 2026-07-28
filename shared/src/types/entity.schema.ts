@@ -13,6 +13,7 @@ export const BaseEntityStateSchema = z.object({
 export type BaseEntityState = z.infer<typeof BaseEntityStateSchema>;
 
 export const PlayerStateSchema = BaseEntityStateSchema.extend({
+    name: z.string(),
     hp: z.number(),
     maxHp: z.number(),
     mana: z.number(),

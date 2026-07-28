@@ -34,4 +34,5 @@ export interface INetworkClient {
     saveAndExit(): Promise<{ success: boolean; message?: string }>;
     sendNextFloor(): void;
     onPortalInteract(cb: () => void): void;
+    onHostMigrated(cb: (data: { newHostAccountId: string }) => void): void;
 }

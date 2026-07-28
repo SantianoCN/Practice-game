@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const ArchetypeSchema = z.enum(['warrior', 'mage']);
+export const ArchetypeSchema = z.enum(['warrior', 'mage', 'archer']);
 export type Archetype = z.infer<typeof ArchetypeSchema>;
 
 export const EntityTypeSchema = z.enum(['player', 'enemy', 'bullet', 'obstacle', 'item']);

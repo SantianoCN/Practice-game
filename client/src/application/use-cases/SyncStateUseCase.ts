@@ -22,7 +22,7 @@ export class SyncStateUseCase {
         for (const p of snapshot.players) {
             activeIdsInSnapshot.add(p.id);
             const entity = this.getOrCreateEntity(
-                p.id, p.x, p.y, p.width, p.height, 
+                p.id, p.name, p.x, p.y, p.width, p.height, 
                 p.maxInventoryLength ?? 3, p.visualId, 'player'
             );
 
@@ -44,7 +44,7 @@ export class SyncStateUseCase {
         for (const e of snapshot.enemies) {
             activeIdsInSnapshot.add(e.id);
             const entity = this.getOrCreateEntity(
-                e.id, e.x, e.y, e.width, e.height, 
+                e.id, null, e.x, e.y, e.width, e.height, 
                 1, e.visualId, 'enemy'
             );
 
@@ -59,7 +59,7 @@ export class SyncStateUseCase {
         for (const b of snapshot.bullets) {
             activeIdsInSnapshot.add(b.id);
             const entity = this.getOrCreateEntity(
-                b.id, b.x, b.y, b.width, b.height, 
+                b.id, null, b.x, b.y, b.width, b.height, 
                 1, b.visualId, 'bullet'
             );
 
@@ -83,17 +83,18 @@ export class SyncStateUseCase {
 
     private getOrCreateEntity(
         id: string, 
+        name: string | null,
         x: number, 
         y: number, 
         w: number, 
         h: number, 
         maxInv: number, 
         visualId: string, 
-        type: 'player' | 'enemy' | 'bullet'
+        type: 'player' | 'enemy' | 'bullet',
     ): VisualEntity {
         let entity = this.entities.get(id);
         if (!entity) {
-            entity = new VisualEntity(id, x, y, w, h, maxInv, visualId, type);
+            entity = new VisualEntity(id, name, x, y, w, h, maxInv, visualId, type);
             this.entities.set(id, entity);
         }
         return entity;

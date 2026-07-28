@@ -349,7 +349,11 @@ export class SocketController {
 
             if (!result) return;
 
-            if (result.migrated) {
+            if (result.migrated && result.newHostAccountId) {
+                this.io.to(result.newHostAccountId).emit(ServerEvent.HOST_MIGRATED, {
+                    newHostAccountId: result.newHostAccountId
+                });
+
                 for (const remainingAccountId of result.remainingOnlineAccountIds) {
                     this.io.to(remainingAccountId).emit(
                         ServerEvent.ERROR, 
@@ -371,7 +375,11 @@ export class SocketController {
             if (!sessionId) return;
 
             const result = this.sessionUseCase.handlePlayerDisconnect(sessionId, accountId);
-            if (result?.migrated) {
+            if (result?.migrated && result.newHostAccountId) {
+                this.io.to(result.newHostAccountId).emit(ServerEvent.HOST_MIGRATED, {
+                    newHostAccountId: result.newHostAccountId
+                });
+
                 for (const remainingAccountId of result.remainingOnlineAccountIds) {
                     this.io.to(remainingAccountId).emit(
                         ServerEvent.ERROR, 

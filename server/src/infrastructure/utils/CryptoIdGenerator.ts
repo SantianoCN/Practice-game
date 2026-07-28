@@ -6,7 +6,11 @@ export class CryptoIdGenerator implements IIdGenerator {
         return `${prefix}_${crypto.randomBytes(4).toString('hex')}`;
     }
 
-    public generateUUID(prefix: string): string {
-        return `${prefix}_${crypto.randomUUID()}`;
+    public generateUUID(maxLength?: number): string {
+        const fullId = crypto.randomUUID();
+        if (maxLength === undefined || maxLength <= 0) {
+            return fullId;
+        }
+        return fullId.slice(0, maxLength);
     }
 }

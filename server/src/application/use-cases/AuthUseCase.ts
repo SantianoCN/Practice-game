@@ -12,7 +12,7 @@ export class AuthUseCase {
     public async login(data: LoginDataDTO): Promise<{ token: string; account: Account } | null> {
         const account = await this.repo.getByLogin(data.login);
         if (account && account.passwordHash === data.password) {
-            const token = this.idGen.generateUUID('token');
+            const token = this.idGen.generateUUID();
             const updatedAccount = await this.repo.updateToken(account.id, token);
             return { token, account: updatedAccount };
         }
@@ -23,7 +23,7 @@ export class AuthUseCase {
         const existing = await this.repo.getByLogin(data.login);
         if (existing) return null;
 
-        const token = this.idGen.generateUUID('token');
+        const token = this.idGen.generateUUID();
         const account = await this.repo.create(data.login, data.password, token);
         return { token, account };
     }

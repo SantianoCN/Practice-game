@@ -1,6 +1,6 @@
 import Pica from 'pica';
 import { VisualEntity } from '../../domain/entities/VisualEntity';
-import { RoomState, ChestState, BaseEntityState } from '@game/shared';
+import { RoomState, ChestState, BaseEntityState, PortalState } from '@game/shared';
 import { TextureRenderer, EntityRenderer } from './SupportRenderer';
 import {
     STATIC_ASSET_MANIFEST,
@@ -356,19 +356,22 @@ export class CanvasRendererAdapter {
             const weaponNames: Record<string, string> = {
                 'iron_sword': 'МЕЧ-КЛАДЕНЕЦ',
                 'battle_axe': 'СЕКИРА ПЕРУНА',
-                'staff': 'ПОСОХ ОГНЯ',
                 'fire_staff': 'ПОСОХ ОГНЯ',
-                'ice_staff': 'ПОСОХ ХЛАДА'
+                'ice_staff': 'ПОСОХ ХЛАДА',
+                'lightning_staff': 'ПОСОХ ПЕРУНА',
+                'hunter_bow': 'ОХОТНИЧИЙ ЛУК',
             };
             weaponEl.innerText = weaponNames[me.activeWeaponVisualId] || me.activeWeaponVisualId.toUpperCase();
         }
 
         if (me.canInteracting) {
+            this.context.save();
             this.context.font = '8px "Press Start 2P", sans-serif';
             this.context.textAlign = 'center';
             this.context.textBaseline = 'middle';
             this.context.fillStyle = '#ffcc00';
-            this.context.fillText('Для взаимодействия нажмите "E"', me.renderX, me.renderY + 20);
+            this.context.fillText('Для взаимодействия - "E"', me.renderX, me.renderY + 20);
+            this.context.restore();
         }
 
         if (me.hp <= 0) {
@@ -383,7 +386,7 @@ export class CanvasRendererAdapter {
 
             this.context.fillStyle = '#ecf0f1';
             this.context.font = '8px "Press Start 2P", monospace';
-            this.context.fillText('Ожидайте помощи отряда (E)...', this.canvas.width / 2, this.canvas.height / 2 + 15);
+            this.context.fillText('Ожидайте помощи отряда ...', this.canvas.width / 2, this.canvas.height / 2 + 15);
             this.context.restore();
         }
     }
@@ -445,8 +448,23 @@ export class CanvasRendererAdapter {
         this.drawBullets(bulletsMap);
         this.drawPlayers(playersMap);
         this.drawEnemies(enemiesMap);
+        if (room?.portal && room.portal.isActive) {
+            this.drawPortal(room?.portal);
+        }
         if (this.isHelpVisible) this.drawHelpPage()
     }
+
+    public drawPortal(portal: PortalState) {
+        this.context.save();
+        this.context.shadowColor = '#00f0ff';
+        this.context.shadowBlur = 15;
+        this.context.fillStyle = 'rgba(0, 240, 255, 0.4)';
+        this.context.fillRect(portal.x - portal.width / 2, portal.y - portal.height / 2, portal.width, portal.height);
+        this.context.strokeStyle = '#ffffff';
+        this.context.lineWidth = 2;
+        this.context.strokeRect(portal.x - portal.width / 2, portal.y - portal.height / 2, portal.width, portal.height);
+        this.context.restore();
+    }   
 
     private drawDoors(room: RoomState): void {
         const doorColor = room.isClear ? '#056111' : '#5c120c';
@@ -682,6 +700,15 @@ export class CanvasRendererAdapter {
 
     private drawPlayers(playersMap: Map<string, VisualEntity>): void {
         playersMap.forEach(player => {
+            if (player.name) {
+                this.context.save();
+                this.context.font = '8px "Press Start 2P", sans-serif';
+                this.context.textAlign = 'center';
+                this.context.textBaseline = 'middle';
+                this.context.fillStyle = '#ffcc00';
+                this.context.fillText(player.name, player.renderX, player.renderY - 25);
+                this.context.restore();
+            }
             const renders = this.playerRenderers[player.visualId];
             if (!renders) {
                 this.drawFallback(player);

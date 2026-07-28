@@ -175,4 +175,8 @@ export class SocketClient implements INetworkClient {
     public onSessionTerminated(cb: (data: { message: string }) => void): void {
         this.socket.on(ServerEvent.SESSION_TERMINATED, cb);
     }
+
+    public onHostMigrated(cb: (data: { newHostAccountId: string }) => void): void {
+        this.socket.on(ServerEvent.HOST_MIGRATED, cb);
+    }
 }

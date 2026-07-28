@@ -41,7 +41,7 @@ export const ITEMS_DATABASE: Record<string, ItemPreset> = {
         id: 'wpn_fire_staff',
         type: 'weapon',
         name: 'Огненный посох',
-        visualId: 'staff',
+        visualId: 'fire_staff',
         dropWidth: 16,
         dropHeight: 32,
         effects: [
@@ -89,7 +89,7 @@ export const ITEMS_DATABASE: Record<string, ItemPreset> = {
         id: 'wpn_boss_staff',
         type: 'weapon',
         name: 'Посох Императора',
-        visualId: 'staff',
+        visualId: 'fire_staff',
         dropWidth: 16,
         dropHeight: 32,
         effects: [

@@ -1,15 +1,10 @@
 import { EntityType } from '@game/shared';
 
 export class VisualEntity {
-    public id: string;
     public targetX: number;
     public targetY: number;
     public renderX: number;
     public renderY: number;
-    public width: number;
-    public height: number;
-    public visualId: string;
-    public type: EntityType;
     public angle: number = 0;
 
     public hp: number = 100;
@@ -20,7 +15,6 @@ export class VisualEntity {
     public activeWeaponVisualId: string = '';
     public inventory: any[] = [];
     public currentWeaponIndex: number = 0;
-    public maxInventoryLength: number = 3;
 
     public lastFacing: 'left' | 'Top' | 'right' = 'right';
     public currentAnimation: 'move' | 'attack' | 'die' | 'idle' = 'idle';
@@ -31,25 +25,20 @@ export class VisualEntity {
     private readonly timePerFrame: number = 0.2;
 
     constructor(
-        id: string, 
+        public id: string,
+        public name: string | null = null,
         x: number, 
         y: number, 
-        w: number, 
-        h: number, 
-        maxInventoryLength: number,
-        visualId: string, 
-        type: EntityType
+        public width: number, 
+        public height: number, 
+        public maxInventoryLength: number = 2,
+        public visualId: string, 
+        public type: EntityType
     ) {
-        this.id = id;
         this.targetX = x;
         this.targetY = y;
         this.renderX = x;
         this.renderY = y;
-        this.width = w;
-        this.height = h;
-        this.maxInventoryLength = maxInventoryLength;
-        this.visualId = visualId;
-        this.type = type;
     }
 
     public updateInterpolation(dt: number, lerpSpeed: number = 22): void {

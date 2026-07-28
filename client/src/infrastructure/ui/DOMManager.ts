@@ -23,6 +23,16 @@ export class DOMManager {
     }
 
     private bindEvents(): void {
+        document.getElementById('portalCloseBtn')?.addEventListener('click', () => {
+            this.showPortalModal(false);
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this.showPortalModal(false);
+            }
+        });
+
         document.getElementById('loginBtn')?.addEventListener('click', () => {
             const l = (document.getElementById('username') as HTMLInputElement).value;
             const p = (document.getElementById('password') as HTMLInputElement).value;
@@ -103,6 +113,13 @@ export class DOMManager {
         document.getElementById('portalSaveBtn')?.addEventListener('click', () => {
             this.onPortalSaveAndExit?.();
         });
+    }
+
+    public updateHostStatus(isHost: boolean): void {
+        const completeBtn = document.getElementById('completeSessionBtn');
+        if (completeBtn) {
+            completeBtn.classList.toggle('hidden', !isHost);
+        }
     }
 
     public showAuth(error?: string): void {

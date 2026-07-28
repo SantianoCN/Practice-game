@@ -7,13 +7,13 @@ export const AXE_SLASH: ProjectileStats = { radius: 10, damage: 30, range: 50, s
 export const POISON_DART: ProjectileStats = { radius: 6, damage: 12, range: 450, speed: 500, visualId: 'green_dart' };
 export const LIGHTNING: ProjectileStats = { radius: 12, damage: 22, range: 380, speed: 600, visualId: 'lightning_spark' };
 
-export const STAFF: WeaponStats = { cooldownMs: 2000, manaCost: 10, projectile: FIREBALL, visualId: 'staff' };
+export const STAFF: WeaponStats = { cooldownMs: 2000, manaCost: 10, projectile: FIREBALL, visualId: 'fire_staff' };
 export const SWORD: WeaponStats = { cooldownMs: 800, manaCost: 0, projectile: SLASH, visualId: 'iron_sword' };
 export const ICE_STAFF: WeaponStats = { cooldownMs: 1000, manaCost: 5, projectile: ICE_BALL, visualId: 'ice_staff' };
 export const AXE: WeaponStats = { cooldownMs: 1500, manaCost: 0, projectile: AXE_SLASH, visualId: 'battle_axe' };
 export const BOW: WeaponStats = { cooldownMs: 900, manaCost: 0, projectile: POISON_DART, visualId: 'hunter_bow' };
 export const LIGHTNING_STAFF: WeaponStats = { cooldownMs: 1300, manaCost: 15, projectile: LIGHTNING, visualId: 'lightning_staff' };
-export const STAFF_OF_BOSS: WeaponStats = { cooldownMs: 500, manaCost: 20, projectile: FIREBALL, visualId: 'staff' };
+export const STAFF_OF_BOSS: WeaponStats = { cooldownMs: 500, manaCost: 20, projectile: FIREBALL, visualId: 'fire_staff' };
 
 export const STARTING_SWORD: StartingWeaponStats = {
     key: 'wpn_iron_sword',
