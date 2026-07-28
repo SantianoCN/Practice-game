@@ -1,6 +1,6 @@
 import { IAccountRepository } from '../interfaces/IAccountRepository';
 import { PlayerProgress } from '../../domain/entities/PlayerProgress';
-import { PLAYER_CLASSES, SHOP_PRICES } from '@game/shared';
+import { PLAYER_CLASSES, SHOP_PRICES, ITEMS_DATABASE } from '@game/shared';
 
 export class BuyItemUseCase {
     constructor(private accountRepo: IAccountRepository) {}
@@ -19,14 +19,28 @@ export class BuyItemUseCase {
         const updatedClasses = [...progress.unlockedClasses];
         const updatedWeapons = [...progress.unlockedWeapons];
 
-        const isClass = itemPresetId in PLAYER_CLASSES;
+        let category: 'class' | 'weapon' | 'unknown' = 'unknown';
 
-        if (isClass) {
-            if (updatedClasses.includes(itemPresetId)) return null; 
-            updatedClasses.push(itemPresetId);
-        } else {
-            if (updatedWeapons.includes(itemPresetId)) return null; 
-            updatedWeapons.push(itemPresetId);
+        if (itemPresetId in PLAYER_CLASSES) {
+            category = 'class';
+        } else if (itemPresetId in ITEMS_DATABASE) {
+            category = 'weapon';
+        }
+
+        switch (category) {
+            case 'class':
+                if (updatedClasses.includes(itemPresetId)) return null;
+                updatedClasses.push(itemPresetId);
+                break;
+
+            case 'weapon':
+                if (updatedWeapons.includes(itemPresetId)) return null;
+                updatedWeapons.push(itemPresetId);
+                break;
+
+            case 'unknown':
+            default:
+                return null;
         }
 
         const updatedAccount = await this.accountRepo.updateProgress(

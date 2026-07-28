@@ -122,8 +122,7 @@ export const PLAYER_VISUAL_MANIFEST: PlayerVisualEntry[] = [
         visualId: ARCHER_PRESET.visualId,
         variants: [
             { weaponVisualId: STARTING_BOW.config.visualId, src: ASSETS.hero.hunter },
-            { weaponVisualId: STARTING_SWORD.config.visualId, src: ASSETS.hero.hunter },
-            { weaponVisualId: STARTING_SWORD.config.visualId, src: ASSETS.hero.hunter },
+            { weaponVisualId: STARTING_SWORD.config.visualId, src: ASSETS.hero.hunter }
 
         ]
     }

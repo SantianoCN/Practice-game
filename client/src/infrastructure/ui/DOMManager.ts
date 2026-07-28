@@ -2,7 +2,7 @@ import { Archetype, PlayerClassPresetDTO, StartingWeaponStats, PlayerProgressDTO
 import { ASSETS } from '../../../assets';
 
 export class DOMManager {
-    public onAuthReq?: (url: string, l: string, p: string) => void;
+    public onAuthReq?: (action: 'login' | 'register', l: string, p: string) => void;
     public onCreateRoom?: (arch: Archetype, weapon: string) => void;
     public onCreateLobby?: (arch: Archetype, weapon: string) => void;
     public onJoinRoom?: (sid: string, arch: Archetype, weapon: string) => void;
@@ -228,7 +228,7 @@ export class DOMManager {
             }
 
             let iconAlt = '';
-            switch(key) {
+            switch (key) {
                 case 'mage':
                     iconAlt = ASSETS.hero.volhvPrev;
                     break;
@@ -271,7 +271,10 @@ export class DOMManager {
 
         if (!weapons || weapons.length === 0) return;
 
-        this.selectedWeapon = weapons[0].key;
+        const weaponKeys = weapons.map(w => w.key);
+        if (!this.selectedWeapon || !weaponKeys.includes(this.selectedWeapon)) {
+            this.selectedWeapon = weapons[0].key;
+        }
 
         weapons.forEach(w => {
             const el = document.createElement('div');
@@ -286,12 +289,27 @@ export class DOMManager {
                 el.classList.add('active');
             }
 
-            let imgSrc = ASSETS.weapon.ironSword;
-            if (w.key === 'wpn_heavy_axe') imgSrc = ASSETS.weapon.battleAxe;
-            if (w.key === 'wpn_fire_staff') imgSrc = ASSETS.weapon.fireStaff;
-            if (w.key === 'wpn_ice_staff') imgSrc = ASSETS.weapon.iceStaff;
-            if (w.key === 'wpn_lightning_staff') imgSrc = ASSETS.weapon.lightningStaff;
-            if (w.key === 'wpn_hunter_bow') imgSrc = ASSETS.weapon.hunterBow;
+            let imgSrc = '';
+            switch (w.key) {
+                case 'wpn_iron_sword':
+                    imgSrc = ASSETS.weapon.ironSword;
+                    break;
+                case 'wpn_heavy_axe':
+                    imgSrc = ASSETS.weapon.battleAxe;
+                    break;
+                case 'wpn_fire_staff':
+                    imgSrc = ASSETS.weapon.fireStaff;
+                    break;
+                case 'wpn_ice_staff':
+                    imgSrc = ASSETS.weapon.iceStaff;
+                    break;
+                case 'wpn_lightning_staff':
+                    imgSrc = ASSETS.weapon.lightningStaff;
+                    break;
+                case 'wpn_hunter_bow':
+                    imgSrc = ASSETS.weapon.hunterBow;
+                    break;
+            }
 
             const iconHtml = `<img src="${imgSrc}" alt="${w.name}" class="weapon-card-img" />`;
 
@@ -402,7 +420,21 @@ export class DOMManager {
 
             const img = document.createElement('img');
             img.className = 'hero-sprite-img';
-            img.src = this.selectedArch === 'mage' ? ASSETS.hero.volhvPrev : ASSETS.hero.warriorPrev;
+
+            let previewSrc = '';
+            switch (this.selectedArch) {
+                case 'mage':
+                    previewSrc = ASSETS.hero.volhvPrev;
+                    break;
+                case 'warrior':
+                    previewSrc = ASSETS.hero.warriorPrev;
+                    break;
+                case 'archer':
+                    previewSrc = ASSETS.hero.hunterPrev;
+                    break;
+            }
+
+            img.src = previewSrc;
             img.alt = 'Спрайт героя';
 
             spriteDiv.appendChild(img);

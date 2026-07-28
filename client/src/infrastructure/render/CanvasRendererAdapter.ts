@@ -12,7 +12,7 @@ import {
     StaticAssetEntry,
 } from './asset-manifest.config';
 import { GAME_CONFIG } from '@game/shared';
-import F1 from './../../../assets/F1.png'
+import { ASSETS } from '../../../assets';
 
 interface MapCell {
     state: 'unseen' | 'visible' | 'visited';
@@ -84,6 +84,7 @@ export class CanvasRendererAdapter {
             this.registerStaticAsset(entry);
             this.assetSrcMap.set(entry.visualId, entry.src);
         }
+        this.loadAndScaleTexture('F1', ASSETS.buble.F1, this.canvas.width, this.canvas.height);
 
         FLOOR_TILE_ASSETS.forEach((src, index) => this.loadAndScaleTile(index, src));
     }
@@ -773,13 +774,13 @@ export class CanvasRendererAdapter {
     }
 
     private drawHelpPage(): void {
-        const texture = new Image;
-        texture.src = F1;
+        const texture = this.textures['F1'];
 
-        if (texture) this.context.drawImage(texture, 0, 0, this.canvas.width, this.canvas.height)
-        else {
-            this.context.fillStyle = '#00a503a2';
-            this.context.fillRect(0, 0, this.canvas.width, this.canvas.height)
+        if (texture) {
+            this.context.drawImage(texture, 0, 0, this.canvas.width, this.canvas.height);
+        } else {
+            this.context.fillStyle = 'rgba(0, 0, 0, 0.85)';
+            this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
         }
     }
 }
