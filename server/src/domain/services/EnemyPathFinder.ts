@@ -72,10 +72,10 @@ export default class EnemyPathFinder {
         x2: number, y2: number,
         ob: Obstacle
     ): boolean {
-        const left = ob.x - ob.width / 2;
-        const right = ob.x + ob.width / 2;
-        const top = ob.y - ob.height / 2;
-        const bottom = ob.y + ob.height / 2;
+        const left = ob.x - ob.width + 10 / 2;
+        const right = ob.x + ob.width + 10 / 2;
+        const top = ob.y - ob.height + 10 / 2;
+        const bottom = ob.y + ob.height + 10 / 2;
 
         let tmin = 0, tmax = 1;
         const dx = x2 - x1;
@@ -109,10 +109,17 @@ export default class EnemyPathFinder {
     ): boolean {
         if (x1 - radius < 0 || x1 + radius > roomWidth ||
             y1 - radius < 0 || y1 + radius > roomHeight) return false;
-        if (x2 < 0 || x2 > roomWidth || y2 < 0 || y2 > roomHeight) return false;
+        if (x2 - radius < 0 || x2 + radius > roomWidth ||
+            y2 - radius < 0 || y2 + radius > roomHeight) return false;
 
         for (const ob of obstacles) {
-            if (this.lineIntersectsBox(x1 + radius, y1+ radius, x2+ radius, y2+ radius, ob)) return false;
+            const inflated: Obstacle = {
+                ...ob,
+                width: ob.width + radius * 2.5,
+                height: ob.height + radius * 2.5,
+                getBounds: ob.getBounds
+            };
+            if (this.lineIntersectsBox(x1, y1, x2, y2, inflated)) return false;
         }
         return true;
     }
@@ -178,6 +185,6 @@ export default class EnemyPathFinder {
         }
         cells.reverse();
 
-        return cells.map(c => ({ x: c.x * cellSize + cellSize / 2, y: c.y * cellSize + cellSize / 2}));
+        return cells.map(c => ({ x: c.x * cellSize + cellSize / 2, y: c.y * cellSize + cellSize / 2 }));
     }
 }
