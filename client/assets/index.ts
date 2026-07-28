@@ -1,9 +1,12 @@
 import warriorSword from './hero/warrior-sword-anim.png';
 import warriorAxe from './hero/warrior-axe-anim.png';
+import warriorPrev from './hero/warrior-sword.png';
 import volhvFire from './hero/volhv-fire-anim.png';
 import volhvIce from './hero/volhv-ice-anim.png';
+import volhvLightning from './hero/volhv-lightning-anim.png'
 import volhvPrev from './hero/volhv.png';
-import warriorPrev from './hero/warrior-sword.png';
+import hunter from './hero/hunter-anim.png'
+import hunterPrev from './hero/hunter.png'
 
 import lizardAxe from './enemy/lizard-axe-anim.png';
 import lizardMage from './enemy/lizard-mage-anim.png';
@@ -17,6 +20,8 @@ import battleAxe from './weapon/axe.png';
 import ironSword from './weapon/sword.png';
 import fireStaff from './weapon/fire_staff.png';
 import iceStaff from './weapon/ice_staff.png';
+import lightningStaff from './weapon/lightning_staff.png'
+import hunterBow from './weapon/hunter_bow.png'
 
 import chest from './chest.png';
 import chestOpen from './chest-open.png';
@@ -29,10 +34,10 @@ import caveTile4 from './environment/caveTile4.png';
 import F1 from './F1.png'
 
 export const ASSETS = {
-    hero: { warriorSword, warriorAxe, volhvFire, volhvIce, volhvPrev, warriorPrev },
+    hero: { warriorSword, warriorAxe, volhvFire, volhvIce, volhvLightning, volhvPrev, warriorPrev, hunter, hunterPrev },
     enemy: { lizardAxe, lizardMage },
     loot: { coin, potionRed, potionBlue, potionGreen, potionYellow },
-    weapon: { battleAxe, ironSword, fireStaff, iceStaff },
+    weapon: { battleAxe, ironSword, fireStaff, iceStaff, lightningStaff, hunterBow },
     env: { chest, chestOpen, stone, caveTile1, caveTile2, caveTile3, caveTile4},
     buble: { F1 }
 };

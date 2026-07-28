@@ -12,6 +12,7 @@ import {
     StaticAssetEntry,
 } from './asset-manifest.config';
 import { GAME_CONFIG } from '@game/shared';
+import F1 from './../../../assets/F1.png'
 
 interface MapCell {
     state: 'unseen' | 'visible' | 'visited';
@@ -177,6 +178,8 @@ export class CanvasRendererAdapter {
                 this.drawMiniMap(room.gridX, room.gridY);
             }
         }
+        if (this.isHelpVisible) this.drawHelpPage();
+        console.log(this.isHelpVisible)
     }
 
     public toggleGUI(): void {
@@ -770,15 +773,12 @@ export class CanvasRendererAdapter {
     }
 
     private drawHelpPage(): void {
-        const texture = this.textures['F1'];
-        const startX = 10;
-        const startY = 10;
-        const width = 640;
-        const height = 440;
+        const texture = new Image;
+        texture.src = F1;
 
-        if (texture) {
-            this.context.drawImage(texture, startX, startY, width, height)
-        } else {
+        if (texture) this.context.drawImage(texture, 0, 0, this.canvas.width, this.canvas.height)
+        else {
+            this.context.fillStyle = '#00a503a2';
             this.context.fillRect(0, 0, this.canvas.width, this.canvas.height)
         }
     }

@@ -235,6 +235,9 @@ export class DOMManager {
                 case 'warrior':
                     iconAlt = ASSETS.hero.warriorPrev;
                     break;
+                case 'archer':
+                    iconAlt = ASSETS.hero.hunterPrev;
+                    break;
             }
             const iconHtml = `<img src="${iconAlt}" alt="${key}" class="hero-card-img" />`;
 
@@ -287,6 +290,8 @@ export class DOMManager {
             if (w.key === 'wpn_heavy_axe') imgSrc = ASSETS.weapon.battleAxe;
             if (w.key === 'wpn_fire_staff') imgSrc = ASSETS.weapon.fireStaff;
             if (w.key === 'wpn_ice_staff') imgSrc = ASSETS.weapon.iceStaff;
+            if (w.key === 'wpn_lightning_staff') imgSrc = ASSETS.weapon.lightningStaff;
+            if (w.key === 'wpn_hunter_bow') imgSrc = ASSETS.weapon.hunterBow;
 
             const iconHtml = `<img src="${imgSrc}" alt="${w.name}" class="weapon-card-img" />`;
 
