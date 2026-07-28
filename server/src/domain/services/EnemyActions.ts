@@ -19,19 +19,22 @@ function getAttackRange(enemy: Enemy): number {
     return enemy.currentWeapon ? enemy.currentWeapon.config.projectile.range : 50;
 }
 
-// Ставит НАПРАВЛЕНИЕ (не позицию) — MoveableEntity.updatePosition сам
-// нормализует вектор и умножит на speed*deltaTime. Здесь только vx/vy,
-// как и в реальном плавном движении (аналог integrate_movement из C++,
-// только сама интеграция уже живёт в Enemy.updateEntity).
+
 function moveToward(
     enemy: Enemy, targetX: number, targetY: number,
     room: Room, roomWidth: number, roomHeight: number
-): void {
+): boolean {
     const path = EnemyPathFinder.findPath(enemy.x, enemy.y, targetX, targetY, room.obstacles, roomWidth, roomHeight);
-    if (path.length === 0) { enemy.vx = 0; enemy.vy = 0; return; }
+    if (path.length === 0) { 
+        console.log('путь не найден');
+        enemy.vx = 0;
+        enemy.vy = 0;
+        return true; 
+    }
     const next = path[0];
     enemy.vx = next.x - enemy.x;
     enemy.vy = next.y - enemy.y;
+    return false;
 }
 
 function tryFire(
@@ -52,21 +55,20 @@ function tryFire(
 export const engage: ActionFn = (enemy, target, generateId, room, roomWidth, roomHeight, currentTime) => {
     const attackRange = getAttackRange(enemy);
     const dist = Math.hypot(target.x - enemy.x, target.y - enemy.y);
-    const hasLOS = EnemyPathFinder.hasLineOfSight(enemy.x, enemy.y, target.x, target.y, room.obstacles);
+    const hasLOS = EnemyPathFinder.hasLineOfSight(enemy.x, enemy.y, target.x, target.y, roomWidth, roomHeight, room.obstacles);
 
     if (dist <= attackRange && hasLOS) {
         enemy.vx = 0; enemy.vy = 0;
         return tryFire(enemy, target, generateId, room, currentTime, attackRange);
     }
-    moveToward(enemy, target.x, target.y, room, roomWidth, roomHeight);
-    return false;
+    return moveToward(enemy, target.x, target.y, room, roomWidth, roomHeight);
 };
 
 export const kite: ActionFn = (enemy, target, generateId, room, roomWidth, roomHeight, currentTime) => {
     const attackRange = getAttackRange(enemy);
     const dist = Math.hypot(target.x - enemy.x, target.y - enemy.y);
     const ideal = attackRange * 0.85;
-    const hasLOS = EnemyPathFinder.hasLineOfSight(enemy.x, enemy.y, target.x, target.y, room.obstacles);
+    const hasLOS = EnemyPathFinder.hasLineOfSight(enemy.x, enemy.y, target.x, target.y, roomWidth, roomHeight, room.obstacles);
 
     if (hasLOS && Math.abs(dist - ideal) < attackRange * 0.1) {
         enemy.vx = 0; enemy.vy = 0;
@@ -75,11 +77,10 @@ export const kite: ActionFn = (enemy, target, generateId, room, roomWidth, roomH
     if (dist < ideal) {
         const awayX = enemy.x + (enemy.x - target.x);
         const awayY = enemy.y + (enemy.y - target.y);
-        moveToward(enemy, awayX, awayY, room, roomWidth, roomHeight);
+        return moveToward(enemy, awayX, awayY, room, roomWidth, roomHeight);
     } else {
-        moveToward(enemy, target.x, target.y, room, roomWidth, roomHeight);
+        return moveToward(enemy, target.x, target.y, room, roomWidth, roomHeight);
     }
-    return false;
 };
 
 export const flank: ActionFn = (enemy, target, generateId, room, roomWidth, roomHeight, currentTime) => {
@@ -92,8 +93,7 @@ export const flank: ActionFn = (enemy, target, generateId, room, roomWidth, room
         enemy.vx = 0; enemy.vy = 0;
         return true; // дошли до точки — дальше пусть решает MCTS
     }
-    moveToward(enemy, flankX, flankY, room, roomWidth, roomHeight);
-    return false;
+    return moveToward(enemy, flankX, flankY, room, roomWidth, roomHeight);
 };
 
 export const retreat: ActionFn = (enemy, target, generateId, room, roomWidth, roomHeight, currentTime) => {
@@ -107,15 +107,14 @@ export const retreat: ActionFn = (enemy, target, generateId, room, roomWidth, ro
         enemy.vx = 0; enemy.vy = 0;
         return true;
     }
-    moveToward(enemy, awayX, awayY, room, roomWidth, roomHeight);
-    return false;
+    return moveToward(enemy, awayX, awayY, room, roomWidth, roomHeight);
 };
 
 export const wait: ActionFn = (enemy, target, generateId, room, roomWidth, roomHeight, currentTime) => {
     enemy.vx = 0; enemy.vy = 0;
     const attackRange = getAttackRange(enemy);
     const dist = Math.hypot(target.x - enemy.x, target.y - enemy.y);
-    if (dist <= attackRange && EnemyPathFinder.hasLineOfSight(enemy.x, enemy.y, target.x, target.y, room.obstacles)) {
+    if (dist <= attackRange && EnemyPathFinder.hasLineOfSight(enemy.x, enemy.y, target.x, target.y, roomWidth, roomHeight, room.obstacles)) {
         tryFire(enemy, target, generateId, room, currentTime, attackRange);
     }
     return true; // Wait — короткое, завершается сразу, независимо от выстрела

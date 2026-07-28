@@ -114,15 +114,15 @@ export class EnemyAIService {
                 const gameState = EnemyAIService.mapState(enemy, players, room.obstacles);
                 EnemyAIService.pendingUpdates.set(enemy.id, true);
 
-                // action = EnemyAIService.updateAction(enemy, gameState, currentTime);
-                //     ec.isCompleted = false;
-                //     ec.isTimeout = false;
-                setImmediate(() => {
-                    action = EnemyAIService.updateAction(enemy, gameState, currentTime);
+                action = EnemyAIService.updateAction(enemy, gameState, currentTime);
                     ec.isCompleted = false;
                     ec.isTimeout = false;
-                    EnemyAIService.pendingUpdates.set(enemy.id, false);
-                });
+                // setImmediate(() => {
+                //     action = EnemyAIService.updateAction(enemy, gameState, currentTime);
+                //     ec.isCompleted = false;
+                //     ec.isTimeout = false;
+                //     EnemyAIService.pendingUpdates.set(enemy.id, false);
+                // });
             }
             EnemyAIService.executeAction(
                 enemy, 
@@ -204,7 +204,8 @@ export class EnemyAIService {
         state: GameState,
         currentTime: number
     ): ActionType {
-        const result = EnemyAIService.mctsInstance.findBestAction(state);
+        //const result = EnemyAIService.mctsInstance.findBestAction(state);
+        const result = { actionName: 'Engage'};
         console.log(result.actionName);
         const ec = EnemyAIService.enemies.get(enemy.id);
         if (!ec) return ActionType.None;
@@ -232,6 +233,8 @@ export class EnemyAIService {
         if (!ac) return;
 
         const target = EnemyAIService.find_closest_target(enemy, players);
+        if (!target) return;
+
         const isComplete = ac(enemy, target, gen, room, roomWidth, roomHeight, currentTime);
 
         const ec = EnemyAIService.enemies.get(enemy.id);
@@ -243,7 +246,9 @@ export class EnemyAIService {
     public static find_closest_target(
         enemy: Enemy,
         players: Player[]
-    ): Player {
+    ): Player | null {
+        if (players.length === 0) return null;
+
         let best = players[0];
         let min_dist = Number.MAX_VALUE;
         for (const player of players) {

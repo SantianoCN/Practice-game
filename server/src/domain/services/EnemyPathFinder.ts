@@ -1,4 +1,6 @@
+import { read } from "fs";
 import { Obstacle } from "../entities/Obstacle";
+import { GAME_CONFIG } from "../../../../shared/src/config/game.config"
 
 export interface Position {
     x: number;
@@ -6,19 +8,20 @@ export interface Position {
 }
 
 export default class EnemyPathFinder {
-    private static readonly CELL_SIZE = 20;
-    private static readonly ENTITY_RADIUS = 40;
+    public static readonly ENTITY_RADIUS = 20;
 
     public static hasLineOfSight(
         x1: number, y1: number,
         x2: number, y2: number,
+        roomWidth: number,
+        roomHeight: number,
         obstacles: Obstacle[]
     ): boolean {
         for (const ob of obstacles) {
-            if (this.lineIntersectsBox(x1, y1, x2, y2, ob))
-                return false;
+            if (this.lineIntersectsBox(x1, y1, x2, y2, ob)) return false;
         }
-
+        if (x1 < 0 || x1 > roomWidth || x2 < 0 || x2 > roomWidth ||
+            y1 < 0 || y1 > roomHeight || y2 < 0 || y2 > roomHeight) return false;
         return true;
     }
 
@@ -26,7 +29,7 @@ export default class EnemyPathFinder {
         x: number, y: number,
         obstacles: readonly Obstacle[],
         roomWidth: number, roomHeight: number,
-        radius: number
+        radius: number = this.ENTITY_RADIUS
     ): boolean {
         if (x - radius < 0 || x + radius >= roomWidth ||
             y - radius < 0 || y + radius >= roomHeight) return false;
@@ -37,6 +40,29 @@ export default class EnemyPathFinder {
             const top = ob.y - ob.height / 2 - radius;
             const bottom = ob.y + ob.height / 2 + radius;
             if (x >= left && x < right && y >= top && y < bottom) return false;
+        }
+        return true;
+    }
+
+    public static hasClearPath(
+        x1: number, y1: number,
+        x2: number, y2: number,
+        obstacles: readonly Obstacle[],
+        roomWidth: number, roomHeight: number,
+        radius: number = this.ENTITY_RADIUS
+    ): boolean {
+        if (x1 - radius < 0 || x1 + radius > roomWidth || x2 - radius < 0 || x2 + radius > roomWidth ||
+            y1 - radius < 0 || y1 + radius > roomHeight || y2 - radius < 0 || y2 + radius > roomHeight) {
+            return false;
+        }
+        for (const ob of obstacles) {
+            const inflated: Obstacle = {
+                ...ob,
+                width: ob.width + radius,
+                height: ob.height + radius,
+                getBounds: ob.getBounds
+            };
+            if (this.lineIntersectsBox(x1, y1, x2, y2, inflated)) return false;
         }
         return true;
     }
@@ -74,14 +100,32 @@ export default class EnemyPathFinder {
         return true;
     }
 
+    public static hasClearPathToTarget(
+        x1: number, y1: number,
+        x2: number, y2: number,
+        obstacles: readonly Obstacle[],
+        roomWidth: number, roomHeight: number,
+        radius: number
+    ): boolean {
+        if (x1 - radius < 0 || x1 + radius > roomWidth ||
+            y1 - radius < 0 || y1 + radius > roomHeight) return false;
+        if (x2 < 0 || x2 > roomWidth || y2 < 0 || y2 > roomHeight) return false;
+
+        for (const ob of obstacles) {
+            if (this.lineIntersectsBox(x1 + radius, y1+ radius, x2+ radius, y2+ radius, ob)) return false;
+        }
+        return true;
+    }
+
     public static findPath(
         fromX: number, fromY: number,
         toX: number, toY: number,
         obstacles: Obstacle[],
         roomWidth: number, roomHeight: number,
-        cellSize: number = this.CELL_SIZE
+        cellSize: number = GAME_CONFIG.CELL_SIZE,
+        radius: number = this.ENTITY_RADIUS
     ): Position[] {
-        if (this.hasLineOfSight(fromX, fromY, toX, toY, obstacles)) {
+        if (this.hasClearPathToTarget(fromX, fromY, toX, toY, obstacles, roomWidth, roomHeight, radius)) {
             return [{ x: toX, y: toY }];
         }
 
@@ -91,8 +135,14 @@ export default class EnemyPathFinder {
         const gx = Math.floor(toX / cellSize), gy = Math.floor(toY / cellSize);
         if (sx === gx && sy === gy) return [];
 
-        const cellWalkable = (cx: number, cy: number) =>
-            this.isWalkable(cx * cellSize + cellSize / 2, cy * cellSize + cellSize / 2, obstacles, roomWidth, roomHeight, this.ENTITY_RADIUS);
+        const cellWalkable = (cx: number, cy: number) => {
+            if (Math.abs(cx - gx) <= 1 && Math.abs(cy - gy) <= 1) {
+                const px = cx * cellSize + cellSize / 2;
+                const py = cy * cellSize + cellSize / 2;
+                return this.isWalkable(px, py, obstacles, roomWidth, roomHeight, 0);
+            }
+            return this.isWalkable(cx * cellSize + cellSize / 2, cy * cellSize + cellSize / 2, obstacles, roomWidth, roomHeight, radius);
+        }
         const key = (x: number, y: number) => y * cols + x;
 
         const visited = new Set<number>([key(sx, sy)]);
@@ -128,6 +178,6 @@ export default class EnemyPathFinder {
         }
         cells.reverse();
 
-        return cells.map(c => ({ x: c.x * cellSize + cellSize / 2, y: c.y * cellSize + cellSize / 2 }));
+        return cells.map(c => ({ x: c.x * cellSize + cellSize / 2, y: c.y * cellSize + cellSize / 2}));
     }
 }
