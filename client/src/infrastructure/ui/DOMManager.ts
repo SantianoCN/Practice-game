@@ -328,14 +328,27 @@ export class DOMManager {
             const buyContainer = document.createElement('div');
             buyContainer.className = 'buy-button-container';
 
-            buyContainer.innerHTML = `
-                <div class="buy-title">ЭТОТ КЛАСС ЕЩЕ ЗАПЕРТ!</div>
-                <button class="button button-success" style="width: 240px;">КУПИТЬ ЗА ${price}<img src="./assets/loot/coin.png" class="coin-icon" /></button>
-            `;
+            const titleDiv = document.createElement('div');
+            titleDiv.className = 'buy-title';
+            titleDiv.innerText = 'ЭТОТ КЛАСС ЕЩЕ ЗАПЕРТ!';
 
-            buyContainer.querySelector('button')!.onclick = () => {
+            const buyBtn = document.createElement('button');
+            buyBtn.className = 'button button-success';
+            buyBtn.style.width = '240px';
+            buyBtn.innerText = `КУПИТЬ ЗА ${price} `;
+
+            const coinImg = document.createElement('img');
+            coinImg.className = 'coin-icon';
+            coinImg.src = ASSETS.loot.coin;
+            coinImg.alt = 'Монета';
+
+            buyBtn.appendChild(coinImg);
+            buyBtn.onclick = () => {
                 this.onBuyItem?.(this.selectedArch);
             };
+
+            buyContainer.appendChild(titleDiv);
+            buyContainer.appendChild(buyBtn);
             container.appendChild(buyContainer);
 
             const nameSpan = document.createElement('span');
@@ -349,14 +362,27 @@ export class DOMManager {
             const buyContainer = document.createElement('div');
             buyContainer.className = 'buy-button-container';
 
-            buyContainer.innerHTML = `
-                <div class="buy-title">ОРУЖИЕ ЕЩЕ ЗАПЕРТО!</div>
-                <button class="button button-success" style="width: 240px;">КУПИТЬ ЗА ${price}<img src="./assets/loot/coin.png" class="coin-icon" /></button>
-            `;
+            const titleDiv = document.createElement('div');
+            titleDiv.className = 'buy-title';
+            titleDiv.innerText = 'ОРУЖИЕ ЕЩЕ ЗАПЕРТО!';
 
-            buyContainer.querySelector('button')!.onclick = () => {
+            const buyBtn = document.createElement('button');
+            buyBtn.className = 'button button-success';
+            buyBtn.style.width = '240px';
+            buyBtn.innerText = `КУПИТЬ ЗА ${price} `;
+
+            const coinImg = document.createElement('img');
+            coinImg.className = 'coin-icon';
+            coinImg.src = ASSETS.loot.coin;
+            coinImg.alt = 'Монета';
+
+            buyBtn.appendChild(coinImg);
+            buyBtn.onclick = () => {
                 this.onBuyItem?.(this.selectedWeapon);
             };
+
+            buyContainer.appendChild(titleDiv);
+            buyContainer.appendChild(buyBtn);
             container.appendChild(buyContainer);
 
             const nameSpan = document.createElement('span');

@@ -12,7 +12,7 @@ export class GameSession {
     public allowedAccountIds: Set<string> = new Set();
 
     constructor(
-        public readonly sessionId: string,
+        public sessionId: string,
         public readonly roomWidth: number,
         public readonly roomHeight: number,
         public difficulty: FloorDifficulty

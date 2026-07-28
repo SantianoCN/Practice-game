@@ -161,6 +161,7 @@ export class SessionManagementUseCase {
         if (!session) return null;
 
         await this.saveRepo.deleteRun(saveId);
+        session.sessionId = this.idGen.generateUUID(6);
 
         const hostPlayer = session.getPlayer(requestingAccountId);
         if (!hostPlayer) return null;

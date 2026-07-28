@@ -26,7 +26,7 @@ import { PrismaSaveRepo } from './infrastructure/persistence/PrismaSaveRepo';
 async function bootstrap() {
     const PORT = process.env.PORT || 3000;
     const HOST = process.env.HOST || '0.0.0.0';
-    const CLIENT_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:5173';
+    const CLIENT_ORIGIN = process.env.CORS_ORIGIN || 'http://217.114.14.204:5173';
 
     const app = express();
     app.use(cors({

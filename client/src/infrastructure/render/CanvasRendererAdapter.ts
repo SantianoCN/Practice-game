@@ -168,15 +168,135 @@ export class CanvasRendererAdapter {
 
         if (!room) return;
         this.updateVisitedRooms(room);
-        if (this.isGuiVisible) {
-            this.drawGUI(players, myId);
-            if (!room) return;
-            this.drawMiniMap(room.gridX, room.gridY);
+
+        const me = players.get(myId);
+        if (me) {
+            this.updateHtmlHUD(me);
+            if (this.isGuiVisible) {
+                this.drawCanvasGUI(me);
+                this.drawMiniMap(room.gridX, room.gridY);
+            }
         }
     }
 
     public toggleGUI(): void {
         this.isGuiVisible = !this.isGuiVisible;
+    }
+
+    private updateHtmlHUD(me: VisualEntity): void {
+        const maxSlots = me.maxInventoryLength ?? (me as any).maxInventoryLenght ?? 3;
+        const currentActiveIdx = me.currentWeaponIndex ?? 0;
+        
+        const inventoryIds = me.inventory 
+            ? me.inventory.map((item: any) => typeof item === 'string' ? item : (item.visualId || item.presetId || '')).join(',') 
+            : '';
+
+        const currentStateKey = `${maxSlots}_${currentActiveIdx}_${inventoryIds}`;
+
+        if (this.lastHotbarState !== currentStateKey) {
+            this.lastHotbarState = currentStateKey;
+            this.updateHtmlHotbar(me, maxSlots, currentActiveIdx);
+        }
+
+        const goldEl = document.getElementById('hudGold');
+        if (goldEl) {
+            goldEl.innerText = `${me.gold}`;
+        }
+
+        const weaponEl = document.getElementById('hudWeapon');
+        if (weaponEl) {
+            const weaponNames: Record<string, string> = {
+                'iron_sword': 'МЕЧ-КЛАДЕНЕЦ',
+                'battle_axe': 'СЕКИРА ПЕРУНА',
+                'fire_staff': 'ПОСОХ ОГНЯ',
+                'ice_staff': 'ПОСОХ ХЛАДА',
+                'lightning_staff': 'ПОСОХ ПЕРУНА',
+                'hunter_bow': 'ОХОТНИЧИЙ ЛУК',
+            };
+            weaponEl.innerText = weaponNames[me.activeWeaponVisualId] || me.activeWeaponVisualId.toUpperCase();
+        }
+    }
+
+    private drawCanvasGUI(me: VisualEntity): void {
+        const px = Math.round(me.renderX);
+        const py = Math.round(me.renderY);
+        const r = me.width ?? 15;
+
+        this.context.save();
+        const arrowY = py - r - 5;
+        this.context.fillStyle = '#d4af37';
+        this.context.fillRect(px - 5, arrowY, 10, 3);
+        this.context.fillRect(px - 3, arrowY + 3, 6, 3);
+        this.context.fillRect(px - 1, arrowY + 6, 2, 3);
+        this.context.restore();
+
+        const guiX = 20, guiY = 20, guiWidth = 210, guiHeight = 64;
+        const hp = me.hp ?? 100, maxHp = me.maxHp ?? 100;
+        const mana = me.mana ?? 100, maxMana = me.maxMana ?? 100;
+
+        const hpRatio = Math.max(0, Math.min(1, hp / maxHp));
+        const manaRatio = Math.max(0, Math.min(1, mana / maxMana));
+
+        this.context.save();
+        this.context.fillStyle = '#1c0e07';
+        this.context.fillRect(guiX, guiY, guiWidth, guiHeight);
+        this.context.strokeStyle = '#b8860b';
+        this.context.lineWidth = 3;
+        this.context.strokeRect(guiX, guiY, guiWidth, guiHeight);
+
+        const barX = guiX + 10, barY = guiY + 8, barWidth = guiWidth - 20, barHeight = 16;
+
+        this.context.fillStyle = '#380805';
+        this.context.fillRect(barX, barY, barWidth, barHeight);
+        this.context.fillStyle = '#8a1c14';
+        this.context.fillRect(barX, barY, Math.floor(barWidth * hpRatio), barHeight);
+        this.context.strokeStyle = '#120904';
+        this.context.lineWidth = 2;
+        this.context.strokeRect(barX, barY, barWidth, barHeight);
+
+        this.context.fillStyle = '#f3e5ab';
+        this.context.font = '8px "Press Start 2P", monospace';
+        this.context.fillText(`ЖИЗНЬ: ${Math.floor(hp)}/${maxHp}`, barX + 6, barY + 11);
+
+        const manaY = barY + 22, manaHeight = 12;
+        this.context.fillStyle = '#0a232d';
+        this.context.fillRect(barX, manaY, barWidth, manaHeight);
+        this.context.fillStyle = '#1a5f7a';
+        this.context.fillRect(barX, manaY, Math.floor(barWidth * manaRatio), manaHeight);
+        this.context.strokeStyle = '#120904';
+        this.context.lineWidth = 2;
+        this.context.strokeRect(barX, manaY, barWidth, manaHeight);
+
+        this.context.fillStyle = '#8ad5f0';
+        this.context.font = '7px "Press Start 2P", monospace';
+        this.context.fillText(`БАЙКАЛ: ${Math.floor(mana)}/${maxMana}`, barX + 6, manaY + 9);
+        this.context.restore();
+
+        if (me.canInteracting) {
+            this.context.save();
+            this.context.font = '8px "Press Start 2P", sans-serif';
+            this.context.textAlign = 'center';
+            this.context.textBaseline = 'middle';
+            this.context.fillStyle = '#ffcc00';
+            this.context.fillText('Для взаимодействия - "E"', me.renderX, me.renderY + 20);
+            this.context.restore();
+        }
+
+        if (me.hp <= 0) {
+            this.context.save();
+            this.context.fillStyle = 'rgba(0, 0, 0, 0.4)';
+            this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+            this.context.fillStyle = '#e74c3c';
+            this.context.font = '14px "Press Start 2P", monospace';
+            this.context.textAlign = 'center';
+            this.context.fillText('ВЫ ПОГИБЛИ', this.canvas.width / 2, this.canvas.height / 2 - 10);
+
+            this.context.fillStyle = '#ecf0f1';
+            this.context.font = '8px "Press Start 2P", monospace';
+            this.context.fillText('Ожидайте помощи отряда ...', this.canvas.width / 2, this.canvas.height / 2 + 15);
+            this.context.restore();
+        }
     }
 
     public reset(): void {
@@ -272,123 +392,6 @@ export class CanvasRendererAdapter {
 
     private clear(): void {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    }
-
-    private drawGUI(playersMap: Map<string, VisualEntity>, myId: string) {
-        const me = playersMap.get(myId);
-        if (!me) return;
-
-        const px = Math.round(me.renderX);
-        const py = Math.round(me.renderY);
-        const r = me.width ?? 15;
-
-        this.context.save();
-        const arrowY = py - r - 5;
-        this.context.fillStyle = '#d4af37';
-        this.context.fillRect(px - 5, arrowY, 10, 3);
-        this.context.fillRect(px - 3, arrowY + 3, 6, 3);
-        this.context.fillRect(px - 1, arrowY + 6, 2, 3);
-        this.context.restore();
-
-        const guiX = 20, guiY = 20, guiWidth = 210, guiHeight = 64;
-        const hp = me.hp ?? 100, maxHp = me.maxHp ?? 100;
-        const mana = me.mana ?? 100, maxMana = me.maxMana ?? 100;
-
-        const hpRatio = Math.max(0, Math.min(1, hp / maxHp));
-        const manaRatio = Math.max(0, Math.min(1, mana / maxMana));
-
-        this.context.save();
-        this.context.fillStyle = '#1c0e07';
-        this.context.fillRect(guiX, guiY, guiWidth, guiHeight);
-        this.context.strokeStyle = '#b8860b';
-        this.context.lineWidth = 3;
-        this.context.strokeRect(guiX, guiY, guiWidth, guiHeight);
-
-        const barX = guiX + 10, barY = guiY + 8, barWidth = guiWidth - 20, barHeight = 16;
-
-        this.context.fillStyle = '#380805';
-        this.context.fillRect(barX, barY, barWidth, barHeight);
-        this.context.fillStyle = '#8a1c14';
-        this.context.fillRect(barX, barY, Math.floor(barWidth * hpRatio), barHeight);
-        this.context.strokeStyle = '#120904';
-        this.context.lineWidth = 2;
-        this.context.strokeRect(barX, barY, barWidth, barHeight);
-
-        this.context.fillStyle = '#f3e5ab';
-        this.context.font = '8px "Press Start 2P", monospace';
-        this.context.fillText(`ЖИЗНЬ: ${Math.floor(hp)}/${maxHp}`, barX + 6, barY + 11);
-
-        const manaY = barY + 22, manaHeight = 12;
-        this.context.fillStyle = '#0a232d';
-        this.context.fillRect(barX, manaY, barWidth, manaHeight);
-        this.context.fillStyle = '#1a5f7a';
-        this.context.fillRect(barX, manaY, Math.floor(barWidth * manaRatio), manaHeight);
-        this.context.strokeStyle = '#120904';
-        this.context.lineWidth = 2;
-        this.context.strokeRect(barX, manaY, barWidth, manaHeight);
-
-        this.context.fillStyle = '#8ad5f0';
-        this.context.font = '7px "Press Start 2P", monospace';
-        this.context.fillText(`БАЙКАЛ: ${Math.floor(mana)}/${maxMana}`, barX + 6, manaY + 9);
-        this.context.restore();
-
-        const maxSlots = me.maxInventoryLength ?? (me as any).maxInventoryLenght ?? 3;
-        const currentActiveIdx = me.currentWeaponIndex ?? 0;
-        
-        const inventoryIds = me.inventory 
-            ? me.inventory.map((item: any) => typeof item === 'string' ? item : (item.visualId || item.presetId || '')).join(',') 
-            : '';
-
-        const currentStateKey = `${maxSlots}_${currentActiveIdx}_${inventoryIds}`;
-
-        if (this.lastHotbarState !== currentStateKey) {
-            this.lastHotbarState = currentStateKey;
-            this.updateHtmlHotbar(me, maxSlots, currentActiveIdx);
-        }
-
-        const goldEl = document.getElementById('hudGold');
-        if (goldEl) {
-            goldEl.innerText = `${me.gold}`;
-        }
-
-        const weaponEl = document.getElementById('hudWeapon');
-        if (weaponEl) {
-            const weaponNames: Record<string, string> = {
-                'iron_sword': 'МЕЧ-КЛАДЕНЕЦ',
-                'battle_axe': 'СЕКИРА ПЕРУНА',
-                'fire_staff': 'ПОСОХ ОГНЯ',
-                'ice_staff': 'ПОСОХ ХЛАДА',
-                'lightning_staff': 'ПОСОХ ПЕРУНА',
-                'hunter_bow': 'ОХОТНИЧИЙ ЛУК',
-            };
-            weaponEl.innerText = weaponNames[me.activeWeaponVisualId] || me.activeWeaponVisualId.toUpperCase();
-        }
-
-        if (me.canInteracting) {
-            this.context.save();
-            this.context.font = '8px "Press Start 2P", sans-serif';
-            this.context.textAlign = 'center';
-            this.context.textBaseline = 'middle';
-            this.context.fillStyle = '#ffcc00';
-            this.context.fillText('Для взаимодействия - "E"', me.renderX, me.renderY + 20);
-            this.context.restore();
-        }
-
-        if (me.hp <= 0) {
-            this.context.save();
-            this.context.fillStyle = 'rgba(0, 0, 0, 0.4)';
-            this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-            this.context.fillStyle = '#e74c3c';
-            this.context.font = '14px "Press Start 2P", monospace';
-            this.context.textAlign = 'center';
-            this.context.fillText('ВЫ ПОГИБЛИ', this.canvas.width / 2, this.canvas.height / 2 - 10);
-
-            this.context.fillStyle = '#ecf0f1';
-            this.context.font = '8px "Press Start 2P", monospace';
-            this.context.fillText('Ожидайте помощи отряда ...', this.canvas.width / 2, this.canvas.height / 2 + 15);
-            this.context.restore();
-        }
     }
 
     private updateHtmlHotbar(me: any, maxSlots: number, activeIdx: number): void {

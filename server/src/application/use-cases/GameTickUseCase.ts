@@ -127,6 +127,8 @@ export class GameTickUseCase {
                 }
 
                 for (const player of livingPlayers) {
+                    player.canInteracting = false;
+
                     CollisionEngine.resolveWallBounds(player, session.roomWidth, session.roomHeight, room, true);
                     CollisionEngine.resolveObstacles(player, room.getObstacleGrid());
                         

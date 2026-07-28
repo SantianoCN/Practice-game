@@ -5,7 +5,7 @@ import { CanvasRendererAdapter } from './infrastructure/render/CanvasRendererAda
 import { SyncStateUseCase } from './application/use-cases/SyncStateUseCase';
 import { BaseResponseDTO, PlayerClassPresetDTO, PlayerProgressDTO } from '@game/shared';
 
-const SERVER_URL = 'http://localhost:3000';
+const SERVER_URL = 'http://217.114.14.204:3000';
 
 class App {
     private ui = new DOMManager();
@@ -227,17 +227,19 @@ class App {
             this.ui.updatePresets(this.classPresets, progress);
         });
 
+        this.network.onSessionCompleted(data => {
+            if (data.progress) {
+                this.metaProgress = data.progress;
+                this.ui.updatePresets(this.classPresets, data.progress);
+            }
+            this.ui.showToast(data.message, 'success');
+            this.stopGame();
+        });
+
         this.ui.onCompleteSession = async () => {
             try {
                 const res = await this.network.completeSession();
-                if (res.success) {
-                    if (res.progress) {
-                        this.metaProgress = res.progress;
-                        this.ui.updatePresets(this.classPresets, res.progress);
-                    }
-                    this.ui.showToast('Поход завершен! Золото в избе.', 'success');
-                    this.stopGame();
-                } else {
+                if (!res.success) {
                     this.ui.showToast(res.message || 'Не удалось завершить поход', 'error');
                 }
             } catch (err) {
@@ -247,6 +249,14 @@ class App {
 
         this.network.onPortalInteract(() => {
             this.ui.showPortalModal(true);
+        });
+
+        this.network.onHostMigrated(data => {
+            if (data.newHostAccountId === this.myId) {
+                this.isHost = true;
+                this.ui.updateHostStatus(true);
+                this.ui.showToast('Вы назначены новым воеводой отряда!', 'success');
+            }
         });
 
         this.network.onSessionTerminated(data => {

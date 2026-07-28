@@ -180,8 +180,6 @@ export class CollisionEngine {
                     player.canInteracting = false;
                     return chest.id;
                 }
-            } else {
-                player.canInteracting = false;
             }
         }
         return null;
@@ -203,8 +201,8 @@ export class CollisionEngine {
                 const requiresInteraction = preset?.type !== 'gold';
                 
                 if (requiresInteraction) {
+                    player.canInteracting = true;
                     if (!player.isInteracting) {
-                        player.canInteracting = true;
                         continue;
                     } 
                     player.isInteracting = false;
@@ -213,8 +211,6 @@ export class CollisionEngine {
 
                 collected.push(item);
                 droppedItems.splice(i, 1);
-            } else {
-                player.canInteracting = false;
             }
         }
         return collected;
@@ -230,8 +226,6 @@ export class CollisionEngine {
                 player.canInteracting = false;
                 return true;
             }
-        } else {
-            player.canInteracting = false;
         }
         return false;
     }
@@ -249,8 +243,6 @@ export class CollisionEngine {
                     player.canInteracting = false;
                     return deadPlayer;
                 } 
-            } else {
-                player.canInteracting = false;
             }
         }
         return null;
