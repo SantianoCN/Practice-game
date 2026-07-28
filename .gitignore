@@ -3,4 +3,5 @@
 /client/node_modules/
 /client/dist/
 /server/dist/
+/server/prisma/dev.db
 /generated/prisma
