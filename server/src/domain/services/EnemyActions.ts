@@ -13,7 +13,7 @@ export type ActionFn = (
     roomWidth: number,
     roomHeight: number,
     currentTime: number
-) => boolean; // true — действие завершено, пора спрашивать MCTS заново
+) => boolean;
 
 function getAttackRange(enemy: Enemy): number {
     return enemy.currentWeapon ? enemy.currentWeapon.config.projectile.range : 50;
@@ -26,7 +26,7 @@ function moveToward(
 ): boolean {
     const path = EnemyPathFinder.findPath(enemy.x, enemy.y, targetX, targetY, room.obstacles, roomWidth, roomHeight);
     if (path.length === 0) { 
-        console.log('путь не найден');
+        //console.log('путь не найден');
         enemy.vx = 0;
         enemy.vy = 0;
         return true; 
@@ -66,11 +66,30 @@ export const engage: ActionFn = (enemy, target, generateId, room, roomWidth, roo
 
 export const kite: ActionFn = (enemy, target, generateId, room, roomWidth, roomHeight, currentTime) => {
     const attackRange = getAttackRange(enemy);
+    if (attackRange < 60) 
+        return engage(
+            enemy, 
+            target,
+            generateId, 
+            room, 
+            roomWidth, 
+            roomHeight, 
+            currentTime
+        ); 
+
     const dist = Math.hypot(target.x - enemy.x, target.y - enemy.y);
     const ideal = attackRange * 0.85;
-    const hasLOS = EnemyPathFinder.hasLineOfSight(enemy.x, enemy.y, target.x, target.y, roomWidth, roomHeight, room.obstacles);
+    const hasLOS = EnemyPathFinder.hasLineOfSight(
+        enemy.x, 
+        enemy.y, 
+        target.x, 
+        target.y, 
+        roomWidth, 
+        roomHeight, 
+        room.obstacles
+    );
 
-    if (hasLOS && Math.abs(dist - ideal) < attackRange * 0.1) {
+    if (hasLOS && Math.abs(dist - ideal) < attackRange * 0.5) {
         enemy.vx = 0; enemy.vy = 0;
         return tryFire(enemy, target, generateId, room, currentTime, attackRange);
     }
@@ -85,13 +104,13 @@ export const kite: ActionFn = (enemy, target, generateId, room, roomWidth, roomH
 
 export const flank: ActionFn = (enemy, target, generateId, room, roomWidth, roomHeight, currentTime) => {
     const dx = target.x - enemy.x, dy = target.y - enemy.y;
-    const flankX = target.x - dy * 0.6;   // детерминированный перпендикуляр,
-    const flankY = target.y + dx * 0.6;   // не случайный угол — см. пояснение выше
+    const flankX = target.x - dy * 0.6;
+    const flankY = target.y + dx * 0.6; 
 
     const distToFlank = Math.hypot(flankX - enemy.x, flankY - enemy.y);
     if (distToFlank < 20) {
         enemy.vx = 0; enemy.vy = 0;
-        return true; // дошли до точки — дальше пусть решает MCTS
+        return true; // дальше пусть решает MCTS
     }
     return moveToward(enemy, flankX, flankY, room, roomWidth, roomHeight);
 };
@@ -99,8 +118,13 @@ export const flank: ActionFn = (enemy, target, generateId, room, roomWidth, room
 export const retreat: ActionFn = (enemy, target, generateId, room, roomWidth, roomHeight, currentTime) => {
     const dx = enemy.x - target.x, dy = enemy.y - target.y;
     const dist = Math.hypot(dx, dy) || 1;
-    const awayX = enemy.x + (dx / dist) * getAttackRange(enemy) * 1.5;
-    const awayY = enemy.y + (dy / dist) * getAttackRange(enemy) * 1.5;
+
+    let awayX = enemy.x + (dx / dist) * getAttackRange(enemy) * 1.5;
+    let awayY = enemy.y + (dy / dist) * getAttackRange(enemy) * 1.5;
+    if (getAttackRange(enemy) > 80) {
+        awayX = enemy.x + (dx / dist) * getAttackRange(enemy);
+        awayY = enemy.y + (dy / dist) * getAttackRange(enemy);
+    } 
 
     const distToGoal = Math.hypot(awayX - enemy.x, awayY - enemy.y);
     if (distToGoal < 20) {
@@ -111,11 +135,20 @@ export const retreat: ActionFn = (enemy, target, generateId, room, roomWidth, ro
 };
 
 export const wait: ActionFn = (enemy, target, generateId, room, roomWidth, roomHeight, currentTime) => {
+    return engage(
+            enemy, 
+            target,
+            generateId, 
+            room, 
+            roomWidth, 
+            roomHeight, 
+            currentTime
+        ); 
     enemy.vx = 0; enemy.vy = 0;
     const attackRange = getAttackRange(enemy);
     const dist = Math.hypot(target.x - enemy.x, target.y - enemy.y);
     if (dist <= attackRange && EnemyPathFinder.hasLineOfSight(enemy.x, enemy.y, target.x, target.y, roomWidth, roomHeight, room.obstacles)) {
         tryFire(enemy, target, generateId, room, currentTime, attackRange);
     }
-    return true; // Wait — короткое, завершается сразу, независимо от выстрела
+    return true;
 };

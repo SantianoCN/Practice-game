@@ -14,7 +14,7 @@ private:
 public:
     ActionTable() {
         action_table[static_cast<size_t>(ActionType::Engage)] = &engage;
-        action_table[static_cast<size_t>(ActionType::Flank)] = &flank;
+        //action_table[static_cast<size_t>(ActionType::Flank)] = &flank;
         action_table[static_cast<size_t>(ActionType::Kite)] = &kite;
         action_table[static_cast<size_t>(ActionType::Retreat)] = &retreat;
         action_table[static_cast<size_t>(ActionType::Wait)] = &wait;

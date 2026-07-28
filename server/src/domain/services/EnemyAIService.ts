@@ -70,9 +70,9 @@ export class EnemyAIService {
     ]);
     private static pendingUpdates: Map<string, boolean> = new Map();
 
-    private static MCTS_TIMEOUT_INTERVAL: number = 2500;    // могут быть проблемы с малыми значениями
-    private static MCTS_C_VALUE: number = 0.4;
-    private static MCTS_MAX_ITERATIONS: number = 50;
+    private static MCTS_TIMEOUT_INTERVAL: number = 3000;    // могут быть проблемы с малыми значениями
+    private static MCTS_C_VALUE: number = 1.4;
+    private static MCTS_MAX_ITERATIONS: number = 40;
 
     private static enemies: Map<string, EnemyAction> = new Map();
     private static mctsInstance: any = new mctsModule.MCTS(
@@ -114,15 +114,15 @@ export class EnemyAIService {
                 const gameState = EnemyAIService.mapState(enemy, players, room.obstacles);
                 EnemyAIService.pendingUpdates.set(enemy.id, true);
 
-                action = EnemyAIService.updateAction(enemy, gameState, currentTime);
-                    ec.isCompleted = false;
-                    ec.isTimeout = false;
-                // setImmediate(() => {
-                //     action = EnemyAIService.updateAction(enemy, gameState, currentTime);
+                // action = EnemyAIService.updateAction(enemy, gameState, currentTime);
                 //     ec.isCompleted = false;
                 //     ec.isTimeout = false;
-                //     EnemyAIService.pendingUpdates.set(enemy.id, false);
-                // });
+                setImmediate(() => {
+                    action = EnemyAIService.updateAction(enemy, gameState, currentTime);
+                    ec.isCompleted = false;
+                    ec.isTimeout = false;
+                    EnemyAIService.pendingUpdates.set(enemy.id, false);
+                });
             }
             EnemyAIService.executeAction(
                 enemy, 
@@ -204,7 +204,7 @@ export class EnemyAIService {
         state: GameState,
         currentTime: number
     ): ActionType {
-        //const result = { actionName: 'Engage'};
+        //const result = { actionName: 'Kite'};
         const result = EnemyAIService.mctsInstance.findBestAction(state);
         console.log(result.actionName);
         const ec = EnemyAIService.enemies.get(enemy.id);
