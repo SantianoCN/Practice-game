@@ -127,7 +127,7 @@ export class TextureRenderer implements EntityRenderer {
         context.save();
 
         const offsetX = 14; 
-        const offsetY = 2;
+        const offsetY = -4;
 
         context.translate(offsetX, offsetY);
 
