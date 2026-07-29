@@ -10,6 +10,7 @@ import {
 } from './asset-manifest.config';
 import { GAME_CONFIG } from '@game/shared';
 import { ASSETS } from '../../../assets';
+import { audio } from './SoundRender';
 
 interface MapCell {
     state: 'unseen' | 'visible' | 'visited';
@@ -42,6 +43,7 @@ export class CanvasRendererAdapter {
 
     private tileArr: Array<HTMLImageElement | HTMLCanvasElement> = [];
     private isHelpVisible: boolean = false;
+    private prevHp: number = 0;
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -233,6 +235,8 @@ export class CanvasRendererAdapter {
         const guiX = 20, guiY = 20, guiWidth = 210, guiHeight = 64;
         const hp = me.hp ?? 100, maxHp = me.maxHp ?? 100;
         const mana = me.mana ?? 100, maxMana = me.maxMana ?? 100;
+        if (this.prevHp > hp) audio.playSound('playerTakeDamage', 'interaction');
+        this.prevHp = hp;
 
         const hpRatio = Math.max(0, Math.min(1, hp / maxHp));
         const manaRatio = Math.max(0, Math.min(1, mana / maxMana));

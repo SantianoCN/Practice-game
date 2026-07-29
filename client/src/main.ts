@@ -3,8 +3,7 @@ import { SocketClient } from './infrastructure/network/SocketClient';
 import { KeyboardAdapter } from './infrastructure/input/KeyboardAdapter';
 import { CanvasRendererAdapter } from './infrastructure/render/CanvasRendererAdapter';
 import { SyncStateUseCase } from './application/use-cases/SyncStateUseCase';
-import { SoundRender } from './infrastructure/render/SoundRender';
-import { SOUNDS } from './../assets/index'
+import { audio } from './infrastructure/render/SoundRender';
 import { BaseResponseDTO, PlayerClassPresetDTO, PlayerProgressDTO } from '@game/shared';
 
 const SERVER_URL = 'http://217.114.14.204:3000';
@@ -15,7 +14,6 @@ class App {
     private input = new KeyboardAdapter();
     private renderer: CanvasRendererAdapter;
     private stateSync = new SyncStateUseCase();
-    private audio = new SoundRender();
 
     private myId = '';
     private gameLoopId?: number;
@@ -33,7 +31,6 @@ class App {
 
         this.input.onHelpPressed(() => this.renderer.toggleHelp());
 
-        this.audio.loadSound('envMusic', SOUNDS.env.envMusic);
         this.bindUiToNetwork();
         this.bindNetworkToApp();
         this.init();
@@ -313,6 +310,7 @@ class App {
         this.ui.showLobby(checkData.login);
         this.ui.updatePresets(this.classPresets, this.metaProgress);
         this.ui.showContinueButton(!!checkData.activeSaveSessionId);
+        audio.playSound('house', 'envMusic')
     }
 
     private startGame(sessionId: string, isSingleplayer: boolean = false, isHost: boolean = false): void {
@@ -320,7 +318,8 @@ class App {
 
         this.input.startListening();
         this.input.onInputChanged(action => this.network.sendPlayerAction(action));
-        this.audio.playSound('envMusic');
+        audio.stopSound('house')
+        audio.playSound('envMusic', 'envMusic');
 
         this.lastTime = performance.now();
         this.tick();
@@ -333,7 +332,7 @@ class App {
         if (this.gameLoopId) cancelAnimationFrame(this.gameLoopId);
         this.stateSync.clear();
         this.renderer.reset();
-        this.audio.stopSound('envMusic');
+        audio.stopSound('envMusic');
 
         this.network.checkAuth()
             .then(check => {
@@ -344,6 +343,7 @@ class App {
                     this.ui.showLobby(check.login);
                     this.ui.updatePresets(this.classPresets, this.metaProgress);
                     this.ui.showContinueButton(!!check.activeSaveSessionId);
+                    audio.playSound('house', 'envMusic')
                 } else {
                     this.ui.showAuth();
                 }
