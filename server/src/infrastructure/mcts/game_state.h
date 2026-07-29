@@ -6,6 +6,7 @@ struct GameState {
     static constexpr int MAX_PLAYERS_COUNT = 4;
     Player players[MAX_PLAYERS_COUNT];
     int players_count = 0;
+    int npc_max_hp;
     int npc_hp;
     int npc_damage;
     int npc_range;

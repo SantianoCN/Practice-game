@@ -10,7 +10,7 @@ private:
     int max_rollout_depth = 100;
 
     static constexpr int MOVE_STEP_SIZE = 10;
-    static constexpr int MAX_ROLLOUT_DEPTH = 100;
+    static constexpr int MAX_ROLLOUT_DEPTH = 8;
     static constexpr double WIN_REWARD = 1.0;
     static constexpr int MIN_DISTANCE = 10;
 
@@ -31,6 +31,6 @@ public:
     double rollout(GameState& state);
     std::vector<ActionType>& get_available_actions();
     void setObstacles(const std::vector<Obstacle>& obs) {
-        map.obstacles = obs;
+        map.obstacles = obs; 
     }
 };

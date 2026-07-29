@@ -18,7 +18,7 @@ export default class EnemyPathFinder {
         obstacles: Obstacle[]
     ): boolean {
         for (const ob of obstacles) {
-            if (this.lineIntersectsBox(x1, y1, x2, y2, ob)) return false;
+            if (this.lineIntersectsBoxWithoutBorder(x1, y1, x2, y2, ob)) return false;
         }
         if (x1 < 0 || x1 > roomWidth || x2 < 0 || x2 > roomWidth ||
             y1 < 0 || y1 > roomHeight || y2 < 0 || y2 > roomHeight) return false;
@@ -39,30 +39,42 @@ export default class EnemyPathFinder {
             const right = ob.x + ob.width / 2 + radius;
             const top = ob.y - ob.height / 2 - radius;
             const bottom = ob.y + ob.height / 2 + radius;
-            if (x >= left && x < right && y >= top && y < bottom) return false;
+            if (x >= left && x < right && y >= top && y < bottom) {
+                return false;
+            }
         }
         return true;
     }
 
-    public static hasClearPath(
+    public static lineIntersectsBoxWithoutBorder(
         x1: number, y1: number,
         x2: number, y2: number,
-        obstacles: readonly Obstacle[],
-        roomWidth: number, roomHeight: number,
-        radius: number = this.ENTITY_RADIUS
+        ob: Obstacle
     ): boolean {
-        if (x1 - radius < 0 || x1 + radius > roomWidth || x2 - radius < 0 || x2 + radius > roomWidth ||
-            y1 - radius < 0 || y1 + radius > roomHeight || y2 - radius < 0 || y2 + radius > roomHeight) {
-            return false;
-        }
-        for (const ob of obstacles) {
-            const inflated: Obstacle = {
-                ...ob,
-                width: ob.width + radius,
-                height: ob.height + radius,
-                getBounds: ob.getBounds
-            };
-            if (this.lineIntersectsBox(x1, y1, x2, y2, inflated)) return false;
+        const left = ob.x - ob.width;
+        const right = ob.x + ob.width;
+        const top = ob.y - ob.height;
+        const bottom = ob.y + ob.height;
+
+        let tmin = 0, tmax = 1;
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+
+        const p = [-dx, dx, -dy, dy];
+        const q = [x1 - left, right - x1, y1 - top, bottom - y1];
+
+        for (let i = 0; i < 4; i++) {
+            if (p[i] === 0) {
+                if (q[i] < 0) return false;
+            } else {
+                const t = q[i] / p[i];
+                if (p[i] < 0) {
+                    tmin = Math.max(tmin, t);
+                } else {
+                    tmax = Math.min(tmax, t);
+                }
+                if (tmin > tmax) return false;
+            }
         }
         return true;
     }
@@ -70,12 +82,13 @@ export default class EnemyPathFinder {
     public static lineIntersectsBox(
         x1: number, y1: number,
         x2: number, y2: number,
-        ob: Obstacle
+        ob: Obstacle,
+        radius: number
     ): boolean {
-        const left = ob.x - ob.width + 10 / 2;
-        const right = ob.x + ob.width + 10 / 2;
-        const top = ob.y - ob.height + 10 / 2;
-        const bottom = ob.y + ob.height + 10 / 2;
+        const left = ob.x - ob.width - radius / 4;
+        const right = ob.x + ob.width + radius / 4;
+        const top = ob.y - ob.height - radius / 4;
+        const bottom = ob.y + ob.height + radius / 4;
 
         let tmin = 0, tmax = 1;
         const dx = x2 - x1;
@@ -113,13 +126,15 @@ export default class EnemyPathFinder {
             y2 - radius < 0 || y2 + radius > roomHeight) return false;
 
         for (const ob of obstacles) {
-            const inflated: Obstacle = {
+            const inflated: Obstacle = { 
                 ...ob,
-                width: ob.width + radius * 2.5,
-                height: ob.height + radius * 2.5,
+                width: ob.width,
+                height: ob.height,
                 getBounds: ob.getBounds
             };
-            if (this.lineIntersectsBox(x1, y1, x2, y2, inflated)) return false;
+            if (radius !== 0)
+                if (this.lineIntersectsBox(x1, y1, x2, y2, inflated, radius)) return false;
+            else if(this.lineIntersectsBoxWithoutBorder(x1, y1, x2, y2, inflated)) return false;
         }
         return true;
     }
@@ -132,9 +147,16 @@ export default class EnemyPathFinder {
         cellSize: number = GAME_CONFIG.CELL_SIZE,
         radius: number = this.ENTITY_RADIUS
     ): Position[] {
-        if (this.hasClearPathToTarget(fromX, fromY, toX, toY, obstacles, roomWidth, roomHeight, radius)) {
-            return [{ x: toX, y: toY }];
-        }
+        if (this.hasClearPathToTarget(
+            fromX,
+            fromY, 
+            toX, 
+            toY, 
+            obstacles, 
+            roomWidth, 
+            roomHeight, 
+            radius
+        )) return [{ x: toX, y: toY }];
         
         const cols = Math.ceil(roomWidth / cellSize);
         const rows = Math.ceil(roomHeight / cellSize);
@@ -146,9 +168,16 @@ export default class EnemyPathFinder {
             if (Math.abs(cx - gx) <= 1 && Math.abs(cy - gy) <= 1) {
                 const px = cx * cellSize + cellSize / 2;
                 const py = cy * cellSize + cellSize / 2;
-                return this.isWalkable(px, py, obstacles, roomWidth, roomHeight, radius);
+                return this.isWalkable(px, py, obstacles, roomWidth, roomHeight, 0);
             }
-            return this.isWalkable(cx * cellSize + cellSize / 2, cy * cellSize + cellSize / 2, obstacles, roomWidth, roomHeight, radius);
+            return this.isWalkable(
+                cx * cellSize + cellSize / 2,
+                cy * cellSize + cellSize / 2, 
+                obstacles, 
+                roomWidth, 
+                roomHeight, 
+                radius
+            );
         }
         const key = (x: number, y: number) => y * cols + x;
 

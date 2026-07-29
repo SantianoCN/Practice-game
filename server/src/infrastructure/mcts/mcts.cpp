@@ -1,3 +1,5 @@
+#include <iostream>
+#include <chrono>
 #include "mcts.h"
 
 /// <summary>
@@ -17,7 +19,7 @@ ActionType MCTS::find_best_action(GameState state) {
         double reward = simulation();
         backpropagation(reward);
     }
-    return tree.best_action_by_visits();
+    return tree.best_action_by_visits(); 
 }
 
 void MCTS::print_stat() {

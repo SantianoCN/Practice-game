@@ -52,42 +52,41 @@ double GameEngine::heuristic_eval(const GameState& state) const {
     int min_distance = std::numeric_limits<int>::max();
     bool player_alive = false;
 
-    for (const Player& p : state.players) {
-        if (p.hp <= 0) continue;
+    for (int i = 0; i < state.players_count; i++) {
+        if (state.players[i].hp <= 0) continue;
         player_alive = true;
-        players_hp_sum += p.hp;
+        players_hp_sum += state.players[i].hp;
 
-        int dx = p.x - state.npc_x;
-        int dy = p.y - state.npc_y;
+        int dx = state.players[i].x - state.npc_x;
+        int dy = state.players[i].y - state.npc_y;
         int distance = (int)sqrt(dx * dx + dy * dy);
         if (distance < min_distance) min_distance = distance;
     }
 
-    /*if (!player_alive) return 1000.0;
-    if (state.npc_hp <= 0) return -1000.0;*/
+    double npc_hp_reward = 0;
+    npc_hp_reward = std::clamp((double)state.npc_hp / state.npc_max_hp, 0.0, 1.0);
+    reward += npc_hp_reward;
 
-    double damage = 150.0 - players_hp_sum;
-    reward += damage * 0.5;  
-
-    reward += state.npc_hp * 0.2;  
-
-    double ideal_min = state.npc_range * 0.8;
-    double ideal_max = state.npc_range * 1.0;
-
-    if (min_distance >= ideal_min && min_distance <= ideal_max) {
-        reward += 30.0;
-    }
-    else if (min_distance < ideal_min) {
-        double deviation = (ideal_min - min_distance) / ideal_min;
-        reward -= deviation * 40.0;
-    }
-    else {
-        double deviation = (min_distance - ideal_max) / ideal_max;
-        reward -= deviation * 60.0;
-    }
-
-    if (min_distance <= state.npc_range) {
-        reward += 5.0;
+    if (min_distance != std::numeric_limits<int>::max()) {
+        double ideal_min = state.npc_range * 0.8;
+        double ideal_max = state.npc_range * 1.0;
+ 
+        if (min_distance >= ideal_min && min_distance <= ideal_max) {
+            reward += 0.15;
+        } else if (min_distance < ideal_min) {
+            double deviation = (ideal_min - min_distance) / ideal_min;
+            reward -= deviation * 0.2;
+        } else {
+            double deviation = (min_distance - ideal_max) / ideal_max;
+            reward -= deviation * 0.3;
+        }
+ 
+        const double LOW_HP_THRESHOLD = 0.3;
+        if (npc_hp_reward < LOW_HP_THRESHOLD) {
+            double danger = (LOW_HP_THRESHOLD - npc_hp_reward) / LOW_HP_THRESHOLD;
+            double closeness = std::clamp(1.0 - (double)min_distance / std::max(1, state.npc_range), 0.0, 1.0);
+            reward -= danger * closeness * 0.5;
+        }
     }
 
     return reward;

@@ -19,18 +19,36 @@ function getAttackRange(enemy: Enemy): number {
     return enemy.currentWeapon ? enemy.currentWeapon.config.projectile.range : 50;
 }
 
-
 function moveToward(
-    enemy: Enemy, targetX: number, targetY: number,
+    enemy: Enemy,
+    targetX: number, targetY: number,
     room: Room, roomWidth: number, roomHeight: number
 ): boolean {
-    const path = EnemyPathFinder.findPath(enemy.x, enemy.y, targetX, targetY, room.obstacles, roomWidth, roomHeight);
-    if (path.length === 0) { 
-        //console.log('путь не найден');
+    let path = EnemyPathFinder.findPath(enemy.x, enemy.y, targetX, targetY, room.obstacles, roomWidth, roomHeight);
+    
+    if (path.length === 0) {
+        const attempts = 8;
+        const step = 40;
+        for (let i = 0; i < attempts; i++) {
+            const angle = Math.random() * 2 * Math.PI;
+            const sx = enemy.x + Math.cos(angle) * step;
+            const sy = enemy.y + Math.sin(angle) * step;
+            
+            if (EnemyPathFinder.isWalkable(sx, sy, room.obstacles, roomWidth, roomHeight, 0)) {
+                path = EnemyPathFinder.findPath(sx, sy, targetX, targetY, room.obstacles, roomWidth, roomHeight);
+                if (path.length > 0) {
+                    enemy.vx = sx - enemy.x;
+                    enemy.vy = sy - enemy.y;
+                    return false;
+                }
+            }
+        }
+        
         enemy.vx = 0;
         enemy.vy = 0;
-        return true; 
+        return true;
     }
+    
     const next = path[0];
     enemy.vx = next.x - enemy.x;
     enemy.vy = next.y - enemy.y;

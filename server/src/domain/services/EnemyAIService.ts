@@ -25,6 +25,7 @@ export enum ActionType {
 }
 
 interface GameState {
+    npc_max_hp: number;
     npc_hp: number;
     npc_x: number;
     npc_y: number;
@@ -71,8 +72,8 @@ export class EnemyAIService {
     private static pendingUpdates: Map<string, boolean> = new Map();
 
     private static MCTS_TIMEOUT_INTERVAL: number = 3000;    // могут быть проблемы с малыми значениями
-    private static MCTS_C_VALUE: number = 1.4;
-    private static MCTS_MAX_ITERATIONS: number = 20;
+    private static MCTS_C_VALUE: number = 0.4;
+    private static MCTS_MAX_ITERATIONS: number = 100;
     private static MCTS_USAGE_INTERVAL: number = 400;
 
     private static enemies: Map<string, EnemyAction> = new Map();
@@ -152,6 +153,7 @@ export class EnemyAIService {
         obstacles: Obstacle[]
     ): GameState {
         return {
+            npc_max_hp: enemy.maxHp,
             npc_x: enemy.x,
             npc_y: enemy.y,
             npc_hp: enemy.hp,
