@@ -1,4 +1,6 @@
 import { VisualEntity } from '../../domain/entities/VisualEntity';
+import { audio } from './SoundRender';
+
 
 export interface EntityRenderer {
     draw(
@@ -145,6 +147,27 @@ export class TextureRenderer implements EntityRenderer {
                 0, 0, weaponTexture.width, weaponTexture.height,
                 -weaponW / 2, -weaponH / 2, weaponW, weaponH
             );
+            switch (entity.activeWeaponVisualId) {
+                case 'iron_sword':
+                    audio.playSound('commonSkash', 'attack');
+                    break;
+                case 'battle_axe':
+                    audio.playSound('commonSkash', 'attack');
+                    break;
+                case 'fire_staff':
+                    audio.playSound('fireCast', 'attack');
+                    break;
+                case 'ice_staff':
+                    audio.playSound('iceCast', 'attack');
+                    break;
+                case 'lightning_staff':
+                    audio.playSound('lightningCast', 'attack');
+                    break;
+                case 'hunter_bow':
+                    audio.playSound('bowShoot', 'attack');
+                    break;
+            }
+
         } else {
             context.drawImage(
                 weaponTexture,

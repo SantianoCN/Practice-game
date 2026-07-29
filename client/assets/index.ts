@@ -51,8 +51,19 @@ export const ASSETS = {
     particle: { swordSlash, axeSlash, arrow, lightning, fireball, iceball }
 };
 
-import envMusic from './sound/env.mp3' 
+import envMusic from './sound/env.mp3'
+import houseMusic from './sound/house.mp3'
+
+import commonSlash from './sound/common-slash'
+import bowAttack from './sound/bow-shoot'
+import fireCast from './sound/fire-cast'
+import iceCast from './sound/ice-cast'
+import lightningCast from './sound/lightning-cast'
+
+import playerDamage from './sound/player-hited'
 
 export const SOUNDS = {
-    env: {envMusic}
+    env: { envMusic, houseMusic },
+    attack: { commonSlash, bowAttack, fireCast, iceCast, lightningCast };
+    interaction: { playerDamage }
 }
