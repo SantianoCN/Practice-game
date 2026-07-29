@@ -149,10 +149,10 @@ export class TextureRenderer implements EntityRenderer {
             );
             switch (entity.activeWeaponVisualId) {
                 case 'iron_sword':
-                    audio.playSound('commonSkash', 'attack');
+                    audio.playSound('commonSlash', 'attack');
                     break;
                 case 'battle_axe':
-                    audio.playSound('commonSkash', 'attack');
+                    audio.playSound('commonSlash', 'attack');
                     break;
                 case 'fire_staff':
                     audio.playSound('fireCast', 'attack');
