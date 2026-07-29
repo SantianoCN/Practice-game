@@ -2,7 +2,7 @@ import { IGameRepository } from '../interfaces/IGameRepository';
 import { IPresetProvider } from '../interfaces/IPresetProvider';
 import { IIdGenerator } from '../interfaces/IIdGenerator';
 import { MapGenerator } from '../../domain/world/FloorGenerator';
-import { GAME_CONFIG, GAME_DIFFICULTY, FloorDifficulty } from '@game/shared';
+import { GAME_CONFIG, GAME_DIFFICULTY, FloorDifficulty, AXE, ELITE_LIZARD_PRESET, ARCHMAGE_LIZARD_PRESET, LIGHTNING_STAFF } from '@game/shared';
 
 export class NextFloorUseCase {
     constructor(
@@ -28,7 +28,11 @@ export class NextFloorUseCase {
                 levelNumber: nextLevelNumber,
                 ROOM_COUNT: 15 + (nextLevelNumber - 2) * 3,
                 ENEMY_MIN: 5 + (nextLevelNumber - 2) * 3,
-                ENEMY_MAX: 10 + (nextLevelNumber - 2) * 3
+                ENEMY_MAX: 10 + (nextLevelNumber - 2) * 3,
+                enemyPool: [
+                    { stats: ELITE_LIZARD_PRESET, allowedWeapons: [AXE] },
+                    { stats: ARCHMAGE_LIZARD_PRESET, allowedWeapons: [LIGHTNING_STAFF] }
+                ]
             };
         }
 
