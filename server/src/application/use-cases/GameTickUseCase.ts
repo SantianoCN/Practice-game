@@ -12,7 +12,6 @@ import { DroppedItem } from '../../domain/entities/Chest';
 import { OpenChestUseCase } from './OpenChestUseCase';
 import { IPresetProvider } from '../interfaces/IPresetProvider';
 import { EffectApplier } from '../../domain/services/EffectApplier';
-import { ZodError } from 'zod';
 
 export class GameTickUseCase {
     constructor(
@@ -91,16 +90,7 @@ export class GameTickUseCase {
                         obstacles: currentRoom.obstacles
                     });
                     
-                    if (RoomTransitionService.combatTransition(currentRoom)) {
-                        const roomOccupants = Array.from(session.players.values())
-                            .filter(p => p.isOnline && p.roomX === currentRoom.gridX && p.roomY === currentRoom.gridY);
-
-                        for (const occupant of roomOccupants) {
-                            this.broadcaster.broadcastRoomInit(occupant.id, roomInit);
-                        }
-                    } else {
-                        this.broadcaster.broadcastRoomInit(player.id, roomInit);
-                    }
+                    this.broadcaster.broadcastRoomInit(player.id, roomInit);
                 }
             }
 

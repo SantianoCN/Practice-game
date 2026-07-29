@@ -15,7 +15,7 @@ class App {
     private input = new KeyboardAdapter();
     private renderer: CanvasRendererAdapter;
     private stateSync = new SyncStateUseCase();
-    private audio = new SoundRender()
+    private audio = new SoundRender();
 
     private myId = '';
     private gameLoopId?: number;
@@ -33,16 +33,23 @@ class App {
 
         this.input.onHelpPressed(() => this.renderer.toggleHelp());
 
-        this.audio.loadSound('envMusic', SOUNDS.env.envMusic)
+        this.audio.loadSound('envMusic', SOUNDS.env.envMusic);
         this.bindUiToNetwork();
         this.bindNetworkToApp();
         this.init();
     }
 
-    private init(): void {
-        const token = localStorage.getItem('session_token');
-        if (token) this.connectToServer(token);
-        else this.ui.showAuth();
+    private async init(): Promise<void> {
+        try {
+            const check = await this.network.checkAuth();
+            if (check.success && check.authenticated) {
+                this.connectToServer(check);
+            } else {
+                this.ui.showAuth();
+            }
+        } catch (e) {
+            this.ui.showAuth();
+        }
     }
 
     private bindUiToNetwork(): void {
@@ -52,12 +59,15 @@ class App {
                 const res = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({ login, password })
-                }).then(r => r.json() as Promise<BaseResponseDTO & { refreshToken?: string }>);
+                }).then(r => r.json() as Promise<BaseResponseDTO>);
 
-                if (res.success && res.refreshToken) {
-                    localStorage.setItem('session_token', res.refreshToken);
-                    this.connectToServer(res.refreshToken);
+                if (res.success) {
+                    const check = await this.network.checkAuth();
+                    if (check.success && check.authenticated) {
+                        this.connectToServer(check);
+                    }
                 } else {
                     this.ui.showAuth(res.message);
                 }
@@ -67,31 +77,27 @@ class App {
         };
 
         this.ui.onCreateRoom = async (arch, weapon) => {
-            const token = localStorage.getItem('session_token');
-            if (!token) return;
             this.isHost = true;
             this.ui.showStartMatchButton(false);
 
             this.stateSync.clear();
             this.renderer.reset();
 
-            const res = await this.network.createSession({ token, archetype: arch, weaponId: weapon });
+            const res = await this.network.createSession({ archetype: arch, weaponId: weapon });
             if (res.success && res.sessionId) {
-                this.startGame(res.sessionId, true, false);
+                this.startGame(res.sessionId, true, true);
             } else {
                 this.ui.showErrorLobby(res.message || 'Ошибка создания одиночной игры');
             }
         };
 
         this.ui.onCreateLobby = async (arch, weapon) => {
-            const token = localStorage.getItem('session_token');
-            if (!token) return;
             this.isHost = true;
 
             this.stateSync.clear();
             this.renderer.reset();
 
-            const res = await this.network.createLobby({ token, archetype: arch, weaponId: weapon });
+            const res = await this.network.createLobby({ archetype: arch, weaponId: weapon });
             if (res.success && res.sessionId) {
                 this.ui.showStartMatchButton(true);
                 this.startGame(res.sessionId, false, true);
@@ -110,7 +116,7 @@ class App {
                     if (res.isSingleplayer) {
                         this.isHost = true;
                         this.ui.showStartMatchButton(false);
-                        this.startGame(res.sessionId, true, false);
+                        this.startGame(res.sessionId, true, true);
                     } else {
                         this.isHost = true;
                         this.ui.showStartMatchButton(true);
@@ -145,15 +151,13 @@ class App {
         };
 
         this.ui.onJoinRoom = async (sid, arch, weapon) => {
-            const token = localStorage.getItem('session_token');
-            if (!token) return;
             this.isHost = false;
             this.ui.showStartMatchButton(false);
 
             this.stateSync.clear();
             this.renderer.reset();
 
-            const res = await this.network.joinLobby({ sessionId: sid, token, archetype: arch, weaponId: weapon });
+            const res = await this.network.joinLobby({ sessionId: sid, archetype: arch, weaponId: weapon });
             if (res.success) {
                 this.startGame(sid, false, false);
             } else {
@@ -192,7 +196,7 @@ class App {
             this.stopGame();
         };
 
-        this.ui.onLogout = () => {
+        this.ui.onLogout = async () => {
             if (this.gameLoopId) {
                 cancelAnimationFrame(this.gameLoopId);
                 this.gameLoopId = undefined;
@@ -202,8 +206,14 @@ class App {
             this.ui.resetState();
             this.stateSync.clear();
             this.renderer.reset();
-            localStorage.removeItem('game_session_id');
-            localStorage.removeItem('session_token');
+
+            try {
+                await fetch(`${SERVER_URL}/logout`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+            } catch (e) {}
+
             this.network.disconnect();
             this.ui.showAuth();
         };
@@ -223,7 +233,9 @@ class App {
 
         this.network.onError(msg => {
             this.ui.showToast(`Сервер: ${msg}`, 'info');
-            if (msg.includes('другого устройства')) this.ui.onLogout?.();
+            if (msg.includes('другого устройства') || msg.includes('недействительна')) {
+                this.ui.onLogout?.();
+            }
         });
 
         this.network.onSyncProgress(progress => {
@@ -263,11 +275,6 @@ class App {
             }
         });
 
-        this.network.onSessionTerminated(data => {
-            this.ui.showToast(data.message, 'info');
-            this.stopGame();
-        });
-
         this.network.onGameOver(() => {
             this.ui.showGameOverModal(true, this.isHost);
             this.ui.updateHostStatus(this.isHost);
@@ -279,66 +286,67 @@ class App {
         });
     }
 
-    private async connectToServer(token: string): Promise<void> {
-        let profile;
+    private async connectToServer(checkData: any): Promise<void> {
         try {
-            profile = await this.network.connect(token);
+            await this.network.connect();
         } catch (e) {
             console.error('[connectToServer] network.connect failed:', e);
             this.ui.showAuth('Ошибка подключения к игровому серверу');
             return;
         }
 
-        if (profile.progress) {
-            this.metaProgress = profile.progress;
+        if (checkData.progress) {
+            this.metaProgress = checkData.progress;
         }
 
-        if (profile.currentSessionId) {
-            this.isHost = profile.isHost === true;
-            this.ui.showStartMatchButton(this.isHost);
-            this.startGame(profile.currentSessionId, false, this.isHost);
+        if (checkData.message) {
+            this.ui.showToast(checkData.message, 'info');
+        }
+
+        if (checkData.currentSessionId) {
+            this.isHost = checkData.isHost === true;
+            this.ui.showStartMatchButton(this.isHost && !checkData.isSingleplayer);
+            this.startGame(checkData.currentSessionId, !!checkData.isSingleplayer, this.isHost);
             return;
         }
 
-        localStorage.removeItem('game_session_id');
-        this.ui.showLobby(profile.login);
+        this.ui.showLobby(checkData.login);
         this.ui.updatePresets(this.classPresets, this.metaProgress);
-        this.ui.showContinueButton(!!profile.activeSaveSessionId);
+        this.ui.showContinueButton(!!checkData.activeSaveSessionId);
     }
 
     private startGame(sessionId: string, isSingleplayer: boolean = false, isHost: boolean = false): void {
-        localStorage.setItem('game_session_id', sessionId);
         this.ui.showGame(sessionId, isSingleplayer, isHost);
 
         this.input.startListening();
         this.input.onInputChanged(action => this.network.sendPlayerAction(action));
         this.audio.playSound('envMusic');
-        console.log('Start envMusic')
 
         this.lastTime = performance.now();
         this.tick();
     }
 
     private stopGame(): void {
-        localStorage.removeItem('game_session_id');
         this.input.stopListening();
         this.ui.showPortalModal(false);
         this.ui.showGameOverModal(false);
         if (this.gameLoopId) cancelAnimationFrame(this.gameLoopId);
         this.stateSync.clear();
         this.renderer.reset();
-        this.audio.stopSound('envMusic')
-        console.log('Stop envMusic')
+        this.audio.stopSound('envMusic');
 
-        this.network.requestProfile()
-            .then(profile => {
-                if (profile.progress) {
-                    this.metaProgress = profile.progress;
+        this.network.checkAuth()
+            .then(check => {
+                if (check.progress) {
+                    this.metaProgress = check.progress;
                 }
-                this.ui.showLobby(profile.login);
-                this.ui.updatePresets(this.classPresets, this.metaProgress);
-
-                this.ui.showContinueButton(!!profile.activeSaveSessionId);
+                if (check.login) {
+                    this.ui.showLobby(check.login);
+                    this.ui.updatePresets(this.classPresets, this.metaProgress);
+                    this.ui.showContinueButton(!!check.activeSaveSessionId);
+                } else {
+                    this.ui.showAuth();
+                }
             })
             .catch(() => this.ui.showAuth());
     }

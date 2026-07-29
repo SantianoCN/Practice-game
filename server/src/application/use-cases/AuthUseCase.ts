@@ -29,6 +29,7 @@ export class AuthUseCase {
     }
 
     public async resolveToken(token: string): Promise<Account | null> {
+        if (!token) return null;
         return this.repo.getByToken(token);
     }
 
@@ -39,5 +40,11 @@ export class AuthUseCase {
             return true;
         }
         return false;
+    }
+
+    public async logoutByAccountId(accountId: string): Promise<boolean> {
+        if (!accountId) return false;
+        await this.repo.updateToken(accountId, '');
+        return true;
     }
 }

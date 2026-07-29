@@ -497,7 +497,7 @@ input.text-center {
 .toast-container {
     position: fixed;
     top: 20px;
-    right: 20px;
+    left: 20px;
     z-index: 1000;
     display: flex;
     flex-direction: column;
@@ -520,13 +520,13 @@ input.text-center {
 .toast-hide { animation: toast-slide-out 0.25s ease-in forwards; }
 
 @keyframes toast-slide-in {
-    from { transform: translateX(120%); opacity: 0; }
+    from { transform: translateX(-120%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
 }
 
 @keyframes toast-slide-out {
     from { transform: translateX(0); opacity: 1; }
-    to { transform: translateX(120%); opacity: 0; }
+    to { transform: translateX(-120%); opacity: 0; }
 }
 
 .right-panel {

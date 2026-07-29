@@ -4,10 +4,21 @@ import {
     PlayerClassPresetDTO, RoomInitDTO, BuyItemResponseDTO, PlayerProgressDTO
 } from '@game/shared';
 
+interface CheckAuthResult {
+    success: boolean;
+    authenticated?: boolean;
+    login?: string;
+    progress?: PlayerProgressDTO;
+    activeSaveSessionId?: string | null;
+    currentSessionId?: string | null;
+    isHost?: boolean;
+    message?: string;
+}
+
 export interface INetworkClient {
-    connect(token: string): Promise<{ login: string, progress?: PlayerProgressDTO, activeSaveSessionId?: string | null }>;
+    connect(token: string): Promise<CheckAuthResult>;
     disconnect(): void;
-    requestProfile(): Promise<{ login: string, progress?: PlayerProgressDTO, activeSaveSessionId?: string | null }>;
+    requestProfile(): Promise<CheckAuthResult>;
     
     createSession(req: SessionCreateRequestDTO): Promise<SessionCreateResponseDTO>;
     createLobby(req: SessionCreateRequestDTO): Promise<SessionCreateResponseDTO>;

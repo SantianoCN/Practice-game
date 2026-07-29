@@ -77,9 +77,7 @@ export class RoomTransitionService {
                     for (const p of allPlayers) {
                         if (
                             p.id !== player.id &&
-                            p.isOnline &&
-                            p.roomX === originRoomX &&
-                            p.roomY === originRoomY
+                            p.isOnline
                         ) {
                             p.roomX = nextX;
                             p.roomY = nextY;
@@ -89,6 +87,8 @@ export class RoomTransitionService {
                             p.y = spawnY + offsetY;
                             p.vx = 0; 
                             p.vy = 0;
+                            p.lastBroadcastedRoomX = null;
+                            p.lastBroadcastedRoomY = null;
                         }
                     }
                 }

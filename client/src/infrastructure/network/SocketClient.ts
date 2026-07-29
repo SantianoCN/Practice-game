@@ -7,12 +7,15 @@ import {
     BuyItemResponseDTO, PlayerProgressDTO
 } from '@game/shared';
 
-interface ProfileResult {
-    login: string;
+interface CheckAuthResult {
+    success: boolean;
+    authenticated?: boolean;
+    login?: string;
     progress?: PlayerProgressDTO;
     activeSaveSessionId?: string | null;
     currentSessionId?: string | null;
     isHost?: boolean;
+    message?: string;
 }
 
 export class SocketClient implements INetworkClient {
@@ -21,17 +24,17 @@ export class SocketClient implements INetworkClient {
     constructor(private serverUrl: string) {
         this.socket = io(this.serverUrl, {
             autoConnect: false,
-            transports: ['websocket']
+            transports: ['websocket'],
+            withCredentials: true 
         });
     }
 
-    public connect(token: string): Promise<ProfileResult> {
+    public connect(): Promise<CheckAuthResult> {
         return new Promise((resolve, reject) => {
             this.socket.disconnect();
             this.socket.off('connect');
             this.socket.off('connect_error');
-            this.socket.off('disconnect');
-            this.socket.auth = { token };
+
             this.socket.once('connect', () => {
                 this.requestProfile()
                     .then(res => resolve(res))
@@ -46,11 +49,20 @@ export class SocketClient implements INetworkClient {
         });
     }
 
-    public requestProfile(): Promise<ProfileResult> {
+    public checkAuth(): Promise<CheckAuthResult> {
+        return fetch(`${this.serverUrl}/auth/check`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
+        }).then(r => r.json() as Promise<CheckAuthResult>);
+    }
+
+    public requestProfile(): Promise<CheckAuthResult> {
         return new Promise((resolve, reject) => {
             this.socket.emit(ClientEvent.REQUEST_PROFILE, (res: any) => {
                 if (res?.success && res.login) {
                     resolve({
+                        success: true,
                         login: res.login,
                         progress: res.progress,
                         activeSaveSessionId: res.activeSaveSessionId || null,
@@ -80,7 +92,7 @@ export class SocketClient implements INetworkClient {
         this.socket.on(ServerEvent.PORTAL_INTERACT, cb);
     }
 
-    public createSession(req: SessionCreateRequestDTO): Promise<SessionCreateResponseDTO> {
+    public createSession(req: Omit<SessionCreateRequestDTO, 'token'>): Promise<SessionCreateResponseDTO> {
         return new Promise(resolve => {
             this.socket.emit(ClientEvent.CREATE_SESSION, req, (res: SessionCreateResponseDTO) => {
                 resolve(res);
@@ -88,7 +100,7 @@ export class SocketClient implements INetworkClient {
         });
     }
 
-    public createLobby(req: SessionCreateRequestDTO): Promise<SessionCreateResponseDTO> {
+    public createLobby(req: Omit<SessionCreateRequestDTO, 'token'>): Promise<SessionCreateResponseDTO> {
         return new Promise(resolve => {
             this.socket.emit(ClientEvent.CREATE_LOBBY, req, (res: SessionCreateResponseDTO) => {
                 resolve(res);
@@ -96,7 +108,7 @@ export class SocketClient implements INetworkClient {
         });
     }
 
-    public joinLobby(req: SessionJoinRequestDTO): Promise<SessionJoinResponseDTO> {
+    public joinLobby(req: Omit<SessionJoinRequestDTO, 'token'>): Promise<SessionJoinResponseDTO> {
         return new Promise(resolve => {
             this.socket.emit(ClientEvent.CONNECT_LOBBY, req, (res: SessionJoinResponseDTO) => {
                 resolve(res);

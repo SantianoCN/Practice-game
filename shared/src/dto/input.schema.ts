@@ -9,7 +9,7 @@ export const LoginDataSchema = z.object({
 export type LoginDataDTO = z.infer<typeof LoginDataSchema>;
 
 export const TokenRequestSchema = z.object({
-    token: z.string()
+    token: z.string().optional()
 });
 export type TokenRequestDTO = z.infer<typeof TokenRequestSchema>;
 
@@ -26,7 +26,7 @@ export const BuyItemRequestSchema = z.object({
 export type BuyItemRequestDTO = z.infer<typeof BuyItemRequestSchema>;
 
 export const SessionCreateRequestSchema = z.object({
-    token: z.string(),
+    token: z.string().optional(),
     archetype: ArchetypeSchema,
     weaponId: z.string()
 });
@@ -34,7 +34,7 @@ export type SessionCreateRequestDTO = z.infer<typeof SessionCreateRequestSchema>
 
 export const SessionJoinRequestSchema = z.object({
     sessionId: z.string(),
-    token: z.string(),
+    token: z.string().optional(),
     archetype: ArchetypeSchema,
     weaponId: z.string()
 });

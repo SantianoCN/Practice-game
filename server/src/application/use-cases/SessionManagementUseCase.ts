@@ -290,6 +290,8 @@ export class SessionManagementUseCase {
             player.y = session.roomHeight / 2;
             player.vx = 0;
             player.vy = 0;
+            player.lastBroadcastedRoomX = null;
+            player.lastBroadcastedRoomY = null;
         }
 
         return true;
@@ -348,8 +350,17 @@ export class SessionManagementUseCase {
         const session = this.repo.get(sessionId);
         if (!session) return;
 
-        session.removePlayer(accountId);
-        session.allowedAccountIds.delete(accountId);
+        const isRestoredLobby = session.isRestoredSave && session.isLobby;
+
+        if (isRestoredLobby) {
+            const player = session.getPlayer(accountId);
+            if (player) {
+                player.isOnline = false;
+            }
+        } else {
+            session.removePlayer(accountId);
+            session.allowedAccountIds.delete(accountId);
+        }
 
         if (this.accountSessionMap.get(accountId) === sessionId) {
             this.accountSessionMap.delete(accountId);
@@ -371,16 +382,17 @@ export class SessionManagementUseCase {
         if (timer) {
             clearTimeout(timer);
             this.reconnectTimers.delete(reconnectKey);
-
-            const player = session.getPlayer(accountId);
-            if (player) {
-                player.isOnline = true;
-                player.lastBroadcastedRoomX = null;
-                player.lastBroadcastedRoomY = null;
-
-                return true;
-            }
         }
+
+        const player = session.getPlayer(accountId);
+        if (player) {
+            player.isOnline = true;
+            player.lastBroadcastedRoomX = null;
+            player.lastBroadcastedRoomY = null;
+
+            return true;
+        }
+
         return false;
     }
 
@@ -388,8 +400,17 @@ export class SessionManagementUseCase {
         const session = this.repo.get(sessionId);
         if (!session) return null;
 
-        session.removePlayer(accountId);
-        session.allowedAccountIds.delete(accountId);
+        const isRestoredLobby = session.isRestoredSave && session.isLobby;
+
+        if (isRestoredLobby) {
+            const player = session.getPlayer(accountId);
+            if (player) {
+                player.isOnline = false;
+            }
+        } else {
+            session.removePlayer(accountId);
+            session.allowedAccountIds.delete(accountId);
+        }
 
         this.accountSessionMap.delete(accountId);
 

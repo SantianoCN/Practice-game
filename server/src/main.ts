@@ -3,6 +3,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import path from 'path';
+import cookieParser from 'cookie-parser';
 import { PrismaClient } from '@prisma/client';
 
 import { InMemoryGameRepo } from './infrastructure/persistence/InMemoryGameRepo';
@@ -23,9 +24,22 @@ import { NextFloorUseCase } from './application/use-cases/NextFloorUseCase';
 import { SaveSessionUseCase } from './application/use-cases/SaveSessionUseCase';
 import { PrismaSaveRepo } from './infrastructure/persistence/PrismaSaveRepo';
 
+function parseCookies(cookieHeader?: string): Record<string, string> {
+    const list: Record<string, string> = {};
+    if (!cookieHeader) return list;
+
+    cookieHeader.split(';').forEach(cookie => {
+        const parts = cookie.split('=');
+        if (parts.length === 2) {
+            list[parts[0].trim()] = decodeURIComponent(parts[1].trim());
+        }
+    });
+
+    return list;
+}
+
 async function bootstrap() {
     const PORT = process.env.PORT || 3000;
-    const HOST = process.env.HOST || '0.0.0.0';
     const CLIENT_ORIGIN = process.env.CORS_ORIGIN || 'http://217.114.14.204:5173';
 
     const app = express();
@@ -34,6 +48,7 @@ async function bootstrap() {
         credentials: true
     }));
     app.use(express.json());
+    app.use(cookieParser());
 
     const clientBuildPath = path.join(__dirname, '../../public');
     app.use(express.static(clientBuildPath));
@@ -77,19 +92,87 @@ async function bootstrap() {
         presetProvider
     );
 
+    app.post('/auth/check', async (req, res) => {
+        const token = req.cookies.refresh_token;
+
+        if (!token) {
+            return res.status(401).send({ 
+                success: false, 
+                authenticated: false, 
+                message: 'Необходима авторизация' 
+            });
+        }
+
+        const account = await authUseCase.resolveToken(token);
+        if (!account) {
+            res.clearCookie('refresh_token');
+            return res.status(401).send({ 
+                success: false, 
+                authenticated: false, 
+                message: 'Сессия недействительна или просрочена' 
+            });
+        }
+
+        const progressDTO = account.progress ? {
+            gold: account.progress.gold,
+            unlockedClasses: account.progress.unlockedClasses,
+            unlockedWeapons: account.progress.unlockedWeapons
+        } : undefined;
+
+        const currentSessionId = sessionUseCase.findActiveSessionByAccountId(account.id);
+
+        if (currentSessionId) {
+            const session = sessionUseCase.getSession(currentSessionId);
+            if (session) {
+                return res.send({
+                    success: true,
+                    authenticated: true,
+                    login: account.login,
+                    progress: progressDTO,
+                    currentSessionId,
+                    isSingleplayer: session.isSingleplayer,
+                    isHost: session.hostAccountId === account.id
+                });
+            } else {
+                return res.send({
+                    success: true,
+                    authenticated: true,
+                    login: account.login,
+                    progress: progressDTO,
+                    currentSessionId: null,
+                    message: 'Ваша сессия сейчас не активна'
+                });
+            }
+        }
+
+        const save = await saveRepo.getRunSaveByHostAccountId(account.id);
+        return res.send({
+            success: true,
+            authenticated: true,
+            login: account.login,
+            progress: progressDTO,
+            activeSaveSessionId: save?.id || null,
+            currentSessionId: null
+        });
+    });
+
     app.post('/register', async (req, res) => {
         const parsed = LoginDataSchema.safeParse(req.body);
         if (!parsed.success) {
-            return res.status(400).send({ success: false, message: 'Некорректные данные логина или пароля, минимальная длинна логина - 3, минимальная длинна пароля - 4' });
+            return res.status(400).send({ success: false, message: 'Некорректные данные логина или пароля' });
         }
 
         const result = await authUseCase.register(parsed.data);
         if (!result) return res.send({ success: false, message: 'Пользователь уже существует' });
 
-        res.send({ 
-            success: true, 
-            refreshToken: result.token
+        res.cookie('refresh_token', result.token, {
+            httpOnly: true,
+            sameSite: 'lax',
+            path: '/',
+            maxAge: 24 * 60 * 60 * 1000
         });
+
+        res.send({ success: true, login: result.account.login });
     });
 
     app.post('/login', async (req, res) => {
@@ -108,30 +191,47 @@ async function bootstrap() {
         const result = await authUseCase.login(parsed.data);
         if (!result) return res.send({ success: false, message: 'Неверный логин или пароль' });
 
-        res.send({ 
-            success: true, 
-            refreshToken: result.token
+        // Устанавливаем refreshToken в защищенную HttpOnly куку на 24 часа
+        res.cookie('refresh_token', result.token, {
+            httpOnly: true,
+            sameSite: 'lax',
+            path: '/',
+            maxAge: 24 * 60 * 60 * 1000
         });
+
+        res.send({ success: true, login: result.account.login });
     });
 
     app.post('/logout', async (req, res) => {
-        if (!req.body.token) return res.status(400).send({ success: false });
-        await authUseCase.logout(req.body.token);
+        const token = req.cookies.refresh_token;
+        if (token) {
+            await authUseCase.logout(token);
+        }
+        res.clearCookie('refresh_token', { path: '/' });
         res.send({ success: true });
     });
 
     io.use(async (socket, next) => {
-        const token = socket.handshake.auth.token;
-        if (!token) return next(new Error('Токен не обнаружен'));
+        const cookies = parseCookies(socket.handshake.headers.cookie);
+        const token = cookies.refresh_token;
+
+        if (!token) return next(new Error('Токен не обнаружен в куках'));
         
         const account = await authUseCase.resolveToken(token);
-        if (!account) return next(new Error('Неверный токен'));
+        if (!account) return next(new Error('Неверный или просроченный токен'));
         
         if (isUserOnline(account.login, socket.id)) {
             return next(new Error('Аккаунт уже авторизован на другом устройстве'));
         }
 
         socket.data.login = account.login;
+        socket.data.accountId = account.id;
+        socket.data.lastActivity = Date.now(); // Время последней активности
+
+        socket.onAny(() => {
+            socket.data.lastActivity = Date.now();
+        });
+
         next();
     });
 
@@ -153,6 +253,21 @@ async function bootstrap() {
         return false;
     };
 
+    const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000;
+    setInterval(async () => {
+        const now = Date.now();
+        for (const [_, socket] of io.sockets.sockets) {
+            if (socket.data.lastActivity && (now - socket.data.lastActivity > INACTIVITY_TIMEOUT_MS)) {
+                console.log(`[Inactivity Timeout] Отключение неактивного игрока: ${socket.data.login}`);
+                if (socket.data.accountId) {
+                    await authUseCase.logoutByAccountId(socket.data.accountId);
+                }
+                socket.emit('server:session-terminated', { message: 'Сессия закрыта из-за неактивности' });
+                socket.disconnect(true);
+            }
+        }
+    }, 60 * 1000);
+
     const TICK_INTERVAL = 1000 / GAME_CONFIG.TICK_RATE;
     let lastTime = performance.now();
 
@@ -172,7 +287,7 @@ async function bootstrap() {
     tick();
 
     httpServer.listen(PORT, () => {
-        console.log(`[Server] Clean Architecture Engine running on `);
+        console.log(`[Server] Clean Architecture Engine running on port ${PORT}`);
     });
 }
 
