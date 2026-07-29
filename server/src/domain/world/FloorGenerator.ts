@@ -2,11 +2,12 @@ import { Room } from '../entities/Room';
 import { Obstacle } from '../entities/Obstacle';
 import { Chest } from '../entities/Chest';
 import { EntityFactory } from '../factories/EntityFactory';
-import { AXE, ICE_STAFF, MAGE_PRESET_LIZARD, STAFF, SWORD, WARRIOR_PRESET_LIZARD,
+import { SWORD, WARRIOR_PRESET_LIZARD,
     GAME_CONFIG, IDGenerator, RoomType, FloorDifficulty, BOSS_PRESET_LIZARD, STAFF_OF_BOSS, 
     ROOM_TEMPLATES, RoomTemplate
  } from '@game/shared';
- import { Portal } from '../entities/Portal'; 
+import { Portal } from '../entities/Portal'; 
+import { CollisionEngine } from '../physics/CollisionEngine';
 
 interface Coords {
     x: number;
@@ -24,7 +25,8 @@ export class MapGenerator {
         private roomWidth: number,
         private roomHeight: number,
         private generateId: IDGenerator,
-        private getChestPreset: (presetId: string) => { width: number; height: number; visualIdClosed: string } | null
+        private getChestPreset: (presetId: string) => { width: number; height: number; visualIdClosed: string } | null,
+        private playerCount: number = 1
     ) {}
 
     public generateLobby(): (Room | null)[][] {
@@ -149,14 +151,17 @@ export class MapGenerator {
     }
 
     private populateRooms(): void {
+        const currentLevel = this.difficulty.levelNumber || 1;
         for (const room of this.roomsCreated) {
             if (room.type === 'Start' || room.type === 'Shop') {
                 room.isClear = true;
                 continue;
             }
 
-            const matchingTemplates = ROOM_TEMPLATES.filter(t => t.type === room.type);
-            
+            const matchingTemplates = ROOM_TEMPLATES.filter(t => 
+                t.type === room.type && (!t.minLevel || currentLevel >= t.minLevel)
+            );
+
             if (matchingTemplates.length > 0) {
                 const template = matchingTemplates[Math.floor(Math.random() * matchingTemplates.length)];
                 this.applyTemplate(room, template);
@@ -169,13 +174,17 @@ export class MapGenerator {
                     this.generateId('portal'),
                     this.roomWidth / 2,
                     this.roomHeight / 2,
-                    48,  // Вынести
+                    48,
                     48,
                     'portal_closed'
                 );
             } else if (room.type === 'Normal') {
-                const enemyCount = Math.floor(Math.random() * (this.difficulty.ENEMY_MAX - this.difficulty.ENEMY_MIN)) + this.difficulty.ENEMY_MIN; 
-                for (let i = 0; i < enemyCount; i++) {
+                const baseEnemyCount = Math.floor(Math.random() * (this.difficulty.ENEMY_MAX - this.difficulty.ENEMY_MIN + 1)) + this.difficulty.ENEMY_MIN; 
+
+                const multiplier = 1 + Math.max(0, this.playerCount - 1) * 0.25;
+                const scaledEnemyCount = Math.max(1, Math.round(baseEnemyCount * multiplier));
+
+                for (let i = 0; i < scaledEnemyCount; i++) {
                     this.spawnEnemy(room);
                 }
             } else if (room.type === 'Treasure') {
@@ -220,19 +229,56 @@ export class MapGenerator {
         }
     }
 
+    private isPositionValidForEnemy(x: number, y: number, width: number, height: number, obstacles: Obstacle[]): boolean {
+        const enemyBounds = {
+            left: x - width / 2,
+            right: x + width / 2,
+            top: y - height / 2,
+            bottom: y + height / 2
+        };
+
+        for (const obs of obstacles) {
+            if (CollisionEngine.isOverlapping(enemyBounds, obs.getBounds())) {
+                return false; // Позиция перекрыта камнем или стеной!
+            }
+        }
+        return true;
+    }
+
     private spawnEnemy(room: Room): void {
         const padding = 150;
-        const x = padding + Math.random() * (this.roomWidth - padding * 2);
-        const y = padding + Math.random() * (this.roomHeight - padding * 2);
 
-        let chance = Math.random() > 0.5;
-        const stats = chance ? MAGE_PRESET_LIZARD : WARRIOR_PRESET_LIZARD;
-        chance = Math.random() > 0.5;
-        let weaponConfig;
-        if (stats === MAGE_PRESET_LIZARD) {
-            weaponConfig = chance ? STAFF : ICE_STAFF;
-        } else {
-            weaponConfig = chance ? SWORD : AXE;
+        const pool = this.difficulty.enemyPool && this.difficulty.enemyPool.length > 0
+            ? this.difficulty.enemyPool
+            : [{ stats: WARRIOR_PRESET_LIZARD, allowedWeapons: [SWORD] }];
+
+        const randomEntry = pool[Math.floor(Math.random() * pool.length)];
+        const stats = randomEntry.stats;
+
+        const weapons = randomEntry.allowedWeapons;
+        const weaponConfig = weapons[Math.floor(Math.random() * weapons.length)] || SWORD;
+
+        let x = this.roomWidth / 2;
+        let y = this.roomHeight / 2;
+        let validPosition = false;
+
+        // 🎯 Ищем точку спавна вне препятствий (до 30 попыток генерации)
+        for (let attempt = 0; attempt < 30; attempt++) {
+            const candidateX = padding + Math.random() * (this.roomWidth - padding * 2);
+            const candidateY = padding + Math.random() * (this.roomHeight - padding * 2);
+
+            if (this.isPositionValidForEnemy(candidateX, candidateY, stats.width, stats.height, room.obstacles)) {
+                x = candidateX;
+                y = candidateY;
+                validPosition = true;
+                break;
+            }
+        }
+
+        // Если комната плотно забита и за 30 попыток не нашли свободное место — спавним ближе к центру
+        if (!validPosition) {
+            x = this.roomWidth / 2 + (Math.random() - 0.5) * 60;
+            y = this.roomHeight / 2 + (Math.random() - 0.5) * 60;
         }
 
         const enemy = EntityFactory.createEnemy(x, y, stats, weaponConfig, this.generateId);

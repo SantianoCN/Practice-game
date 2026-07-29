@@ -1,7 +1,6 @@
 import { 
     GameSnapshotDTO, 
-    RoomState, 
-    RoomInitDTO, 
+    RoomState,
     ObstacleState 
 } from '@game/shared';
 import { VisualEntity } from '../../domain/entities/VisualEntity';
@@ -11,12 +10,12 @@ export class SyncStateUseCase {
     public currentRoomState: RoomState | null = null;
     public staticObstacles: ObstacleState[] = [];
 
-    public setStaticRoom(roomInit: RoomInitDTO): void {
-        this.staticObstacles = roomInit.obstacles;
-    }
-
     public processSnapshot(snapshot: GameSnapshotDTO): void {
         this.currentRoomState = snapshot.room;
+        if (snapshot.room && snapshot.room.obstacles) {
+            this.staticObstacles = snapshot.room.obstacles;
+        }
+
         const activeIdsInSnapshot = new Set<string>();
 
         for (const p of snapshot.players) {
@@ -26,7 +25,7 @@ export class SyncStateUseCase {
                 p.maxInventoryLength ?? 3, p.visualId, 'player'
             );
 
-            
+            this.updateFacingAndAnimation(entity, p.x, p.y, p.hp);
             if (p.isAttacking) {
                 entity.triggerAttack();
             }
@@ -42,7 +41,6 @@ export class SyncStateUseCase {
             entity.currentWeaponIndex = p.currentWeaponIndex ?? 0;
             entity.activeWeaponVisualId = p.activeWeaponVisualId || 'iron_sword';
             entity.canInteracting = p.canInteracting;
-            this.updateFacingAndAnimation(entity, p.x, p.y, p.hp);
         }
 
         for (const e of snapshot.enemies) {
@@ -52,7 +50,7 @@ export class SyncStateUseCase {
                 1, e.visualId, 'enemy'
             );
 
-            
+            this.updateFacingAndAnimation(entity, e.x, e.y, e.hp);
             if (e.isAttacking) {
                 entity.triggerAttack();
             }
@@ -62,7 +60,6 @@ export class SyncStateUseCase {
             entity.hp = e.hp;
             entity.maxHp = e.maxHp;
             entity.activeWeaponVisualId = e.activeWeaponVisualId || 'battle_axe';
-            this.updateFacingAndAnimation(entity, e.x, e.y, e.hp);
         }
 
         for (const b of snapshot.bullets) {

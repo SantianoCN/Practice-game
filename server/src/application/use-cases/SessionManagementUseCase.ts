@@ -223,7 +223,7 @@ export class SessionManagementUseCase {
         if (!session || !session.isLobby) return false;
 
         if (session.isRestoredSave) {
-            if (!session.allowedAccountIds.has(accountId)) {
+            if (!session.allowedAccountIds.has(accountId) && session.players.size >= GAME_CONFIG.MAX_PLAYERS_PER_ROOM) {
                 return false;
             }
 
@@ -266,6 +266,7 @@ export class SessionManagementUseCase {
         const session = this.repo.get(sessionId);
         if (!session || !session.isLobby) return false;
         if (session.hostAccountId !== accountId) return false;
+        const activePlayerCount = Array.from(session.players.values()).filter(p => !p.isDead() && p.isOnline).length || 1;
 
         const mapGenerator = new MapGenerator(
             GAME_CONFIG.MAP_SIZE,
@@ -273,7 +274,8 @@ export class SessionManagementUseCase {
             session.roomWidth,
             session.roomHeight,
             (prefix) => this.idGen.generateId(prefix),
-            (id) => this.presetProvider.getChestPreset(id)
+            (id) => this.presetProvider.getChestPreset(id),
+            activePlayerCount
         );
 
         session.floorMap = mapGenerator.generate();

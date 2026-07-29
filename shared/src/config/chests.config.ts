@@ -40,5 +40,21 @@ export const CHESTS_DATABASE: Record<string, ChestPreset> = {
         lootTableId: 'lt_boss_chest',
         width: 36,
         height: 36
+    },
+    chest_rare_melee: {
+        id: 'chest_rare_melee',
+        visualIdClosed: 'chest_gold_closed',
+        visualIdOpened: 'chest_gold_opened',
+        lootTableId: 'lt_rare_melee_chest',
+        width: 32,
+        height: 32
+    },
+    chest_rare_ranged: {
+        id: 'chest_rare_ranged',
+        visualIdClosed: 'chest_gold_closed',
+        visualIdOpened: 'chest_gold_opened',
+        lootTableId: 'lt_rare_ranged_chest',
+        width: 32,
+        height: 32
     }
 };

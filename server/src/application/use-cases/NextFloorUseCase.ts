@@ -33,6 +33,7 @@ export class NextFloorUseCase {
         }
 
         session.difficulty = nextDifficulty;
+        const activePlayerCount = Array.from(session.players.values()).filter(p => !p.isDead() && p.isOnline).length || 1;
 
         const mapGenerator = new MapGenerator(
             GAME_CONFIG.MAP_SIZE,
@@ -40,7 +41,8 @@ export class NextFloorUseCase {
             session.roomWidth,
             session.roomHeight,
             (prefix) => this.idGen.generateId(prefix),
-            (id) => this.presetProvider.getChestPreset(id)
+            (id) => this.presetProvider.getChestPreset(id),
+            activePlayerCount
         );
 
         session.floorMap = mapGenerator.generate();

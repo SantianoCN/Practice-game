@@ -1,5 +1,7 @@
 import { ItemPreset } from '../types/loot.schema';
-import { SWORD, AXE, STAFF, ICE_STAFF, BOW, LIGHTNING_STAFF, STAFF_OF_BOSS } from './weapon.config';
+import { SWORD, AXE, STAFF, ICE_STAFF, BOW, LIGHTNING_STAFF, STAFF_OF_BOSS, THUNDER_SPEAR, HOLY_GREATSWORD,
+    DRAGON_BOW, BAIKAL_STAFF
+ } from './weapon.config';
 
 export const ITEMS_DATABASE: Record<string, ItemPreset> = {
     gold_coins: {
@@ -96,6 +98,46 @@ export const ITEMS_DATABASE: Record<string, ItemPreset> = {
             { type: 'equip_weapon', weaponPresetId: 'wpn_boss_staff' }
         ],
         stats: STAFF_OF_BOSS
+    },
+    wpn_thunder_spear: {
+        id: 'wpn_thunder_spear',
+        type: 'weapon',
+        name: 'Копье Перуна',
+        visualId: 'iron_sword',
+        dropWidth: 16,
+        dropHeight: 32,
+        effects: [{ type: 'equip_weapon', weaponPresetId: 'wpn_thunder_spear' }],
+        stats: THUNDER_SPEAR
+    },
+    wpn_holy_greatsword: {
+        id: 'wpn_holy_greatsword',
+        type: 'weapon',
+        name: 'Святой Меч-Кладенец',
+        visualId: 'battle_axe',
+        dropWidth: 16,
+        dropHeight: 32,
+        effects: [{ type: 'equip_weapon', weaponPresetId: 'wpn_holy_greatsword' }],
+        stats: HOLY_GREATSWORD
+    },
+    wpn_dragon_bow: {
+        id: 'wpn_dragon_bow',
+        type: 'weapon',
+        name: 'Драконий Лук',
+        visualId: 'hunter_bow',
+        dropWidth: 16,
+        dropHeight: 32,
+        effects: [{ type: 'equip_weapon', weaponPresetId: 'wpn_dragon_bow' }],
+        stats: DRAGON_BOW
+    },
+    wpn_baikal_staff: {
+        id: 'wpn_baikal_staff',
+        type: 'weapon',
+        name: 'Посох Байкала',
+        visualId: 'ice_staff',
+        dropWidth: 16,
+        dropHeight: 32,
+        effects: [{ type: 'equip_weapon', weaponPresetId: 'wpn_baikal_staff' }],
+        stats: BAIKAL_STAFF
     },
     pot_heal: {
         id: 'pot_heal',

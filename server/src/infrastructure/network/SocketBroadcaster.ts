@@ -1,6 +1,6 @@
 import { Server } from 'socket.io';
 import { IClientBroadcaster } from '../../application/interfaces/IClientBroadcaster';
-import { GameSnapshotDTO, ServerEvent, RoomInitDTO } from '@game/shared';
+import { GameSnapshotDTO, ServerEvent } from '@game/shared';
 
 export class SocketBroadcaster implements IClientBroadcaster {
     constructor(private io: Server) {}
@@ -11,10 +11,6 @@ export class SocketBroadcaster implements IClientBroadcaster {
 
     public broadcastError(userId: string, message: string): void {
         this.io.to(userId).emit(ServerEvent.ERROR, message);
-    }
-
-    public broadcastRoomInit(userId: string, roomInit: RoomInitDTO): void {
-        this.io.to(userId).emit(ServerEvent.ROOM_INIT, roomInit);
     }
 
     public broadcastPortalInteract(userId: string): void {

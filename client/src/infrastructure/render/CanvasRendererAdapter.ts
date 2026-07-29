@@ -146,9 +146,10 @@ export class CanvasRendererAdapter {
 
         if (room) {
             const roomKey = `${room.gridX}:${room.gridY}`;
+
             if (this.currentRoomKey !== roomKey) {
                 this.currentRoomKey = roomKey;
-                this.prerenderStaticScene(staticObstacles);
+                this.prerenderStaticScene(room.obstacles || staticObstacles);
             }
         }
 

@@ -6,6 +6,10 @@ export const ICE_BALL: ProjectileStats = { radius: 12, damage: 6, range: 350, sp
 export const AXE_SLASH: ProjectileStats = { radius: 16, damage: 30, range: 50, speed: 300, visualId: 'axe_slash' };
 export const POISON_DART: ProjectileStats = { radius: 10, damage: 12, range: 450, speed: 500, visualId: 'green_dart' };
 export const LIGHTNING: ProjectileStats = { radius: 12, damage: 22, range: 380, speed: 600, visualId: 'lightning_spark' };
+export const THUNDER_SLASH: ProjectileStats = { radius: 18, damage: 45, range: 75, speed: 500, visualId: 'lightning_spark' };
+export const HOLY_SLASH: ProjectileStats = { radius: 22, damage: 60, range: 70, speed: 350, visualId: 'axe_slash' };
+export const FIRE_ARROW: ProjectileStats = { radius: 12, damage: 35, range: 500, speed: 600, visualId: 'red_ball' };
+export const BAIKAL_BLAST: ProjectileStats = { radius: 15, damage: 40, range: 450, speed: 400, visualId: 'blue_ball' };
 
 export const STAFF: WeaponStats = { cooldownMs: 2000, manaCost: 10, projectile: FIREBALL, visualId: 'fire_staff' };
 export const SWORD: WeaponStats = { cooldownMs: 800, manaCost: 0, projectile: SLASH, visualId: 'iron_sword' };
@@ -14,6 +18,10 @@ export const AXE: WeaponStats = { cooldownMs: 1500, manaCost: 0, projectile: AXE
 export const BOW: WeaponStats = { cooldownMs: 900, manaCost: 0, projectile: POISON_DART, visualId: 'hunter_bow' };
 export const LIGHTNING_STAFF: WeaponStats = { cooldownMs: 1300, manaCost: 15, projectile: LIGHTNING, visualId: 'lightning_staff' };
 export const STAFF_OF_BOSS: WeaponStats = { cooldownMs: 500, manaCost: 20, projectile: FIREBALL, visualId: 'fire_staff_boos' };
+export const THUNDER_SPEAR: WeaponStats = { cooldownMs: 700, manaCost: 0, projectile: THUNDER_SLASH, visualId: 'iron_sword' };
+export const HOLY_GREATSWORD: WeaponStats = { cooldownMs: 1200, manaCost: 0, projectile: HOLY_SLASH, visualId: 'battle_axe' };
+export const DRAGON_BOW: WeaponStats = { cooldownMs: 600, manaCost: 0, projectile: FIRE_ARROW, visualId: 'hunter_bow' };
+export const BAIKAL_STAFF: WeaponStats = { cooldownMs: 800, manaCost: 10, projectile: BAIKAL_BLAST, visualId: 'ice_staff' };
 
 export const STARTING_SWORD: StartingWeaponStats = {
     key: 'wpn_iron_sword',

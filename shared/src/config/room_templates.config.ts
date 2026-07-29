@@ -19,6 +19,7 @@ export interface RoomTemplate {
     id: string;
     name: string;
     type: RoomType;
+    minLevel?: number;
     obstacles: ObstacleTemplate[];
     chests: ChestTemplate[];
 }
@@ -198,6 +199,32 @@ export const ROOM_TEMPLATES: RoomTemplate[] = [
             { gridX: 18, gridY: 14, presetId: "chest_of_gold" },
             { gridX: 21, gridY: 14, presetId: "chest_of_weapon" },
             { gridX: 19, gridY: 16, presetId: "chest_of_potion" }
+        ]
+    },
+    {
+        id: "layout_rare_melee_treasure",
+        name: "Оружейная Древних (Ближний бой)",
+        type: "Treasure",
+        minLevel: 3,
+        obstacles: [
+            { startX: 12, startY: 12, endX: 14, endY: 14, obj: 'stone' },
+            { startX: 26, startY: 12, endX: 28, endY: 14, obj: 'stone' }
+        ],
+        chests: [
+            { gridX: 20, gridY: 15, presetId: "chest_rare_melee" }
+        ]
+    },
+    {
+        id: "layout_rare_ranged_treasure",
+        name: "Арсенал Волхвов (Дальний бой)",
+        type: "Treasure",
+        minLevel: 3,
+        obstacles: [
+            { startX: 12, startY: 16, endX: 14, endY: 18, obj: 'stone' },
+            { startX: 26, startY: 16, endX: 28, endY: 18, obj: 'stone' }
+        ],
+        chests: [
+            { gridX: 20, gridY: 15, presetId: "chest_rare_ranged" }
         ]
     }
 ];

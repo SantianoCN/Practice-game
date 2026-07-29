@@ -9,6 +9,8 @@ export const ARCHER_PRESET: EntityStats = { maxHp: 100, maxMana: 60, manaRegen: 
 export const WARRIOR_PRESET_LIZARD: EntityStats = { maxHp: 80, maxMana: Infinity, manaRegen: Infinity, speed: 90, visualId: 'lizard', width: 40, height: 40, maxInventoryLength: 1, archetype: 'warrior' };
 export const MAGE_PRESET_LIZARD: EntityStats = { maxHp: 50, maxMana: Infinity, manaRegen: Infinity, speed: 120, visualId: 'lizard', width: 40, height: 40, maxInventoryLength: 1, archetype: 'mage' };
 export const BOSS_PRESET_LIZARD: EntityStats = { maxHp: 200, maxMana: Infinity, manaRegen: Infinity, speed: 140, visualId: 'lizard', width: 64, height: 64, maxInventoryLength: 1, archetype: 'mage' };
+export const ELITE_LIZARD_PRESET: EntityStats = { maxHp: 150, maxMana: Infinity, manaRegen: Infinity, speed: 105, visualId: 'lizard', width: 48, height: 48, maxInventoryLength: 1, archetype: 'warrior' };
+export const ARCHMAGE_LIZARD_PRESET: EntityStats = { maxHp: 110, maxMana: Infinity, manaRegen: Infinity, speed: 130, visualId: 'lizard', width: 44, height: 44, maxInventoryLength: 1, archetype: 'mage' };
 
 export const PLAYER_CLASSES: Record<string, PlayerClassPreset> = {
     warrior: {

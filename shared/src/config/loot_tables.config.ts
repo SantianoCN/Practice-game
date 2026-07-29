@@ -51,5 +51,23 @@ export const LOOT_TABLES_DATABASE: Record<string, LootTable> = {
             { itemPresetId: 'wpn_iron_sword', weight: 50, minQuantity: 1, maxQuantity: 1 },
             { itemPresetId: 'pot_heal', weight: 80, minQuantity: 1, maxQuantity: 2 }
         ]
+    },
+    lt_rare_melee_chest: {
+        id: 'lt_rare_melee_chest',
+        rolls: 1,
+        entries: [
+            { itemPresetId: 'wpn_thunder_spear', weight: 50, minQuantity: 1, maxQuantity: 1 },
+            { itemPresetId: 'wpn_holy_greatsword', weight: 50, minQuantity: 1, maxQuantity: 1 },
+            { itemPresetId: 'gold_coins', weight: 20, minQuantity: 50, maxQuantity: 100 }
+        ]
+    },
+    lt_rare_ranged_chest: {
+        id: 'lt_rare_ranged_chest',
+        rolls: 1,
+        entries: [
+            { itemPresetId: 'wpn_dragon_bow', weight: 50, minQuantity: 1, maxQuantity: 1 },
+            { itemPresetId: 'wpn_baikal_staff', weight: 50, minQuantity: 1, maxQuantity: 1 },
+            { itemPresetId: 'gold_coins', weight: 20, minQuantity: 50, maxQuantity: 100 }
+        ]
     }
 };

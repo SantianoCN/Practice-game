@@ -1,8 +1,7 @@
-import { GameSnapshotDTO, RoomInitDTO } from "@game/shared";
+import { GameSnapshotDTO} from "@game/shared";
 
 export interface IClientBroadcaster {
     broadcastSnapshot(userId: string, snapshot: GameSnapshotDTO): void;
-    broadcastRoomInit(usersId: string, roomInit: RoomInitDTO): void; 
     broadcastError(userId: string, message: string): void;
     broadcastPortalInteract(userId: string): void;
     broadcastGameOver(userId: string): void;

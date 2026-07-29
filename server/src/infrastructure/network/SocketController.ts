@@ -320,7 +320,7 @@ export class SocketController {
                 this.socket.data.sessionId = parsed.data.sessionId;
                 callback({ success: true, sessionId: parsed.data.sessionId, message: "Вы вошли в лобби ожидания" });
             } else {
-                callback({ success: false, message: 'Вы не участвуете в этом походе или игра уже началась' });
+                callback({ success: false, message: 'Не удалось войти: отряд уже полон или поход начался' });
             }
         });
 

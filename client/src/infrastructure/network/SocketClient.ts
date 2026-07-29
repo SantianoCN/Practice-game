@@ -3,7 +3,7 @@ import { INetworkClient } from '../../application/interfaces/INetworkClient';
 import {
     PlayerActionDTO, GameSnapshotDTO, SessionCreateRequestDTO,
     SessionCreateResponseDTO, SessionJoinRequestDTO, SessionJoinResponseDTO,
-    PlayerClassPresetDTO, ClientEvent, ServerEvent, RoomInitDTO,
+    PlayerClassPresetDTO, ClientEvent, ServerEvent,
     BuyItemResponseDTO, PlayerProgressDTO
 } from '@game/shared';
 
@@ -170,10 +170,6 @@ export class SocketClient implements INetworkClient {
 
     public onError(cb: (msg: string) => void): void {
         this.socket.on(ServerEvent.ERROR, cb);
-    }
-
-    public onRoomInit(cb: (data: RoomInitDTO) => void) {
-        this.socket.on(ServerEvent.ROOM_INIT, cb);
     }
 
     public onSyncProgress(cb: (progress: PlayerProgressDTO) => void): void {

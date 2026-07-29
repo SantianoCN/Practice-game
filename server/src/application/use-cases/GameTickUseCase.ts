@@ -1,7 +1,7 @@
 import { IGameRepository } from '../interfaces/IGameRepository';
 import { IClientBroadcaster } from '../interfaces/IClientBroadcaster';
 import { CollisionEngine } from '../../domain/physics/CollisionEngine';
-import { GameSnapshotDTO, GameSnapshotSchema, RoomInitSchema } from '@game/shared';
+import { GameSnapshotDTO, GameSnapshotSchema } from '@game/shared';
 import { EnemyAIService } from '../../domain/services/EnemyAIService';
 import { PlayerCombatService } from '../../domain/services/PlayerCombatService'; 
 import { IIdGenerator } from '../interfaces/IIdGenerator';
@@ -75,22 +75,6 @@ export class GameTickUseCase {
                             session.roomHeight
                         );
                     }
-                }
-
-                const currentRoom = session.getRoom(player.roomX, player.roomY);
-
-                if (currentRoom && (player.lastBroadcastedRoomX !== player.roomX || player.lastBroadcastedRoomY !== player.roomY)) {
-                    player.lastBroadcastedRoomX = player.roomX;
-                    player.lastBroadcastedRoomY = player.roomY;
-                    
-                    const roomInit = RoomInitSchema.parse({
-                        gridX: currentRoom.gridX,
-                        gridY: currentRoom.gridY,
-                        type: currentRoom.type,
-                        obstacles: currentRoom.obstacles
-                    });
-                    
-                    this.broadcaster.broadcastRoomInit(player.id, roomInit);
                 }
             }
 

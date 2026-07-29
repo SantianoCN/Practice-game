@@ -1,7 +1,7 @@
 import { 
     PlayerActionDTO, GameSnapshotDTO, SessionCreateRequestDTO, 
     SessionCreateResponseDTO, SessionJoinRequestDTO, SessionJoinResponseDTO, 
-    PlayerClassPresetDTO, RoomInitDTO, BuyItemResponseDTO, PlayerProgressDTO
+    PlayerClassPresetDTO, BuyItemResponseDTO, PlayerProgressDTO
 } from '@game/shared';
 
 interface CheckAuthResult {
@@ -37,7 +37,6 @@ export interface INetworkClient {
     onPlayerId(callback: (id: string) => void): void;
     onClassPresets(callback: (presets: Record<string, PlayerClassPresetDTO>) => void): void;
     onError(callback: (msg: string) => void): void;
-    onRoomInit(cb: (data: RoomInitDTO) => void): void;
     
     onSyncProgress(cb: (progress: PlayerProgressDTO) => void): void;
     onSessionCompleted(cb: (data: { message: string, progress: PlayerProgressDTO }) => void): void;

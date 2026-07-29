@@ -24,7 +24,6 @@ export const ServerEvent = {
     SESSION_COMPLETED: 'server:session-completed', 
     SESSION_TERMINATED: 'server:session-terminated',
     PORTAL_INTERACT: 'server:portal-interact',
-    ROOM_INIT: 'server:room-init',
     HOST_MIGRATED: 'server:host-migrated',
     GAME_OVER: 'server:game-over'
 } as const;

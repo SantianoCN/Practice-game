@@ -7,6 +7,7 @@ export const GAME_CONFIG = {
     ROOM_HEIGHT: 600,
     TICK_RATE: 20,
     GRID_SIZE: 100,
+    MAX_PLAYERS_PER_ROOM: 4 
 } as const;
 
 export type IDGenerator = (prefix: string) => string;

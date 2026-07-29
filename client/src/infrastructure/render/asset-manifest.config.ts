@@ -28,9 +28,26 @@ export interface StaticAssetEntry {
     mode?: 'stretch' | 'tiled';
 }
 
+const CHEST_ASSET_SOURCES: Record<string, string> = {
+    chest_wooden_closed: ASSETS.env.chest,
+    chest_wooden_opened: ASSETS.env.chestOpen,
+    chest_gold_closed: ASSETS.env.chest,
+    chest_gold_opened: ASSETS.env.chestOpen,
+};
+
 const CHEST_ASSETS: StaticAssetEntry[] = Object.values(CHESTS_DATABASE).flatMap(preset => [
-    { visualId: preset.visualIdClosed, src: ASSETS.env.chest, width: preset.width, height: preset.height },
-    { visualId: preset.visualIdOpened, src: ASSETS.env.chestOpen, width: preset.width, height: preset.height },
+    { 
+        visualId: preset.visualIdClosed, 
+        src: CHEST_ASSET_SOURCES[preset.visualIdClosed] || ASSETS.env.chest, 
+        width: preset.width, 
+        height: preset.height 
+    },
+    { 
+        visualId: preset.visualIdOpened, 
+        src: CHEST_ASSET_SOURCES[preset.visualIdOpened] || ASSETS.env.chestOpen, 
+        width: preset.width, 
+        height: preset.height 
+    },
 ]);
 
 const ITEM_ASSET_SOURCES: Record<string, string> = {
