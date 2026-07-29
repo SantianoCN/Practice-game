@@ -18,10 +18,10 @@ export const AXE: WeaponStats = { cooldownMs: 1500, manaCost: 0, projectile: AXE
 export const BOW: WeaponStats = { cooldownMs: 900, manaCost: 0, projectile: POISON_DART, visualId: 'hunter_bow' };
 export const LIGHTNING_STAFF: WeaponStats = { cooldownMs: 1300, manaCost: 15, projectile: LIGHTNING, visualId: 'lightning_staff' };
 export const STAFF_OF_BOSS: WeaponStats = { cooldownMs: 500, manaCost: 20, projectile: FIREBALL, visualId: 'fire_staff_boos' };
-export const THUNDER_SPEAR: WeaponStats = { cooldownMs: 700, manaCost: 0, projectile: THUNDER_SLASH, visualId: 'iron_sword' };
-export const HOLY_GREATSWORD: WeaponStats = { cooldownMs: 1200, manaCost: 0, projectile: HOLY_SLASH, visualId: 'battle_axe' };
-export const DRAGON_BOW: WeaponStats = { cooldownMs: 600, manaCost: 0, projectile: FIRE_ARROW, visualId: 'hunter_bow' };
-export const BAIKAL_STAFF: WeaponStats = { cooldownMs: 800, manaCost: 10, projectile: BAIKAL_BLAST, visualId: 'ice_staff' };
+export const THUNDER_SPEAR: WeaponStats = { cooldownMs: 700, manaCost: 0, projectile: THUNDER_SLASH, visualId: 'thunder_spear' };
+export const HOLY_GREATSWORD: WeaponStats = { cooldownMs: 1200, manaCost: 0, projectile: HOLY_SLASH, visualId: 'holy_greatsword' };
+export const DRAGON_BOW: WeaponStats = { cooldownMs: 600, manaCost: 0, projectile: FIRE_ARROW, visualId: 'dragon_bow' };
+export const BAIKAL_STAFF: WeaponStats = { cooldownMs: 800, manaCost: 10, projectile: BAIKAL_BLAST, visualId: 'staff_of_baikal' };
 
 export const STARTING_SWORD: StartingWeaponStats = {
     key: 'wpn_iron_sword',

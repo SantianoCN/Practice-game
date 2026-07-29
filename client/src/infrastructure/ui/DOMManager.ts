@@ -369,6 +369,18 @@ export class DOMManager {
                 case 'wpn_hunter_bow':
                     imgSrc = ASSETS.weapon.hunterBow;
                     break;
+                case 'wpn_thunder_spear':
+                    imgSrc = ASSETS.weapon.thunderSpear;
+                    break;
+                case 'wpn_holy_greatsword':
+                    imgSrc = ASSETS.weapon.greatSword;
+                    break;
+                case 'wpn_dragon_bow':
+                    imgSrc = ASSETS.weapon.dragonBow;
+                    break;
+                case 'wpn_baikal_staff':
+                    imgSrc = ASSETS.weapon.staffBaikal;
+                    break;
             }
 
             const iconHtml = `<img src="${imgSrc}" alt="${w.name}" class="weapon-card-img" />`;

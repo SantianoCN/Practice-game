@@ -18,9 +18,15 @@ import fireStaff from './weapon/fire_staff.png';
 import iceStaff from './weapon/ice_staff.png';
 import lightningStaff from './weapon/lightning_staff.png'
 import hunterBow from './weapon/hunter_bow.png'
+import dragonBow from './weapon/dragon_bow.png'
+import greatSword from './weapon/holy_greatsword.png'
+import thunderSpear from './weapon/thunder_spear.png'
+import staffBaikal from './weapon/staff_of_baikal.png'
 
-import chest from './chest.png';
-import chestOpen from './chest-open.png';
+import chest from './chests/chest.png';
+import chestOpen from './chests/chest-open.png';
+import chestGold from './chests/chest-gold.png';
+import chestOpenGold from './chests/chest-open-gold.png';
 import stone from './environment/stoneTile.png';
 import caveTile1 from './environment/caveTile1.png';
 import caveTile2 from './environment/caveTile2.png';
@@ -39,8 +45,8 @@ export const ASSETS = {
     hero: { warriorIdle, warriorMove, mageIdle, mageMove, hunterIdle, hunterMove },
     enemy: { lizardIdle, lizardMove },
     loot: { coin, potionRed, potionBlue, potionGreen, potionYellow },
-    weapon: { battleAxe, ironSword, fireStaff, iceStaff, lightningStaff, hunterBow },
-    env: { chest, chestOpen, stone, caveTile1, caveTile2, caveTile3, caveTile4},
+    weapon: { battleAxe, ironSword, fireStaff, iceStaff, lightningStaff, hunterBow, dragonBow, greatSword, thunderSpear, staffBaikal },
+    env: { chest, chestOpen, stone, caveTile1, caveTile2, caveTile3, caveTile4, chestGold, chestOpenGold },
     bubble: { F1 },
     particle: { swordSlash, axeSlash, arrow, lightning, fireball, iceball }
 };

@@ -203,9 +203,9 @@ export const ROOM_TEMPLATES: RoomTemplate[] = [
     },
     {
         id: "layout_rare_melee_treasure",
-        name: "Оружейная Древних (Ближний бой)",
+        name: "Оружейная Древних",
         type: "Treasure",
-        minLevel: 3,
+        minLevel: 2,
         obstacles: [
             { startX: 12, startY: 12, endX: 14, endY: 14, obj: 'stone' },
             { startX: 26, startY: 12, endX: 28, endY: 14, obj: 'stone' }
@@ -216,7 +216,7 @@ export const ROOM_TEMPLATES: RoomTemplate[] = [
     },
     {
         id: "layout_rare_ranged_treasure",
-        name: "Арсенал Волхвов (Дальний бой)",
+        name: "Арсенал Волхвов",
         type: "Treasure",
         minLevel: 3,
         obstacles: [

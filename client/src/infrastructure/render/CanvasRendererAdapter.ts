@@ -173,7 +173,8 @@ export class CanvasRendererAdapter {
             this.updateHtmlHUD(me);
             if (this.isGuiVisible) {
                 this.drawCanvasGUI(me);
-                this.drawMiniMap(room.gridX, room.gridY);
+                if (room.isClear)
+                    this.drawMiniMap(room.gridX, room.gridY);
             }
         }
 
@@ -213,6 +214,11 @@ export class CanvasRendererAdapter {
                 'ice_staff': 'ПОСОХ ХЛАДА',
                 'lightning_staff': 'ПОСОХ ПЕРУНА',
                 'hunter_bow': 'ОХОТНИЧИЙ ЛУК',
+                'staff_of_baikal': 'ПОСОХ БАЙКАЛА',
+                'dragon_bow': 'ДРАКОНИЙ ЛУК',
+                'holy_greatsword': 'СВЯТОЙ МЕЧ-КЛАДЕНЕЦ',
+                'thunder_spear': 'КОПЬЕ ПЕРУНА',
+                'fire_staff_boos': 'ПОСОХ ИМПЕРАТОРА',
             };
             weaponEl.innerText = weaponNames[me.activeWeaponVisualId] || me.activeWeaponVisualId.toUpperCase();
         }

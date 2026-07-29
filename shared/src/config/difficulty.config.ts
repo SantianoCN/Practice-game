@@ -24,7 +24,7 @@ export const GAME_DIFFICULTY: Record<string, FloorDifficulty> = {
         ENEMY_MAX: 5,
         enemyPool: [
             { stats: WARRIOR_PRESET_LIZARD, allowedWeapons: [SWORD] },
-            { stats: MAGE_PRESET_LIZARD, allowedWeapons: [STAFF] }
+            { stats: MAGE_PRESET_LIZARD, allowedWeapons: [ICE_STAFF] }
         ]
     },
     LVL2: {
@@ -40,11 +40,11 @@ export const GAME_DIFFICULTY: Record<string, FloorDifficulty> = {
     LVL3: {
         levelNumber: 3,
         ROOM_COUNT: 15,
-        ENEMY_MIN: 6,
-        ENEMY_MAX: 10,
+        ENEMY_MIN: 5,
+        ENEMY_MAX: 8,
         enemyPool: [
             { stats: WARRIOR_PRESET_LIZARD, allowedWeapons: [AXE] },
-            { stats: MAGE_PRESET_LIZARD, allowedWeapons: [ICE_STAFF, LIGHTNING_STAFF] },
+            { stats: MAGE_PRESET_LIZARD, allowedWeapons: [STAFF, ICE_STAFF] },
             { stats: ELITE_LIZARD_PRESET, allowedWeapons: [SWORD, AXE] }
         ]
     },
@@ -55,13 +55,13 @@ export const GAME_DIFFICULTY: Record<string, FloorDifficulty> = {
         ENEMY_MAX: 9,
         enemyPool: [
             { stats: ELITE_LIZARD_PRESET, allowedWeapons: [AXE] },
-            { stats: ARCHMAGE_LIZARD_PRESET, allowedWeapons: [LIGHTNING_STAFF] }
+            { stats: ARCHMAGE_LIZARD_PRESET, allowedWeapons: [ICE_STAFF, STAFF] }
         ]
     },
     LVL5: {
         levelNumber: 5,
         ROOM_COUNT: 25,
-        ENEMY_MIN: 7,
+        ENEMY_MIN: 6,
         ENEMY_MAX: 10,
         enemyPool: [
             { stats: ELITE_LIZARD_PRESET, allowedWeapons: [AXE] },

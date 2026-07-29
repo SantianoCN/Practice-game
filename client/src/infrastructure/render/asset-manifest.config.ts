@@ -31,8 +31,8 @@ export interface StaticAssetEntry {
 const CHEST_ASSET_SOURCES: Record<string, string> = {
     chest_wooden_closed: ASSETS.env.chest,
     chest_wooden_opened: ASSETS.env.chestOpen,
-    chest_gold_closed: ASSETS.env.chest,
-    chest_gold_opened: ASSETS.env.chestOpen,
+    chest_gold_closed: ASSETS.env.chestGold,
+    chest_gold_opened: ASSETS.env.chestOpenGold,
 };
 
 const CHEST_ASSETS: StaticAssetEntry[] = Object.values(CHESTS_DATABASE).flatMap(preset => [
@@ -58,6 +58,10 @@ const ITEM_ASSET_SOURCES: Record<string, string> = {
     wpn_lightning_staff: ASSETS.weapon.lightningStaff,
     wpn_hunter_bow: ASSETS.weapon.hunterBow,
     wpn_boss_staff: ASSETS.weapon.fireStaff,
+    wpn_dragon_bow: ASSETS.weapon.dragonBow,
+    wpn_baikal_staff: ASSETS.weapon.staffBaikal,
+    wpn_holy_greatsword: ASSETS.weapon.greatSword,
+    wpn_thunder_spear: ASSETS.weapon.thunderSpear,
     gold_coins: ASSETS.loot.coin,
     pot_heal: ASSETS.loot.potionRed,
     pot_mana: ASSETS.loot.potionBlue,
