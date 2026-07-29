@@ -18,18 +18,15 @@ bool Tree::is_fully_expanded() const {
     return current_node->action_pull.empty();
 }
 
-void Tree::initialize_node(Node* node) const {
-    for (int i = static_cast<int>(ActionType::MoveUp);
-        i <= static_cast<int>(ActionType::Attack); i++) {
-        node->action_pull.push_back(static_cast<ActionType>(i));
-    }
+void Tree::initialize_action_pull(Node* node, const std::vector<ActionType>& actions) const {
+    node->action_pull = actions;
 }
 
  
-void Tree::reset(GameState state) {
+void Tree::reset(GameState state, const std::vector<ActionType>& actions) {
     root_ptr = std::unique_ptr<Node>(new Node(state, ActionType::None));
     root = root_ptr.get();
-    initialize_node(root);
+    initialize_action_pull(root, actions);
     current_node = root;
 }
 
@@ -64,7 +61,7 @@ void Tree::select_best_uct(double c) {
     }
 }
 
-void Tree::expand_current(GameState next_state, ActionType next_action)
+void Tree::expand_current(GameState next_state, ActionType next_action, const std::vector<ActionType>& actions)
 {
     if (current_node != nullptr)
     {
@@ -72,7 +69,7 @@ void Tree::expand_current(GameState next_state, ActionType next_action)
             new Node(next_state, next_action, current_node)
         );
         Node* child_ptr = child.get();
-        initialize_node(child_ptr);
+        initialize_action_pull(child_ptr, actions);
 
         current_node->children.push_back(std::move(child));
         current_node = child_ptr;
