@@ -24,8 +24,10 @@ export class PlayerCombatService {
         const aliveEnemies = room.enemies.filter(e => !e.isDead());
 
         if (aliveEnemies.length > 0) {
+            const obstacleGrid = room.getObstacleGrid();
+
             const visibleEnemies = aliveEnemies.filter(enemy => 
-                CollisionEngine.hasLineOfSight(player.x, player.y, enemy.x, enemy.y, room.obstacles)
+                CollisionEngine.hasLineOfSight(player.x, player.y, enemy.x, enemy.y, obstacleGrid)
             );
 
             if (visibleEnemies.length > 0) {

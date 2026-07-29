@@ -251,11 +251,19 @@ export class CollisionEngine {
     public static hasLineOfSight(
         x0: number, y0: number, 
         x1: number, y1: number, 
-        obstacles: Obstacle[]
+        obstacleGrid: SpatialGrid<Obstacle>
     ): boolean {
-        if (obstacles.length === 0) return true;
+        const rayBounds: BoundingBox = {
+            left: Math.min(x0, x1),
+            right: Math.max(x0, x1),
+            top: Math.min(y0, y1),
+            bottom: Math.max(y0, y1)
+        };
 
-        for (const obs of obstacles) {
+        const potentialObstacles = obstacleGrid.query(rayBounds);
+        if (potentialObstacles.size === 0) return true;
+
+        for (const obs of potentialObstacles) {
             if (this.lineIntersectsAABB(x0, y0, x1, y1, obs.getBounds())) {
                 return false;
             }

@@ -9,12 +9,14 @@
   "dependencies": {
     "@game/shared": "*",
     "@prisma/client": "^5.22.0",
+    "cookie": "^2.0.1",
     "cookie-parser": "^1.4.7",
     "express": "^4.22.2",
     "node-addon-api": "^8.9.0",
     "socket.io": "^4.8.3"
   },
   "devDependencies": {
+    "@types/cookie": "^1.0.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^4.17.21",
     "@types/node": "^20.12.12",

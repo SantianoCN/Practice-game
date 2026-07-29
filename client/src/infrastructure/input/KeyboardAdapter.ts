@@ -43,6 +43,7 @@ export class KeyboardAdapter implements IInputProvider {
     };
 
     public startListening(): void {
+        this.stopListening();
         window.addEventListener('keydown', this.handleKeyDown);
         window.addEventListener('keyup', this.handleKeyUp);
         window.addEventListener('blur', this.handleBlur);
@@ -99,11 +100,11 @@ export class KeyboardAdapter implements IInputProvider {
     }
 
     public onInputChanged(cb: (action: PlayerActionDTO) => void): void {
-        this.listeners.push(cb);
+        this.listeners = [cb];
     }
 
     public saveListener(callback: (action: PlayerActionDTO) => void): void {
-        this.listeners.push(callback);
+        this.listeners = [callback];
     }
 
     public isPressed(key: string): boolean {
@@ -120,5 +121,4 @@ export class KeyboardAdapter implements IInputProvider {
     public getCurrentAction(): PlayerActionDTO {
         return this.getPlayerAction();
     }
-
 }

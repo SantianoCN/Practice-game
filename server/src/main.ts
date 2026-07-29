@@ -4,6 +4,7 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import path from 'path';
 import cookieParser from 'cookie-parser';
+const { parse: parseCookie } = require('cookie');
 import { PrismaClient } from '@prisma/client';
 
 import { InMemoryGameRepo } from './infrastructure/persistence/InMemoryGameRepo';
@@ -23,20 +24,6 @@ import { GAME_CONFIG, LoginDataSchema } from '@game/shared';
 import { NextFloorUseCase } from './application/use-cases/NextFloorUseCase';
 import { SaveSessionUseCase } from './application/use-cases/SaveSessionUseCase';
 import { PrismaSaveRepo } from './infrastructure/persistence/PrismaSaveRepo';
-
-function parseCookies(cookieHeader?: string): Record<string, string> {
-    const list: Record<string, string> = {};
-    if (!cookieHeader) return list;
-
-    cookieHeader.split(';').forEach(cookie => {
-        const parts = cookie.split('=');
-        if (parts.length === 2) {
-            list[parts[0].trim()] = decodeURIComponent(parts[1].trim());
-        }
-    });
-
-    return list;
-}
 
 async function bootstrap() {
     const PORT = process.env.PORT || 3000;
@@ -191,7 +178,6 @@ async function bootstrap() {
         const result = await authUseCase.login(parsed.data);
         if (!result) return res.send({ success: false, message: 'Неверный логин или пароль' });
 
-        // Устанавливаем refreshToken в защищенную HttpOnly куку на 24 часа
         res.cookie('refresh_token', result.token, {
             httpOnly: true,
             sameSite: 'lax',
@@ -212,7 +198,8 @@ async function bootstrap() {
     });
 
     io.use(async (socket, next) => {
-        const cookies = parseCookies(socket.handshake.headers.cookie);
+        const cookieHeader = socket.handshake.headers.cookie;
+        const cookies = cookieHeader ? parseCookie(cookieHeader) : {};
         const token = cookies.refresh_token;
 
         if (!token) return next(new Error('Токен не обнаружен в куках'));
@@ -226,7 +213,7 @@ async function bootstrap() {
 
         socket.data.login = account.login;
         socket.data.accountId = account.id;
-        socket.data.lastActivity = Date.now(); // Время последней активности
+        socket.data.lastActivity = Date.now();
 
         socket.onAny(() => {
             socket.data.lastActivity = Date.now();

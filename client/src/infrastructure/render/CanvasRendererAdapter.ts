@@ -28,6 +28,9 @@ export class CanvasRendererAdapter {
     private offscreenCanvas: HTMLCanvasElement;
     private offscreenContext: CanvasRenderingContext2D;
     private currentRoomKey: string = '';
+    private framePlayers = new Map<string, VisualEntity>();
+    private frameEnemies = new Map<string, VisualEntity>();
+    private frameBullets = new Map<string, VisualEntity>();
 
     private entityRenderers: Record<string, EntityRenderer> = {};
     private lastGridX: number | null = null;
@@ -149,22 +152,22 @@ export class CanvasRendererAdapter {
             }
         }
 
-        const players = new Map<string, VisualEntity>();
-        const enemies = new Map<string, VisualEntity>();
-        const bullets = new Map<string, VisualEntity>();
+        this.framePlayers.clear();
+        this.frameEnemies.clear();
+        this.frameBullets.clear();
 
         entitiesMap.forEach((e, id) => {
-            if (e.type === 'player') players.set(id, e);
-            else if (e.type === 'enemy') enemies.set(id, e);
-            else if (e.type === 'bullet') bullets.set(id, e);
+            if (e.type === 'player') this.framePlayers.set(id, e);
+            else if (e.type === 'enemy') this.frameEnemies.set(id, e);
+            else if (e.type === 'bullet') this.frameBullets.set(id, e);
         });
 
-        this.drawScreen(players, enemies, bullets, room, myId);
+        this.drawScreen(this.framePlayers, this.frameEnemies, this.frameBullets, room, myId);
 
         if (!room) return;
         this.updateVisitedRooms(room);
 
-        const me = players.get(myId);
+        const me = this.framePlayers.get(myId);
         if (me) {
             this.updateHtmlHUD(me);
             if (this.isGuiVisible) {
@@ -172,7 +175,11 @@ export class CanvasRendererAdapter {
                 this.drawMiniMap(room.gridX, room.gridY);
             }
         }
-        this.drawHitboxes(entitiesMap, room, staticObstacles);
+
+        if (this.isDebugHitboxesVisible) {
+            this.drawHitboxes(entitiesMap, room, staticObstacles);
+        }
+
         if (this.isHelpVisible) this.drawHelpPage();
     }
 
@@ -391,19 +398,35 @@ export class CanvasRendererAdapter {
         const hotbarEl = document.getElementById('hudHotbar');
         if (!hotbarEl) return;
 
-        hotbarEl.innerHTML = '';
-
-        for (let i = 0; i < maxSlots; i++) {
+        while (hotbarEl.children.length < maxSlots) {
             const slot = document.createElement('div');
             slot.className = 'hud-slot';
-            if (i === activeIdx) {
-                slot.classList.add('active');
-            }
 
             const num = document.createElement('span');
             num.className = 'hud-slot-num';
-            num.innerText = `${i + 1}`;
+            num.innerText = `${hotbarEl.children.length + 1}`;
             slot.appendChild(num);
+
+            const img = document.createElement('img');
+            img.className = 'hud-slot-icon';
+            img.style.display = 'none';
+            slot.appendChild(img);
+
+            hotbarEl.appendChild(slot);
+        }
+
+        while (hotbarEl.children.length > maxSlots) {
+            hotbarEl.removeChild(hotbarEl.lastChild!);
+        }
+
+        for (let i = 0; i < maxSlots; i++) {
+            const slot = hotbarEl.children[i] as HTMLElement;
+            if (!slot) continue;
+
+            slot.classList.toggle('active', i === activeIdx);
+
+            const img = slot.querySelector('img.hud-slot-icon') as HTMLImageElement | null;
+            if (!img) continue;
 
             if (me.inventory && me.inventory[i]) {
                 const item = me.inventory[i];
@@ -414,14 +437,16 @@ export class CanvasRendererAdapter {
                 const imgSrc = this.assetSrcMap.get(textureId);
 
                 if (imgSrc) {
-                    const img = document.createElement('img');
-                    img.className = 'hud-slot-icon';
-                    img.src = imgSrc;
-                    slot.appendChild(img);
+                    if (img.src !== imgSrc) {
+                        img.src = imgSrc;
+                    }
+                    img.style.display = 'block';
+                } else {
+                    img.style.display = 'none';
                 }
+            } else {
+                img.style.display = 'none';
             }
-
-            hotbarEl.appendChild(slot);
         }
     }
 
@@ -650,7 +675,6 @@ export class CanvasRendererAdapter {
         this.context.save();
         this.context.lineWidth = 1;
 
-        // 1. Хитбоксы статических препятствий (Синие)
         this.context.strokeStyle = '#0088ff';
         for (const obs of staticObstacles) {
             this.context.strokeRect(
@@ -661,7 +685,6 @@ export class CanvasRendererAdapter {
             );
         }
 
-        // 2. Хитбоксы сундуков (Голубые/Циановые)
         if (room?.chests) {
             this.context.strokeStyle = '#00ffff';
             for (const chest of room.chests) {
@@ -674,7 +697,6 @@ export class CanvasRendererAdapter {
             }
         }
 
-        // 3. Хитбоксы выпавших предметов/лута (Голубые/Циановые)
         if (room?.droppedItems) {
             this.context.strokeStyle = '#00ffff';
             for (const item of room.droppedItems) {
@@ -687,7 +709,6 @@ export class CanvasRendererAdapter {
             }
         }
 
-        // 4. Хитбокс враг/портал (Пурпурный)
         if (room?.portal && room.portal.isActive) {
             this.context.strokeStyle = '#ff00ff';
             const portal = room.portal;
@@ -699,28 +720,24 @@ export class CanvasRendererAdapter {
             );
         }
 
-        // 5. Динамические сущности из снапшота (Игроки, Враги, Пули)
         entitiesMap.forEach(e => {
             const x = Math.round(e.renderX - e.width / 2);
             const y = Math.round(e.renderY - e.height / 2);
             const w = Math.round(e.width);
             const h = Math.round(e.height);
 
-            // Цветовое кодирование типов сущностей:
             if (e.type === 'player') {
-                this.context.strokeStyle = '#00ff00'; // 🟢 Зеленый для Игроков
+                this.context.strokeStyle = '#00ff00';
             } else if (e.type === 'enemy') {
-                this.context.strokeStyle = '#ff0000'; // 🔴 Красный для Врагов
+                this.context.strokeStyle = '#ff0000';
             } else if (e.type === 'bullet') {
-                this.context.strokeStyle = '#ffff00'; // 🟡 Желтый для Снарядов/Пуль
+                this.context.strokeStyle = '#ffff00';
             } else {
                 this.context.strokeStyle = '#ffffff';
             }
 
-            // Отрисовка контура Bounding Box
             this.context.strokeRect(x, y, w, h);
 
-            // 🎯 Отрисовка центральной точки физического пивота (2x2px)
             this.context.fillStyle = this.context.strokeStyle;
             this.context.fillRect(Math.round(e.renderX) - 1, Math.round(e.renderY) - 1, 2, 2);
         });

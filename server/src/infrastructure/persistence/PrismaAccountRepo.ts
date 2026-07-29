@@ -63,6 +63,7 @@ export class PrismaAccountRepo implements IAccountRepository {
     }
 
     async getByToken(token: string): Promise<Account | null> {
+        if (!token) return null;
         const dbAccount = await this.prisma.account.findFirst({ 
             where: { refreshToken: token },
             include: this.includeConfig
@@ -111,7 +112,7 @@ export class PrismaAccountRepo implements IAccountRepository {
     ): Promise<Account> {
         const account = await this.prisma.account.findUnique({
             where: { id: accountId },
-            include: { progress: true }
+            include: this.includeConfig
         });
 
         if (!account || !account.progress) {
@@ -120,22 +121,44 @@ export class PrismaAccountRepo implements IAccountRepository {
 
         const progressId = account.progress.id;
 
-        await this.prisma.$transaction([
-            this.prisma.unlockedClass.deleteMany({ where: { playerProgressId: progressId } }),
-            this.prisma.unlockedWeapon.deleteMany({ where: { playerProgressId: progressId } }),
+        const existingClasses = new Set(
+            account.progress.unlockedClasses
+                ? account.progress.unlockedClasses.map((c: any) => c.classId)
+                : []
+        );
+        const existingWeapons = new Set(
+            account.progress.unlockedWeapons
+                ? account.progress.unlockedWeapons.map((w: any) => w.weaponId)
+                : []
+        );
+
+        const newClasses = unlockedClasses.filter(c => !existingClasses.has(c));
+        const newWeapons = unlockedWeapons.filter(w => !existingWeapons.has(w));
+
+        const transactions: any[] = [
             this.prisma.playerProgress.update({
                 where: { id: progressId },
-                data: {
-                    gold,
-                    unlockedClasses: {
-                        create: unlockedClasses.map(c => ({ classId: c }))
-                    },
-                    unlockedWeapons: {
-                        create: unlockedWeapons.map(w => ({ weaponId: w }))
-                    }
-                }
+                data: { gold }
             })
-        ]);
+        ];
+
+        if (newClasses.length > 0) {
+            transactions.push(
+                this.prisma.unlockedClass.createMany({
+                    data: newClasses.map(c => ({ playerProgressId: progressId, classId: c }))
+                })
+            );
+        }
+
+        if (newWeapons.length > 0) {
+            transactions.push(
+                this.prisma.unlockedWeapon.createMany({
+                    data: newWeapons.map(w => ({ playerProgressId: progressId, weaponId: w }))
+                })
+            );
+        }
+
+        await this.prisma.$transaction(transactions);
 
         const updatedAccount = await this.prisma.account.findUnique({
             where: { id: accountId },
