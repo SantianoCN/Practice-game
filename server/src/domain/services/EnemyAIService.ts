@@ -213,7 +213,6 @@ export class EnemyAIService {
     ): ActionType {
         //const result = { actionName: 'Engage'};
         const result = EnemyAIService.mctsInstance.findBestAction(state);
-        console.log(result.actionName);
         const ec = EnemyAIService.enemies.get(enemy.id);
         if (!ec) return ActionType.None;
 

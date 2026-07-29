@@ -1,6 +1,7 @@
 #include <random>
 #include <limits>
 #include "game_engine.h"
+#include <algorithm>
 
 void GameEngine::apply_action(GameState& state, ActionType action, bool npc_turn, int player_idx) {
     ActionCallback ac = action_table.get_action(action);

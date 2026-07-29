@@ -4,7 +4,6 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import path from 'path';
 import cookieParser from 'cookie-parser';
-const { parse: parseCookie } = require('cookie');
 import { PrismaClient } from '@prisma/client';
 
 import { InMemoryGameRepo } from './infrastructure/persistence/InMemoryGameRepo';
@@ -24,6 +23,31 @@ import { GAME_CONFIG, LoginDataSchema } from '@game/shared';
 import { NextFloorUseCase } from './application/use-cases/NextFloorUseCase';
 import { SaveSessionUseCase } from './application/use-cases/SaveSessionUseCase';
 import { PrismaSaveRepo } from './infrastructure/persistence/PrismaSaveRepo';
+
+function parseCookies(cookieHeader?: string): Record<string, string> {
+    const list: Record<string, string> = {};
+    if (!cookieHeader) return list;
+
+    const pairs = cookieHeader.split(';');
+    for (const pair of pairs) {
+        const index = pair.indexOf('=');
+        if (index < 0) continue;
+
+        const key = pair.slice(0, index).trim();
+        const val = pair.slice(index + 1).trim();
+
+        if (key) {
+            try {
+                list[key] = decodeURIComponent(val);
+            } catch {
+                list[key] = val;
+            }
+        }
+    }
+
+    return list;
+}
+
 
 async function bootstrap() {
     const PORT = process.env.PORT || 3000;
@@ -198,8 +222,7 @@ async function bootstrap() {
     });
 
     io.use(async (socket, next) => {
-        const cookieHeader = socket.handshake.headers.cookie;
-        const cookies = cookieHeader ? parseCookie(cookieHeader) : {};
+        const cookies = parseCookies(socket.handshake.headers.cookie);
         const token = cookies.refresh_token;
 
         if (!token) return next(new Error('Токен не обнаружен в куках'));
