@@ -1,71 +1,164 @@
 import { VisualEntity } from '../../domain/entities/VisualEntity';
 
 export interface EntityRenderer {
-    draw(context: CanvasRenderingContext2D, entity: VisualEntity): void;
+    draw(
+        context: CanvasRenderingContext2D, 
+        entity: VisualEntity, 
+        weaponTexture?: HTMLImageElement | HTMLCanvasElement,
+        weaponMeta?: { width: number; height: number }
+    ): void;
 }
 
 export class TextureRenderer implements EntityRenderer {
-    private texture: HTMLImageElement;
-    private isLoaded: boolean = false;
-    private frameWidth: number = 280;
-    private frameHeight: number = 300;
+    private walkTexture: HTMLImageElement;
+    private idleTexture: HTMLImageElement;
+    private isWalkLoaded: boolean = false;
+    private isIdleLoaded: boolean = false;
 
-    constructor(imagePath: string) {
-        this.texture = new Image();
-        this.texture.onload = () => { this.isLoaded = true; };
-        this.texture.src = imagePath;
+    private readonly frameWidth: number = 300;
+    private readonly frameHeight: number = 300;
+    private readonly colsPerRow: number = 4;
+
+    private readonly cropPaddingX: number = 60; 
+    private readonly cropPaddingY: number = 40; 
+    private readonly renderScale: number = 1;
+
+    constructor(walkImagePath: string, idleImagePath?: string) {
+        this.walkTexture = new Image();
+        this.walkTexture.onload = () => { this.isWalkLoaded = true; };
+        this.walkTexture.src = walkImagePath;
+
+        this.idleTexture = new Image();
+        if (idleImagePath) {
+            this.idleTexture.onload = () => { this.isIdleLoaded = true; };
+            this.idleTexture.src = idleImagePath;
+        } else {
+            this.idleTexture = this.walkTexture;
+            this.isIdleLoaded = true;
+        }
     }
 
-    public draw(context: CanvasRenderingContext2D, entity: VisualEntity): void {
+    public draw(
+        context: CanvasRenderingContext2D, 
+        entity: VisualEntity, 
+        weaponTexture?: HTMLImageElement | HTMLCanvasElement,
+        weaponMeta?: { width: number; height: number }
+    ): void {
         const facing = entity.lastFacing; 
         const animation = entity.currentAnimation || 'idle';
 
         const rx = Math.round(entity.renderX);
         const ry = Math.round(entity.renderY);
-        const rw = Math.round(entity.width);
-        const rh = Math.round(entity.height);
+        const rw = Math.round((entity.width || 40) * this.renderScale);
+        const rh = Math.round((entity.height || 40) * this.renderScale);
 
-        if (this.isLoaded && this.frameWidth > 0) {
-            context.save();
+        const isDead = entity.hp <= 0;
 
-            let startY = 0;
-            const isDead = entity.hp <= 0;
+        context.save();
+        context.translate(rx, ry);
 
-            if (isDead) {
-                context.globalAlpha = 0.6;
-                startY = 0;
-            } else if (animation === 'attack') {
-                startY = this.frameHeight * 2;
-            } else if (animation === 'move') {
-                startY = this.frameHeight;
-            } 
-
-            const currentFrame = isDead ? 0 : ((entity.currentFrame || 0) % 3);
-            const startX = currentFrame * this.frameWidth;
-
-            context.translate(rx, ry);
-
-            if (isDead) {
-                context.rotate(Math.PI / 2);
-            } else if (facing === 'left') {
-                context.scale(-1, 1);
-            }
-
-            context.drawImage(
-                this.texture, 
-                startX, startY, this.frameWidth, this.frameHeight,
-                -Math.round(rw / 2), -Math.round(rh / 2), rw, rh
-            );
-            
-            context.restore();
-        } else {
-            context.fillStyle = entity.hp <= 0 ? '#555555' : '#ff00ff';
-            context.fillRect(rx - Math.round(rw / 2), ry - Math.round(rh / 2), rw, rh);
+        if (isDead) {
+            context.globalAlpha = 0.6;
+            context.rotate(Math.PI / 2);
+        } else if (facing === 'left') {
+            context.scale(-1, 1);
         }
+
+        const croppedWidth = this.frameWidth - (this.cropPaddingX * 2);
+        const croppedHeight = this.frameHeight - (this.cropPaddingY * 2);
+
+        if (isDead || animation === 'idle') {
+            const img = this.isIdleLoaded ? this.idleTexture : this.walkTexture;
+            const isLoaded = this.isIdleLoaded || this.isWalkLoaded;
+
+            if (isLoaded) {
+                if (img !== this.walkTexture) {
+                    context.drawImage(
+                        img, 
+                        0, 0, img.width || this.frameWidth, img.height || this.frameHeight,
+                        -Math.round(rw / 2), -Math.round(rh / 2), rw, rh
+                    );
+                } else {
+                    context.drawImage(
+                        img, 
+                        this.cropPaddingX, this.cropPaddingY, croppedWidth, croppedHeight,
+                        -Math.round(rw / 2), -Math.round(rh / 2), rw, rh
+                    );
+                }
+            } else {
+                this.drawFallbackBox(context, rw, rh, isDead);
+            }
+        } else if (animation === 'move') {
+            if (this.isWalkLoaded) {
+                const frameIndex = (entity.currentFrame || 0) % 8;
+                const col = frameIndex % this.colsPerRow;
+                const row = Math.floor(frameIndex / this.colsPerRow);
+
+                const startX = (col * this.frameWidth) + this.cropPaddingX;
+                const startY = (row * this.frameHeight) + this.cropPaddingY;
+
+                context.drawImage(
+                    this.walkTexture, 
+                    startX, startY, croppedWidth, croppedHeight,
+                    -Math.round(rw / 2), -Math.round(rh / 2), rw, rh
+                );
+            } else {
+                this.drawFallbackBox(context, rw, rh, isDead);
+            }
+        }
+
+        if (!isDead && weaponTexture) {
+            this.drawWeaponOverlay(context, entity, weaponTexture, weaponMeta);
+        }
+
+        context.restore();
 
         if (entity.hp !== undefined && entity.maxHp !== undefined && entity.type !== 'player' && entity.hp > 0) {
             this.drawHpBar(context, entity);
         }
+    }
+
+    private drawWeaponOverlay(
+        context: CanvasRenderingContext2D, 
+        entity: VisualEntity, 
+        weaponTexture: HTMLImageElement | HTMLCanvasElement,
+        weaponMeta?: { width: number; height: number }
+    ): void {
+        context.save();
+
+        const offsetX = 14; 
+        const offsetY = 2;
+
+        context.translate(offsetX, offsetY);
+
+        const weaponW = weaponMeta?.width || weaponTexture.width || 24;
+        const weaponH = weaponMeta?.height || weaponTexture.height || 24;
+
+        if (entity.isAttackingAnim) {
+            const progress = Math.min(1, entity.attackTimer / entity.attackDuration);
+            const swingAngle = (-Math.PI / 4) + (progress * (Math.PI / 2));
+
+            context.rotate(swingAngle);
+
+            context.drawImage(
+                weaponTexture,
+                0, 0, weaponTexture.width, weaponTexture.height,
+                -weaponW / 2, -weaponH / 2, weaponW, weaponH
+            );
+        } else {
+            context.drawImage(
+                weaponTexture,
+                0, 0, weaponTexture.width, weaponTexture.height,
+                -weaponW / 2, -weaponH / 2, weaponW, weaponH
+            );
+        }
+
+        context.restore();
+    }
+
+    private drawFallbackBox(context: CanvasRenderingContext2D, rw: number, rh: number, isDead: boolean): void {
+        context.fillStyle = isDead ? '#555555' : '#ff00ff';
+        context.fillRect(-Math.round(rw / 2), -Math.round(rh / 2), rw, rh);
     }
 
     private drawHpBar(context: CanvasRenderingContext2D, entity: VisualEntity): void {

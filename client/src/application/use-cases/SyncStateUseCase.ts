@@ -60,6 +60,7 @@ export class SyncStateUseCase {
             entity.targetY = e.y;
             entity.hp = e.hp;
             entity.maxHp = e.maxHp;
+            entity.activeWeaponVisualId = e.activeWeaponVisualId || 'battle_axe';
         }
 
         for (const b of snapshot.bullets) {

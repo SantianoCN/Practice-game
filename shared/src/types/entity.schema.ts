@@ -8,8 +8,7 @@ export const BaseEntityStateSchema = z.object({
     y: z.number(),
     width: z.number(),
     height: z.number(),
-    visualId: z.string(),
-    isAttacking: z.boolean()
+    visualId: z.string()
 });
 export type BaseEntityState = z.infer<typeof BaseEntityStateSchema>;
 
@@ -24,13 +23,16 @@ export const PlayerStateSchema = BaseEntityStateSchema.extend({
     inventory: z.array(WeaponStatsSchema),
     currentWeaponIndex: z.number(),
     activeWeaponVisualId: z.string(),
-    canInteracting: z.boolean()
+    canInteracting: z.boolean(),
+    isAttacking: z.boolean()
 });
 export type PlayerState = z.infer<typeof PlayerStateSchema>;
 
 export const EnemyStateSchema = BaseEntityStateSchema.extend({
     hp: z.number(),
-    maxHp: z.number()
+    maxHp: z.number(),
+    isAttacking: z.boolean(),
+    activeWeaponVisualId: z.string()
 });
 export type EnemyState = z.infer<typeof EnemyStateSchema>;
 

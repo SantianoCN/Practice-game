@@ -69,7 +69,7 @@ class App {
         this.ui.onCreateRoom = async (arch, weapon) => {
             const token = localStorage.getItem('session_token');
             if (!token) return;
-            this.isHost = false;
+            this.isHost = true;
             this.ui.showStartMatchButton(false);
 
             this.stateSync.clear();
@@ -108,7 +108,7 @@ class App {
                 const res = await this.network.restoreSave();
                 if (res.success && res.sessionId) {
                     if (res.isSingleplayer) {
-                        this.isHost = false;
+                        this.isHost = true;
                         this.ui.showStartMatchButton(false);
                         this.startGame(res.sessionId, true, false);
                     } else {

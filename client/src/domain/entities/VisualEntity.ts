@@ -15,17 +15,17 @@ export class VisualEntity {
     public activeWeaponVisualId: string = '';
     public inventory: any[] = [];
     public currentWeaponIndex: number = 0;
+    public isAttackingAnim: boolean = false;
+    public attackTimer: number = 0;
+    public readonly attackDuration: number = 0.25;
 
     public lastFacing: 'left' | 'Top' | 'right' = 'right';
     public currentAnimation: 'move' | 'attack' | 'die' | 'idle' = 'idle';
     public currentFrame: number = 0;
     public canInteracting: boolean = false;
-    public isAttackingAnim: boolean = false;
-    private attackTimer: number = 0;
-    private readonly attackDuration: number = 0.24; 
 
     private frameTimer: number = 0;
-    private readonly timePerFrame: number = 0.2;
+    private readonly timePerFrame: number = 0.1;
 
     constructor(
         public id: string,
@@ -54,8 +54,6 @@ export class VisualEntity {
 
     public triggerAttack(): void {
         this.isAttackingAnim = true;
-        this.currentAnimation = 'attack';
-        this.currentFrame = 0;
         this.attackTimer = 0;
     }
 
@@ -67,14 +65,17 @@ export class VisualEntity {
 
         if (this.isAttackingAnim) {
             this.attackTimer += dt;
-            const progress = this.attackTimer / this.attackDuration;
-            
-            if (progress >= 1) {
+            if (this.attackTimer >= this.attackDuration) {
                 this.isAttackingAnim = false;
-                this.currentAnimation = 'idle';
-                this.currentFrame = 0;
-            } else {
-                this.currentFrame = Math.min(2, Math.floor(progress * 3));
+                this.attackTimer = 0;
+            }
+        }
+
+        if (this.currentAnimation === 'move') {
+            this.frameTimer += dt;
+            if (this.frameTimer >= this.timePerFrame) {
+                this.frameTimer = 0;
+                this.currentFrame = (this.currentFrame + 1) % 8;
             }
             return;
         }
@@ -83,12 +84,6 @@ export class VisualEntity {
             this.currentFrame = 0;
             this.frameTimer = 0;
             return;
-        }
-
-        this.frameTimer += dt;
-        if (this.frameTimer >= this.timePerFrame) {
-            this.frameTimer = 0;
-            this.currentFrame = (this.currentFrame + 1) % 3;
         }
     }
 }

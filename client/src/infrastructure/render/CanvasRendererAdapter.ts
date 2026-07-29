@@ -5,10 +5,7 @@ import { TextureRenderer, EntityRenderer } from './SupportRenderer';
 import {
     STATIC_ASSET_MANIFEST,
     FLOOR_TILE_ASSETS,
-    PLAYER_VISUAL_MANIFEST,
-    ENEMY_VISUAL_MANIFEST,
-    PROJECTILE_VISUAL_MANIFEST,
-    DEFAULT_PROJECTILE_VISUAL,
+    LIVING_VISUAL_MANIFEST,
     StaticAssetEntry,
 } from './asset-manifest.config';
 import { GAME_CONFIG } from '@game/shared';
@@ -32,20 +29,16 @@ export class CanvasRendererAdapter {
     private offscreenContext: CanvasRenderingContext2D;
     private currentRoomKey: string = '';
 
-    private playerRenderers: Record<string, EntityRenderer[]> = {};
-    private playerVariantWeapons: Record<string, string[]> = {};
+    private entityRenderers: Record<string, EntityRenderer> = {};
     private lastGridX: number | null = null;
     private lastGridY: number | null = null;
-
-    private enemyRenderers: Record<string, EntityRenderer> = {};
     private assetSrcMap: Map<string, string> = new Map();
     private textures: Record<string, HTMLImageElement | HTMLCanvasElement> = {};
+    public isDebugHitboxesVisible: boolean = false;
     private assetMeta: Record<string, { mode: 'stretch' | 'tiled'; width: number; height: number }> = {};
 
     private tileArr: Array<HTMLImageElement | HTMLCanvasElement> = [];
-
     private isHelpVisible: boolean = false;
-    private swordSlashTexture: HTMLImageElement;
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -65,30 +58,27 @@ export class CanvasRendererAdapter {
 
         this.initVisitedMatrix();
         this.registerFromManifest();
-        this.swordSlashTexture = new Image();
-        this.swordSlashTexture.src = ASSETS.particle.swordSlash;
     }
 
     public toggleHelp(): void {
         this.isHelpVisible = !this.isHelpVisible;
     }
 
-    private registerFromManifest(): void {
-        for (const entry of PLAYER_VISUAL_MANIFEST) {
-            this.playerRenderers[entry.visualId] = entry.variants.map(v => new TextureRenderer(v.src));
-            this.playerVariantWeapons[entry.visualId] = entry.variants.map(v => v.weaponVisualId);
-        }
+    public toggleGUI(): void {
+        this.isGuiVisible = !this.isGuiVisible;
+    }
 
-        for (const entry of ENEMY_VISUAL_MANIFEST) {
-            this.enemyRenderers[entry.visualId] = new TextureRenderer(entry.src);
+    private registerFromManifest(): void {
+        for (const entry of LIVING_VISUAL_MANIFEST) {
+            this.entityRenderers[entry.visualId] = new TextureRenderer(entry.src, entry.idleSrc);
         }
 
         for (const entry of STATIC_ASSET_MANIFEST) {
             this.registerStaticAsset(entry);
             this.assetSrcMap.set(entry.visualId, entry.src);
         }
-        this.loadAndScaleTexture('F1', ASSETS.buble.F1, this.canvas.width, this.canvas.height);
 
+        this.loadAndScaleTexture('F1', ASSETS.bubble.F1, this.canvas.width, this.canvas.height);
         FLOOR_TILE_ASSETS.forEach((src, index) => this.loadAndScaleTile(index, src));
     }
 
@@ -182,11 +172,8 @@ export class CanvasRendererAdapter {
                 this.drawMiniMap(room.gridX, room.gridY);
             }
         }
-        if (this.isHelpVisible) this.drawHelpPage()
-    }
-
-    public toggleGUI(): void {
-        this.isGuiVisible = !this.isGuiVisible;
+        this.drawHitboxes(entitiesMap, room, staticObstacles);
+        if (this.isHelpVisible) this.drawHelpPage();
     }
 
     private updateHtmlHUD(me: VisualEntity): void {
@@ -461,7 +448,7 @@ export class CanvasRendererAdapter {
         if (room?.portal && room.portal.isActive) {
             this.drawPortal(room?.portal);
         }
-        if (this.isHelpVisible) this.drawHelpPage()
+        if (this.isHelpVisible) this.drawHelpPage();
     }
 
     public drawPortal(portal: PortalState) {
@@ -540,126 +527,31 @@ export class CanvasRendererAdapter {
 
     private drawBullets(bulletsMap: Map<string, VisualEntity>): void {
         bulletsMap.forEach(bullet => {
-            const visual = PROJECTILE_VISUAL_MANIFEST[bullet.visualId] ?? DEFAULT_PROJECTILE_VISUAL;
+            const texture = this.textures[bullet.visualId];
+            const meta = this.assetMeta[bullet.visualId];
 
-            switch (visual.kind) {
-                case 'axe-arc':
-                    this.drawAxeSlash(bullet, visual.color);
-                    return;
-                case 'sword-slash':
-                    this.drawSwordSlash(bullet, visual.color);
-                    return;
-                case 'orb':
-                    this.drawOrb(bullet, visual.color);
-                    return;
-                case 'dart':
-                    this.drawDart(bullet, visual.color);
-                    return;
-                case 'lightning':
-                    this.drawLightning(bullet, visual.color);
-                    return;
+            if (texture) {
+                const bw = meta?.width || bullet.width || 20;
+                const bh = meta?.height || bullet.height || 20;
+                const angle = bullet.angle;
+
+                this.context.save();
+                this.context.translate(Math.round(bullet.renderX), Math.round(bullet.renderY));
+                this.context.rotate(angle);
+                
+                this.context.drawImage(
+                    texture, 
+                    -Math.round(bw / 2), 
+                    -Math.round(bh / 2), 
+                    bw, 
+                    bh
+                );
+
+                this.context.restore();
+            } else {
+                this.drawFallback(bullet);
             }
         });
-    }
-
-    private drawDart(bullet: VisualEntity, color: string): void {
-        const bx = Math.round(bullet.renderX);
-        const by = Math.round(bullet.renderY);
-        const angle = bullet.angle;
-
-        this.context.save();
-        this.context.translate(bx, by);
-        this.context.rotate(angle);
-
-        this.context.beginPath();
-        this.context.moveTo(10, 0);
-        this.context.lineTo(-6, -3);
-        this.context.lineTo(-3, 0);
-        this.context.lineTo(-6, 3);
-        this.context.closePath();
-
-        this.context.fillStyle = color;
-        this.context.shadowBlur = 8;
-        this.context.shadowColor = color;
-        this.context.fill();
-
-        this.context.restore();
-    }
-
-    private drawLightning(bullet: VisualEntity, color: string): void {
-        const bx = Math.round(bullet.renderX);
-        const by = Math.round(bullet.renderY);
-        const angle = bullet.angle;
-        const radius = Math.round(bullet.width || 12);
-
-        this.context.save();
-        this.context.translate(bx, by);
-        this.context.rotate(angle);
-
-        this.context.beginPath();
-        this.context.moveTo(radius, 0);
-        this.context.lineTo(0, -radius / 2);
-        this.context.lineTo(radius / 4, 0);
-        this.context.lineTo(-radius, radius / 2);
-        this.context.lineTo(-radius / 4, 0);
-        this.context.closePath();
-
-        this.context.fillStyle = '#ffffff';
-        this.context.strokeStyle = color;
-        this.context.lineWidth = 2;
-        this.context.shadowBlur = 12;
-        this.context.shadowColor = color;
-        this.context.fill();
-        this.context.stroke();
-
-        this.context.restore();
-    }
-
-    private drawOrb(bullet: VisualEntity, color: string): void {
-        this.context.save();
-        this.context.beginPath();
-
-        const radius = Math.round(bullet.width / 2);
-        const bx = Math.round(bullet.renderX);
-        const by = Math.round(bullet.renderY);
-
-        this.context.arc(bx, by, radius, 0, Math.PI * 2);
-        this.context.shadowBlur = 8;
-        this.context.shadowColor = color;
-        this.context.fillStyle = color;
-        this.context.fill();
-        this.context.restore();
-    }
-
-    private drawAxeSlash(bullet: VisualEntity, color: string): void {
-        const bx = Math.round(bullet.renderX);
-        const by = Math.round(bullet.renderY);
-        const slashLength = Math.round(bullet.height || 45);
-        const slashWidth = Math.round(bullet.width || 20);
-
-        const angle = bullet.angle;
-
-        this.context.save();
-        this.context.translate(bx, by);
-        this.context.rotate(angle);
-        if (this.swordSlashTexture) this.context.drawImage(this.swordSlashTexture, -slashWidth / 2, -slashLength / 2, slashWidth, slashLength)
-        else this.drawOrb(bullet, color)
-        this.context.restore()
-    }
-
-    private drawSwordSlash(bullet: VisualEntity, color: string): void {
-        const bx = Math.round(bullet.renderX);
-        const by = Math.round(bullet.renderY);
-        const slashLength = Math.round(bullet.height || 45);
-        const slashWidth = Math.round(bullet.width || 20);
-        const angle = bullet.angle;
-
-        this.context.save();
-        this.context.translate(bx, by);
-        this.context.rotate(angle);
-        if (this.swordSlashTexture) this.context.drawImage(this.swordSlashTexture, -slashWidth / 2, -slashLength / 2, slashWidth, slashLength)
-        else this.drawOrb(bullet, color)
-        this.context.restore()
     }
 
     private drawPlayers(playersMap: Map<string, VisualEntity>, myId: string): void {
@@ -677,25 +569,30 @@ export class CanvasRendererAdapter {
                 this.context.fillText(player.name, player.renderX, player.renderY - 25);
                 this.context.restore();
             }
-            const renders = this.playerRenderers[player.visualId];
-            if (!renders) {
+
+            const renderer = this.entityRenderers[player.visualId];
+            if (renderer) {
+                const weaponVisualId = player.activeWeaponVisualId;
+                const weaponTexture = this.textures[weaponVisualId];
+                const weaponMeta = this.assetMeta[weaponVisualId];
+                renderer.draw(this.context, player, weaponTexture, weaponMeta);
+            } else {
                 this.drawFallback(player);
-                return;
             }
-
-            const variantWeapons = this.playerVariantWeapons[player.visualId] ?? [];
-            const matchedIndex = variantWeapons.indexOf(player.activeWeaponVisualId);
-            const renderIndex = matchedIndex !== -1 ? matchedIndex : 0;
-
-            renders[renderIndex].draw(this.context, player);
         });
     }
 
     private drawEnemies(enemiesMap: Map<string, VisualEntity>): void {
         enemiesMap.forEach(enemy => {
-            const renderer = this.enemyRenderers[enemy.visualId];
-            if (renderer) renderer.draw(this.context, enemy);
-            else this.drawFallback(enemy);
+            const renderer = this.entityRenderers[enemy.visualId];
+            if (renderer) {
+                const weaponVisualId = enemy.activeWeaponVisualId;
+                const weaponTexture = this.textures[weaponVisualId];
+                const weaponMeta = this.assetMeta[weaponVisualId];
+                renderer.draw(this.context, enemy, weaponTexture, weaponMeta);
+            } else {
+                this.drawFallback(enemy);
+            }
         });
     }
 
@@ -743,5 +640,91 @@ export class CanvasRendererAdapter {
             this.context.fillStyle = 'rgba(0, 0, 0, 0.85)';
             this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
         }
+    }
+
+    private drawHitboxes(
+        entitiesMap: Map<string, VisualEntity>,
+        room: RoomState | null,
+        staticObstacles: BaseEntityState[]
+    ): void {
+        this.context.save();
+        this.context.lineWidth = 1;
+
+        // 1. Хитбоксы статических препятствий (Синие)
+        this.context.strokeStyle = '#0088ff';
+        for (const obs of staticObstacles) {
+            this.context.strokeRect(
+                Math.round(obs.x - obs.width / 2),
+                Math.round(obs.y - obs.height / 2),
+                Math.round(obs.width),
+                Math.round(obs.height)
+            );
+        }
+
+        // 2. Хитбоксы сундуков (Голубые/Циановые)
+        if (room?.chests) {
+            this.context.strokeStyle = '#00ffff';
+            for (const chest of room.chests) {
+                this.context.strokeRect(
+                    Math.round(chest.x - chest.width / 2),
+                    Math.round(chest.y - chest.height / 2),
+                    Math.round(chest.width),
+                    Math.round(chest.height)
+                );
+            }
+        }
+
+        // 3. Хитбоксы выпавших предметов/лута (Голубые/Циановые)
+        if (room?.droppedItems) {
+            this.context.strokeStyle = '#00ffff';
+            for (const item of room.droppedItems) {
+                this.context.strokeRect(
+                    Math.round(item.x - item.width / 2),
+                    Math.round(item.y - item.height / 2),
+                    Math.round(item.width),
+                    Math.round(item.height)
+                );
+            }
+        }
+
+        // 4. Хитбокс враг/портал (Пурпурный)
+        if (room?.portal && room.portal.isActive) {
+            this.context.strokeStyle = '#ff00ff';
+            const portal = room.portal;
+            this.context.strokeRect(
+                Math.round(portal.x - portal.width / 2),
+                Math.round(portal.y - portal.height / 2),
+                Math.round(portal.width),
+                Math.round(portal.height)
+            );
+        }
+
+        // 5. Динамические сущности из снапшота (Игроки, Враги, Пули)
+        entitiesMap.forEach(e => {
+            const x = Math.round(e.renderX - e.width / 2);
+            const y = Math.round(e.renderY - e.height / 2);
+            const w = Math.round(e.width);
+            const h = Math.round(e.height);
+
+            // Цветовое кодирование типов сущностей:
+            if (e.type === 'player') {
+                this.context.strokeStyle = '#00ff00'; // 🟢 Зеленый для Игроков
+            } else if (e.type === 'enemy') {
+                this.context.strokeStyle = '#ff0000'; // 🔴 Красный для Врагов
+            } else if (e.type === 'bullet') {
+                this.context.strokeStyle = '#ffff00'; // 🟡 Желтый для Снарядов/Пуль
+            } else {
+                this.context.strokeStyle = '#ffffff';
+            }
+
+            // Отрисовка контура Bounding Box
+            this.context.strokeRect(x, y, w, h);
+
+            // 🎯 Отрисовка центральной точки физического пивота (2x2px)
+            this.context.fillStyle = this.context.strokeStyle;
+            this.context.fillRect(Math.round(e.renderX) - 1, Math.round(e.renderY) - 1, 2, 2);
+        });
+
+        this.context.restore();
     }
 }

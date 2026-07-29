@@ -41,6 +41,7 @@ export class GameTickUseCase {
 
             for (const player of session.players.values()) {
                 if (!player.isOnline) continue;
+                player.isAttacking = false;
 
                 if (!player.isDead()) {
                     player.processInputQueue();
@@ -144,7 +145,6 @@ export class GameTickUseCase {
 
                 for (const player of livingPlayers) {
                     player.canInteracting = false;
-                    player.isAttacking = false;
 
                     CollisionEngine.resolveWallBounds(player, session.roomWidth, session.roomHeight, room, true);
                     CollisionEngine.resolveObstacles(player, room.getObstacleGrid());
@@ -257,7 +257,18 @@ export class GameTickUseCase {
                 canInteracting: player.canInteracting,
                 isAttacking: player.isAttacking
             })),
-            enemies: room.enemies,
+            enemies: room.enemies.map(enemy => ({
+                id: enemy.id,
+                x: enemy.x,
+                y: enemy.y,
+                width: enemy.width,
+                height: enemy.height,
+                visualId: enemy.visualId,
+                hp: enemy.hp,
+                maxHp: enemy.maxHp,
+                isAttacking: enemy.isAttacking,
+                activeWeaponVisualId: enemy.currentWeapon?.config?.visualId || 'battle_axe' 
+            })),
             bullets: room.bullets
         });
     }

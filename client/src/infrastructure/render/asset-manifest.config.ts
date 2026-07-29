@@ -4,27 +4,20 @@ import {
     WARRIOR_PRESET,
     MAGE_PRESET,
     ARCHER_PRESET,
-    WARRIOR_PRESET_LIZARD,
-    MAGE_PRESET_LIZARD,
-    STARTING_SWORD,
-    STARTING_AXE,
-    STARTING_STAFF,
-    STARTING_ICE_STAFF,
-    STARTING_BOW,
-    STARTING_LIGHTNING_STAFF,
     FIREBALL,
     ICE_BALL,
     SLASH,
     AXE_SLASH,
     POISON_DART,
-    LIGHTNING
+    LIGHTNING,
+    GAME_CONFIG
 } from '@game/shared';
 import { ASSETS } from './../../../assets';
 
 export const DEFAULT_SIZES = {
-    droppedItem: 24,
-    obstacleTile: 20,
-    floorTile: 20,
+    droppedItem: GAME_CONFIG.CELL_SIZE,
+    obstacleTile: GAME_CONFIG.CELL_SIZE,
+    floorTile: GAME_CONFIG.CELL_SIZE,
 } as const;
 
 export interface StaticAssetEntry {
@@ -81,11 +74,22 @@ const OBSTACLE_ASSETS: StaticAssetEntry[] = [
     },
 ];
 
+export const PROJECTILE_ASSET_MANIFEST: StaticAssetEntry[] = [
+    { visualId: SLASH.visualId, src: ASSETS.particle.swordSlash, width: 20, height: 45 },
+    { visualId: AXE_SLASH.visualId, src: ASSETS.particle.axeSlash, width: 24, height: 45 },
+    { visualId: FIREBALL.visualId, src: ASSETS.particle.fireball, width: 30, height: 14 },
+    { visualId: ICE_BALL.visualId, src: ASSETS.particle.iceball, width: 30, height: 14 },
+    { visualId: LIGHTNING.visualId, src: ASSETS.particle.lightning, width: 30, height: 14 },
+    { visualId: POISON_DART.visualId, src: ASSETS.particle.arrow, width: 30, height: 12 },
+];
+
 export const STATIC_ASSET_MANIFEST: StaticAssetEntry[] = [
     ...CHEST_ASSETS,
     ...ITEM_ASSETS,
     ...OBSTACLE_ASSETS,
+    ...PROJECTILE_ASSET_MANIFEST
 ];
+
 export const FLOOR_TILE_ASSETS: string[] = [
     ASSETS.env.caveTile1,
     ASSETS.env.caveTile2,
@@ -93,66 +97,31 @@ export const FLOOR_TILE_ASSETS: string[] = [
     ASSETS.env.caveTile4,
 ];
 
-export interface PlayerVisualVariant {
-    weaponVisualId: string;
-    src: string;
-}
-export interface PlayerVisualEntry {
+export interface LivingEntityVisualEntry {
     visualId: string;
-    variants: PlayerVisualVariant[];
+    src: string;
+    idleSrc?: string;
 }
 
-export const PLAYER_VISUAL_MANIFEST: PlayerVisualEntry[] = [
+export const LIVING_VISUAL_MANIFEST: LivingEntityVisualEntry[] = [
     {
         visualId: WARRIOR_PRESET.visualId,
-        variants: [
-            { weaponVisualId: STARTING_SWORD.config.visualId, src: ASSETS.hero.warriorSword },
-            { weaponVisualId: STARTING_AXE.config.visualId, src: ASSETS.hero.warriorAxe },
-        ],
+        src: ASSETS.hero.warriorMove,
+        idleSrc: ASSETS.hero.warriorIdle,
     },
     {
         visualId: MAGE_PRESET.visualId,
-        variants: [
-            { weaponVisualId: STARTING_STAFF.config.visualId, src: ASSETS.hero.volhvFire },
-            { weaponVisualId: STARTING_ICE_STAFF.config.visualId, src: ASSETS.hero.volhvIce },
-            { weaponVisualId: STARTING_LIGHTNING_STAFF.config.visualId, src: ASSETS.hero.volhvLightning },
-        ],
+        src: ASSETS.hero.mageMove,
+        idleSrc: ASSETS.hero.mageIdle,
     },
     {
         visualId: ARCHER_PRESET.visualId,
-        variants: [
-            { weaponVisualId: STARTING_BOW.config.visualId, src: ASSETS.hero.hunter },
-            { weaponVisualId: STARTING_SWORD.config.visualId, src: ASSETS.hero.hunter }
-
-        ]
+        src: ASSETS.hero.hunterMove,
+        idleSrc: ASSETS.hero.hunterIdle,
+    },
+    {
+        visualId: 'lizard',
+        src: ASSETS.enemy.lizardMove,
+        idleSrc: ASSETS.enemy.lizardIdle,
     }
 ];
-
-export interface EnemyVisualEntry {
-    visualId: string;
-    src: string;
-}
-
-export const ENEMY_VISUAL_MANIFEST: EnemyVisualEntry[] = [
-    { visualId: WARRIOR_PRESET_LIZARD.visualId, src: ASSETS.enemy.lizardAxe },
-    { visualId: MAGE_PRESET_LIZARD.visualId, src: ASSETS.enemy.lizardMage },
-];
-
-export type ProjectileRenderMode =
-    | { kind: 'orb'; color: string }
-    | { kind: 'axe-arc'; color: string }
-    | { kind: 'sword-slash'; color: string }
-    | { kind: 'dart'; color: string }
-    | { kind: 'lightning'; color: string };
-    
-
-export const PROJECTILE_VISUAL_MANIFEST: Record<string, ProjectileRenderMode> = {
-    [FIREBALL.visualId]: { kind: 'orb', color: 'red' },
-    [ICE_BALL.visualId]: { kind: 'orb', color: 'blue' },
-    [SLASH.visualId]: { kind: 'sword-slash', color: '#00d2d3' },
-    [AXE_SLASH.visualId]: { kind: 'axe-arc', color: '#e67e22' },
-    [LIGHTNING.visualId]: { kind: 'lightning', color: '#f1c40f' },
-    [POISON_DART.visualId]: { kind: 'dart', color: '#2ecc71' },
-};
-
-export const DEFAULT_PROJECTILE_VISUAL: ProjectileRenderMode = { kind: 'orb', color: 'black' };

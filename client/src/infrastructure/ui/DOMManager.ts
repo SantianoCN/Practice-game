@@ -290,13 +290,13 @@ export class DOMManager {
             let iconAlt = '';
             switch (key) {
                 case 'mage':
-                    iconAlt = ASSETS.hero.volhvPrev;
+                    iconAlt = ASSETS.hero.mageIdle;
                     break;
                 case 'warrior':
-                    iconAlt = ASSETS.hero.warriorPrev;
+                    iconAlt = ASSETS.hero.warriorIdle;
                     break;
                 case 'archer':
-                    iconAlt = ASSETS.hero.hunterPrev;
+                    iconAlt = ASSETS.hero.hunterIdle;
                     break;
             }
             const iconHtml = `<img src="${iconAlt}" alt="${key}" class="hero-card-img" />`;
@@ -376,13 +376,11 @@ export class DOMManager {
             if (!isUnlocked) {
                 const price = SHOP_PRICES[w.key] || 150;
                 
-                const infoDiv = document.createElement('div');
-                infoDiv.innerHTML = `
+                el.innerHTML = `
                     <div>${iconHtml}</div>
                     <div class="weapon-name">${w.name} (ЗАКРЫТО)</div>
                     <div class="weapon-desc">${w.description || 'Базовое оружие'}</div>
                 `;
-                el.appendChild(infoDiv);
 
                 const buyBtn = document.createElement('button');
                 buyBtn.type = 'button';
@@ -483,13 +481,13 @@ export class DOMManager {
             let previewSrc = '';
             switch (this.selectedArch) {
                 case 'mage':
-                    previewSrc = ASSETS.hero.volhvPrev;
+                    previewSrc = ASSETS.hero.mageIdle;
                     break;
                 case 'warrior':
-                    previewSrc = ASSETS.hero.warriorPrev;
+                    previewSrc = ASSETS.hero.warriorIdle;
                     break;
                 case 'archer':
-                    previewSrc = ASSETS.hero.hunterPrev;
+                    previewSrc = ASSETS.hero.hunterIdle;
                     break;
             }
 
