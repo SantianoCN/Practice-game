@@ -54,16 +54,16 @@ export const ASSETS = {
 import envMusic from './sound/env.mp3'
 import houseMusic from './sound/house.mp3'
 
-import commonSlash from './sound/common-slash'
-import bowAttack from './sound/bow-shoot'
-import fireCast from './sound/fire-cast'
-import iceCast from './sound/ice-cast'
-import lightningCast from './sound/lightning-cast'
+import commonSlash from './sound/common-slash.mp3'
+import bowAttack from './sound/bow-shoot.mp3'
+import fireCast from './sound/fire-cast.mp3'
+import iceCast from './sound/ice-cast.mp3'
+import lightningCast from './sound/lightning-cast.mp3'
 
-import playerDamage from './sound/player-hited'
+import playerDamage from './sound/player-hited.mp3'
 
 export const SOUNDS = {
     env: { envMusic, houseMusic },
-    attack: { commonSlash, bowAttack, fireCast, iceCast, lightningCast };
+    attack: { commonSlash, bowAttack, fireCast, iceCast, lightningCast },
     interaction: { playerDamage }
 }

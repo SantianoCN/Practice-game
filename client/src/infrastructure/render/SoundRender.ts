@@ -8,9 +8,9 @@ export class SoundRender {
   public attackVolume: number = 0.8;
   public interactionVolume: number = 0.3;
 
-  constructor () {
+  public init() {
     this.loadSound('envMusic', SOUNDS.env.envMusic);
-    this.loadSound('houseMusic', SOUNDS.env.houseMusic);
+    this.loadSound('house', SOUNDS.env.houseMusic);
 
     this.loadSound('commonSlash', SOUNDS.attack.commonSlash);
     this.loadSound('bowShoot', SOUNDS.attack.bowAttack);
@@ -27,7 +27,7 @@ export class SoundRender {
     this.sounds.set(key, audio)
   }
 
-public playSound(key: string, type: 'envMusic' | 'interaction' | 'attack'): void {
+  public playSound(key: string, type: 'envMusic' | 'interaction' | 'attack'): void {
     const sound = this.sounds.get(key);
     if (!sound) return;
 

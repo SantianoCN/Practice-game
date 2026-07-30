@@ -6,7 +6,7 @@ import { SyncStateUseCase } from './application/use-cases/SyncStateUseCase';
 import { audio } from './infrastructure/render/SoundRender';
 import { BaseResponseDTO, PlayerClassPresetDTO, PlayerProgressDTO } from '@game/shared';
 
-const SERVER_URL = 'http://217.114.14.204:3000';
+const SERVER_URL = 'http://localhost:3000';
 
 class App {
     private ui = new DOMManager();
@@ -34,6 +34,7 @@ class App {
         this.bindUiToNetwork();
         this.bindNetworkToApp();
         this.init();
+        audio.init();
     }
 
     private async init(): Promise<void> {
