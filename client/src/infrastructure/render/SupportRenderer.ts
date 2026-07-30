@@ -137,6 +137,7 @@ export class TextureRenderer implements EntityRenderer {
         const weaponH = weaponMeta?.height || weaponTexture.height || 24;
 
         if (entity.isAttackingAnim) {
+            
             const progress = Math.min(1, entity.attackTimer / entity.attackDuration);
             const swingAngle = (-Math.PI / 4) + (progress * (Math.PI / 2));
 
@@ -149,10 +150,10 @@ export class TextureRenderer implements EntityRenderer {
             );
             switch (entity.activeWeaponVisualId) {
                 case 'iron_sword':
-                    audio.playSound('commonSkash', 'attack');
+                    audio.playSound('commonSlash', 'attack');
                     break;
                 case 'battle_axe':
-                    audio.playSound('commonSkash', 'attack');
+                    audio.playSound('commonSlash', 'attack');
                     break;
                 case 'fire_staff':
                     audio.playSound('fireCast', 'attack');
@@ -167,6 +168,7 @@ export class TextureRenderer implements EntityRenderer {
                     audio.playSound('bowShoot', 'attack');
                     break;
             }
+            entity.isAttackingSound = false;
 
         } else {
             context.drawImage(

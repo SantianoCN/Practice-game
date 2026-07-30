@@ -16,6 +16,7 @@ export class VisualEntity {
     public inventory: any[] = [];
     public currentWeaponIndex: number = 0;
     public isAttackingAnim: boolean = false;
+    public isAttackingSound: boolean = false;
     public attackTimer: number = 0;
     public readonly attackDuration: number = 0.25;
 
@@ -54,6 +55,7 @@ export class VisualEntity {
 
     public triggerAttack(): void {
         this.isAttackingAnim = true;
+        this.isAttackingSound = true;
         this.attackTimer = 0;
     }
 

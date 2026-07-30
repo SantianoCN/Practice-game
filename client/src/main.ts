@@ -34,7 +34,7 @@ class App {
         this.bindUiToNetwork();
         this.bindNetworkToApp();
         this.init();
-        audio.init();
+        audio.initSound()
     }
 
     private async init(): Promise<void> {

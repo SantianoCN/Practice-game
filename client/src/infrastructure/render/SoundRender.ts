@@ -8,7 +8,7 @@ export class SoundRender {
   public attackVolume: number = 0.8;
   public interactionVolume: number = 0.3;
 
-  public init() {
+  public initSound(): void {
     this.loadSound('envMusic', SOUNDS.env.envMusic);
     this.loadSound('house', SOUNDS.env.houseMusic);
 
@@ -35,23 +35,39 @@ export class SoundRender {
       sound.loop = true;
       sound.volume = this.envVolume;
 
-      if (sound.paused) {
-        sound.play().catch((err) => {
-          console.warn(`Не удалось воспроизвести музыку ${key}:`, err);
-        });
+      const attemptPlay = () => {
+        if (sound.paused) {
+          sound.play().catch((err) => {
+            console.warn(`[Audio] Ждем клика пользователя для воспроизведения ${key}:`, err);
+            
+            const playOnInteraction = () => {
+              sound.play().catch(() => {});
+              window.removeEventListener('click', playOnInteraction);
+              window.removeEventListener('keydown', playOnInteraction);
+            };
+            window.addEventListener('click', playOnInteraction);
+            window.addEventListener('keydown', playOnInteraction);
+          });
+        }
+      };
+
+      if (sound.readyState < 3) {
+        sound.addEventListener('canplaythrough', () => attemptPlay(), { once: true });
+      } else {
+        attemptPlay();
       }
       return;
     }
 
     const sfxClone = sound.cloneNode() as HTMLAudioElement;
-    if (type === 'interaction') sfxClone.volume = this.interactionVolume;
-    if (type === 'attack') sfxClone.volume = this.attackVolume;
+    if (type === 'interaction') sound.volume = this.interactionVolume;
+    if (type === 'attack') sound.volume = this.attackVolume;
 
-    sfxClone.onended = () => {
-        sfxClone.remove();
+    sound.onended = () => {
+        sound.remove();
       };
 
-    sfxClone.play().catch((err) => {
+    sound.play().catch((err) => {
       console.warn(`Не удалось воспроизвести звук ${key}:`, err);
     });
   }
