@@ -8,26 +8,6 @@ void GameEngine::apply_action(GameState& state, ActionType action, bool npc_turn
     if (ac != nullptr) {
         ac(state, map, npc_turn, player_idx);
     }
-    //integrate_movement(state, npc_turn, player_idx);
-}
-
-void GameEngine::integrate_movement(GameState& state, bool npc_turn, int player_idx) {
-    int& x = npc_turn ? state.npc_x : state.players[player_idx].x;
-    int& y = npc_turn ? state.npc_y : state.players[player_idx].y;
-    int vx = npc_turn ? state.npc_vx : state.players[player_idx].vx;
-    int vy = npc_turn ? state.npc_vy : state.players[player_idx].vy;
-    if (vx == 0 && vy == 0) return;
-
-    int cx = x, cy = y;
-    for (int i = 0; i < MOVE_STEP_SIZE; ++i) {
-        int nx = cx + vx, ny = cy + vy;
-        if (map.is_wall(nx, ny)) {
-            //if (npc_turn) state.npc_hp = 0;   
-            return;
-        }
-        cx = nx; cy = ny;
-    }
-    x = cx; y = cy;
 }
 
 bool GameEngine::is_terminal(const GameState& state) {

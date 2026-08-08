@@ -5,7 +5,6 @@
 #include <unordered_set>
 #include <unordered_map>
 #include "position.h"
-#include <algorithm>
 
 struct Obstacle {
     int x;

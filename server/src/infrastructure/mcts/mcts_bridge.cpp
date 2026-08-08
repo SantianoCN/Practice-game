@@ -23,7 +23,8 @@ GameState ConvertToGameState(const Napi::Object &obj)
     
     g_currentMap.obstacles.clear();
     
-    state.npc_hp = obj.Get("npc_hp").As<Number>().Int32Value();
+    state.npc_hp = obj.Get("npc_max_hp").As<Number>().Int32Value();
+    state.npc_hp = obj.Get("npc_hp").As<Number>().Int32Value(); 
     state.npc_x = obj.Get("npc_x").As<Number>().Int32Value();
     state.npc_y = obj.Get("npc_y").As<Number>().Int32Value();
     state.npc_vx = obj.Get("npc_vx").As<Number>().Int32Value();

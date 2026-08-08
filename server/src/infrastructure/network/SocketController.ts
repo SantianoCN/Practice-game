@@ -57,21 +57,16 @@ export class SocketController {
         this.socket.on(ClientEvent.REQUEST_PROFILE, async (callback) => {
             if (typeof callback !== 'function') return;
             try {
-                const account = await this.accountRepo.getByLogin(this.login);
-                if (!account) {
-                    return callback({ success: false, message: 'Аккаунт не найден' });
-                }
-
-                const accountId = account.id;
-                const progressDTO: PlayerProgressDTO | undefined = account.progress ? {
-                    gold: account.progress.gold,
-                    unlockedClasses: account.progress.unlockedClasses,
-                    unlockedWeapons: account.progress.unlockedWeapons
+                const currentAccount = await this.accountRepo.getById(accountId);
+                const progressDTO: PlayerProgressDTO | undefined = currentAccount?.progress ? {
+                    gold: currentAccount.progress.gold,
+                    unlockedClasses: currentAccount.progress.unlockedClasses,
+                    unlockedWeapons: currentAccount.progress.unlockedWeapons
                 } : undefined;
 
                 const save = await this.saveRepo.getRunSaveByHostAccountId(accountId);
+
                 const currentSessionId: string | null = this.socket.data.sessionId || null;
-                
                 let isHost = false;
                 if (currentSessionId) {
                     const currentSession = this.sessionUseCase.getSession(currentSessionId);
@@ -87,7 +82,6 @@ export class SocketController {
                     isHost
                 });
             } catch (err) {
-                console.error('[SocketController] REQUEST_PROFILE Error:', err);
                 callback({ success: false, message: 'Ошибка загрузки профиля' });
             }
         });
@@ -320,7 +314,7 @@ export class SocketController {
                 this.socket.data.sessionId = parsed.data.sessionId;
                 callback({ success: true, sessionId: parsed.data.sessionId, message: "Вы вошли в лобби ожидания" });
             } else {
-                callback({ success: false, message: 'Не удалось войти: отряд уже полон или поход начался' });
+                callback({ success: false, message: 'Вы не участвуете в этом походе или игра уже началась' });
             }
         });
 
@@ -349,11 +343,7 @@ export class SocketController {
 
             if (!result) return;
 
-            if (result.migrated && result.newHostAccountId) {
-                this.io.to(result.newHostAccountId).emit(ServerEvent.HOST_MIGRATED, {
-                    newHostAccountId: result.newHostAccountId
-                });
-
+            if (result.migrated) {
                 for (const remainingAccountId of result.remainingOnlineAccountIds) {
                     this.io.to(remainingAccountId).emit(
                         ServerEvent.ERROR, 
@@ -375,11 +365,7 @@ export class SocketController {
             if (!sessionId) return;
 
             const result = this.sessionUseCase.handlePlayerDisconnect(sessionId, accountId);
-            if (result?.migrated && result.newHostAccountId) {
-                this.io.to(result.newHostAccountId).emit(ServerEvent.HOST_MIGRATED, {
-                    newHostAccountId: result.newHostAccountId
-                });
-
+            if (result?.migrated) {
                 for (const remainingAccountId of result.remainingOnlineAccountIds) {
                     this.io.to(remainingAccountId).emit(
                         ServerEvent.ERROR, 

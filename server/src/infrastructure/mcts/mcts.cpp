@@ -2,11 +2,11 @@
 #include <chrono>
 #include "mcts.h"
 
-/// <summary>
-/// ����� ��� ������ ������� ��������
-/// </summary>
-/// <param name="state"> ������� ��������� �� ������ �������� </param>
-/// <returns></returns>
+
+
+
+
+
 ActionType MCTS::find_best_action(GameState state) {
     tree.reset(state, engine.get_available_actions());
     if (engine.is_terminal(state)) return ActionType::None;
@@ -48,7 +48,7 @@ void MCTS::expansion() {
 double MCTS::simulation() {
     GameState state = tree.get_current_state();
     auto result = engine.rollout(state);
-    //std::cout << "Terminal. NPC HP=" << state.npc_hp << " reward=" << result << std::endl;
+    
     return result;
 }
 

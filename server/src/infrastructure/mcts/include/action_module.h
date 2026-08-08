@@ -150,11 +150,11 @@ inline void try_attack(GameState& state, Player* target, const RoomMap& map) {
 		int distance = sqrt(dx * dx + dy * dy);
 		if (distance <= state.npc_range)
 			target->hp -= state.npc_damage;
+		
 	}
 }
 
-inline void wait(GameState& state, const RoomMap& map, bool npc_turn, int player_idx) {
-}
+inline void wait(GameState& state, const RoomMap& map, bool npc_turn, int player_idx) {}
 
 inline int get_dist(Position npc, Position target) {
 	int dx = target.x - npc.x;

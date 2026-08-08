@@ -7,27 +7,19 @@
 
 class Node {
     friend class Tree;
-public:
-    /// <summary>
-    /// Данные
-    /// </summary>
+public:    
     GameState game_state;
     ActionType action;
-
-    /// <summary>
-    /// Указатели на следующие узлы и на предыдущий
-    /// </summary>
+    
     Node* parent = nullptr;
     std::vector<std::unique_ptr<Node>> children;
-
-    /// <summary>
-    /// Для рассчета UCT
-    /// </summary>
+    
     std::vector<ActionType> action_pull;
     double total_score = 0;
     int visits = 0;
     Node(GameState state, ActionType action, Node* parent = nullptr)
         : game_state(state), action(action), parent(parent) {
+
     }
 
     double uct(int parent_visits, const double c) const;
